@@ -10,24 +10,25 @@ from extract_presence_rate import *
 
 
 # list of session to be concatenated
-concat_list = ['m53s91']
-save = False
+concat_list = ['m53s120']
+save = True
 send = False
 # destination folder
-sv_folder = '/Volumes/WD Edo/firefly_analysis/LFP_band/DATASET/PPC+PFC+MST/'
-
+#sv_folder = '/Volumes/WD Edo/firefly_analysis/LFP_band/DATASET/PPC+PFC+MST/'
+sv_folder = '/Users/jean-paulnoel/Documents/Savin-Angelaki/saved/'
 
 # path to files
 
 # path to preproc mat files
-base_file = '/Volumes/WD Edo/firefly_analysis/LFP_band/DATASET/PPC+PFC+MST/'
+#base_file = '/Volumes/WD Edo/firefly_analysis/LFP_band/DATASET/PPC+PFC+MST/'
+base_file = '/Volumes/server/Data/Monkey2_newzdrive/Schro/Sim_recordings/Sep 11 2018/neural data/New folder/'
 
 # folder in which the sorted files are (useful for presencerate calculation)
 # presence rate uses the folder structure in which are saved the data
 # presence rate assume PPC and PFC are in the folder base_sorted_fold and MST in the oter
 base_sorted_fold = '/Volumes/server/Data/Monkey2_newzdrive/%s/neural data/Sorted'
 base_sorted_fold_array = '/Volumes/server/Data/Monkey2_newzdrive/%s/neural data/PLEXON FILES/Sorted/'
-result_fld = '/Volumes/WD Edo/firefly_analysis/LFP_band/results_radTarg/'
+#result_fld = '/Volumes/WD Edo/firefly_analysis/LFP_band/results_radTarg/'
 
 # list of session in which forcing the use of left eye posiiton
 use_left_eye = ['m53s83','m53s84','m53s86','m53s90','m53s92','m53s133','m53s134','m53s35']

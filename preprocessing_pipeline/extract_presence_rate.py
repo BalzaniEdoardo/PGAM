@@ -2,7 +2,7 @@ import numpy as np
 from python_monkey_info import monkey_info_class
 import os,sys
 
-list_all_dir = [x[0] for x in os.walk('/Users/edoardo/Work/Code/ecephys_spike_sorting')]
+list_all_dir = [x[0] for x in os.walk('/Users/jean-paulnoel/Documents/Savin-Angelaki/ecephys_spike_sorting')]
 
 for dir_name in list_all_dir:
     sys.path.append(dir_name)
