@@ -29,6 +29,14 @@ smooth_info = reduced_model.smooth_info
 # for example spline interp knots
 knots_eye = smooth_info['eye_hori']['knots']
 
+# if you fit the model using k-fold method you have a cv pseudo-r^2 as a
+# measure of fit quality that you can access like this
+kfold_pr2 = reduced_model.kfold_pseudo_r2 # vector of len the number of folds
+# each r2 is the predicion quality on a different test set
+# any value positive means that it is better than using only the mean
+# the larger the better
+#  low positive vals are fine!
+
 # plot full or reduced
 
 dict_xlim = {'rad_vel': (0., 200),

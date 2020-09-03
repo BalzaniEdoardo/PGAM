@@ -7,9 +7,6 @@ sys.path.append(os.path.join(main_dir,'GAM_library'))
 sys.path.append(os.path.join(main_dir,'preprocessing_pipeline'))
 from utils_loading import unpack_preproc_data, add_smooth
 from GAM_library import *
-# from data_handler import *
-# from gam_data_handlers import *
-# from behav_class import *
 from time import perf_counter
 import statsmodels.api as sm
 from basis_set_param_per_session import *
