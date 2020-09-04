@@ -1,1 +1,8 @@
 .DS*
+*.pdf
+*.png
+*.npz
+*.npy
+*.mat
+*/path_class.py
+

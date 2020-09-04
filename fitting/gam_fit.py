@@ -11,6 +11,10 @@ from time import perf_counter
 import statsmodels.api as sm
 from basis_set_param_per_session import *
 from knots_util import *
+from path_class import get_paths_class
+
+user_paths = get_paths_class()
+
 
 tot_fits = 1
 plot_res = False
@@ -27,15 +31,15 @@ use_fisher_scoring = False
 
 # load the data Kaushik passed me
 try:
-    folder_name = '/scratch/jpn5/dataset_firefly/'
-    sv_folder_base = '/scratch/jpn5/final_gam_fit_coupling/'
+    folder_name = user_paths.get_path('data_hpc')
+    sv_folder_base = user_paths.get_path('code_hpc')
     fhName = os.path.join(folder_name, sys.argv[2])
     dat = np.load(os.path.join(folder_name, fhName), allow_pickle=True)
 except:
     print('EXCEPTION RAISED')
     folder_name = ''
     sv_folder_base = ''
-    fhName = '/Volumes/WD Edo/firefly_analysis/LFP_band/DATASET/PPC/m51s120.npz'
+    fhName = os.path.join(user_paths.get_path('local_concat'),'m53s91.npz')
     # fhName = '/Users/edoardo/Downloads/PPC+PFC+MST/m53s109.npz'
     if fhName.endswith('.mat'):
         dat = loadmat(fhName)
@@ -68,15 +72,15 @@ session = os.path.basename(fhName).split('.')[0]
 
 try:  # IF CLUSTER JOB IS RUNNING
     JOB = int(sys.argv[1]) - 1
-    list_condition = np.load('/scratch/jpn5/final_gam_fit_coupling/condiiton_list_%s.npy' % session)
+    list_condition = np.load(os.path.join(user_paths.get_path('code_hpc'),'condiiton_list_%s.npy' % session))
     neuron_list = list_condition[JOB:JOB + tot_fits]['neuron']
     cond_type_list = list_condition[JOB:JOB + tot_fits]['condition']
     cond_value_list = list_condition[JOB:JOB + tot_fits]['value']
     pop_size_max = yt.shape[1]
 except Exception as ex:
     JOB = 1
-    list_condition = np.load(
-        '/Users/edoardo/Work/Code/Angelaki-Savin/Analysis_Scripts/GAM_encoding_with_coupling/sim_list/condiiton_list_%s.npy' % session)
+    list_condition = np.load(os.path.join(os.path.join(main_dir,'preprocessing_pipeline'),
+        'condiiton_list_%s.npy' % session))
     neuron_list = list_condition[JOB:JOB + tot_fits]['neuron']
     cond_type_list = list_condition[JOB:JOB + tot_fits]['condition']
     cond_value_list = list_condition[JOB:JOB + tot_fits]['value']

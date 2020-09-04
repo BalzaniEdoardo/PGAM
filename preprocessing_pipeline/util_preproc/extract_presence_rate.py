@@ -1,8 +1,9 @@
 import numpy as np
 from python_monkey_info import monkey_info_class
 import os,sys
-
-list_all_dir = [x[0] for x in os.walk('/Users/jean-paulnoel/Documents/Savin-Angelaki/ecephys_spike_sorting')]
+from path_class import get_paths_class
+user_path_gen = get_paths_class()
+list_all_dir = [x[0] for x in os.walk(user_path_gen.get_path('ecephys_spike_sorting'))]
 
 for dir_name in list_all_dir:
     sys.path.append(dir_name)
@@ -35,8 +36,8 @@ def compute_amplitude_tc(ampl_spk,time_spk,bin_sec,tot_time):
 
 
 def extract_presecnce_rate(occupancy_bin_sec,occupancy_rate_th,unit_info,session,
-                           base_sorted_fold,base_sorted_fold_array,utah_array_sappling_fq,linearprobe_sampling_fq):
-    monkey_info = monkey_info_class()
+                           path_user,utah_array_sappling_fq,linearprobe_sampling_fq):
+    # monkey_info = monkey_info_class()
 
     N = unit_info['brain_area'].shape[0]
     unit_info['presence_rate'] = np.zeros(N)
@@ -45,7 +46,7 @@ def extract_presecnce_rate(occupancy_bin_sec,occupancy_rate_th,unit_info,session
 
 
     # first extract utah array
-    sorted_fold = base_sorted_fold % monkey_info.get_folder(session)
+    sorted_fold = path_user.get_path('cluster_data',session)
     spike_times, spike_clusters, spike_templates, amplitudes, templates, channel_map, clusterIDs, cluster_quality= \
         load_kilosort_data(sorted_fold, \
                            utah_array_sappling_fq, \
@@ -76,7 +77,7 @@ def extract_presecnce_rate(occupancy_bin_sec,occupancy_rate_th,unit_info,session
         unit_info['presence_rate'][idx_un] = occupancy
 
     # second extract linear prove
-    sorted_fold = base_sorted_fold_array % monkey_info.get_folder(session)
+    sorted_fold = path_user.get_path('cluster_array_data',session)
     if not 'Utah Array' in sorted_fold and not session.startswith('m51'):
 
         spike_times, spike_clusters, spike_templates, amplitudes, templates, channel_map, clusterIDs, cluster_quality = \

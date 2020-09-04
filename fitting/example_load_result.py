@@ -3,7 +3,7 @@ import sys, os, dill
 folder_name = os.path.dirname(os.path.realpath(__file__))
 main_dir = os.path.dirname(folder_name)
 sys.path.append(os.path.join(main_dir,'GAM_library'))
-sys.path.append(os.path.join(main_dir,'preprocessing_pipeline'))
+sys.path.append(os.path.join(main_dir,'preprocessing_pipeline/util_preproc'))
 from utils_loading import unpack_preproc_data, add_smooth
 from GAM_library import *
 import pandas as pd

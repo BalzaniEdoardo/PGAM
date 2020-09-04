@@ -4,30 +4,28 @@ folder_name = os.path.dirname(os.path.realpath(__file__))
 main_dir = os.path.dirname(folder_name)
 sys.path.append(os.path.join(main_dir,'GAM_library'))
 sys.path.append(os.path.join(main_dir,'firefly_utils'))
+sys.path.append(os.path.join(folder_name,'util_preproc'))
+from path_class import get_paths_class
 from scipy.io import loadmat
 from data_handler import *
 from extract_presence_rate import *
 
-
+user_paths = get_paths_class()
 # list of session to be concatenated
 concat_list = ['m53s120']
-save = True
+save = False
 send = False
 # destination folder
 #sv_folder = '/Volumes/WD Edo/firefly_analysis/LFP_band/DATASET/PPC+PFC+MST/'
-sv_folder = '/Users/jean-paulnoel/Documents/Savin-Angelaki/saved/'
+sv_folder = '/Users/edoardo/Work/Code/GAM_code/fitting/'
 
 # path to files
 
 # path to preproc mat files
 #base_file = '/Volumes/WD Edo/firefly_analysis/LFP_band/DATASET/PPC+PFC+MST/'
-base_file = '/Volumes/server/Data/Monkey2_newzdrive/Schro/Sim_recordings/Sep 11 2018/neural data/New folder/'
+base_file = user_paths.get_path('local_concat','m53s120')
 
-# folder in which the sorted files are (useful for presencerate calculation)
-# presence rate uses the folder structure in which are saved the data
-# presence rate assume PPC and PFC are in the folder base_sorted_fold and MST in the oter
-base_sorted_fold = '/Volumes/server/Data/Monkey2_newzdrive/%s/neural data/Sorted'
-base_sorted_fold_array = '/Volumes/server/Data/Monkey2_newzdrive/%s/neural data/PLEXON FILES/Sorted/'
+
 #result_fld = '/Volumes/WD Edo/firefly_analysis/LFP_band/results_radTarg/'
 
 # list of session in which forcing the use of left eye posiiton
@@ -146,7 +144,7 @@ for session in concat_list:
 
     # compute additional quality metrics
     res['unit_info'] = extract_presecnce_rate(occupancy_bin_sec,occupancy_rate_th,res['unit_info'],session,
-                           base_sorted_fold,base_sorted_fold_array,utah_array_sappling_fq,linearprobe_sampling_fq)
+                           user_paths,utah_array_sappling_fq,linearprobe_sampling_fq)
 
 
     print('saving variables...')
