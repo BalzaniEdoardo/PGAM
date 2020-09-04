@@ -4,5 +4,5 @@
 *.npz
 *.npy
 *.mat
-*/path_class.py
+*path_class.py
 
