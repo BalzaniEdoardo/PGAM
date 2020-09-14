@@ -147,8 +147,9 @@ for session in concat_list:
                            user_paths,utah_array_sampling_fq,linearprobe_sampling_fq)
 
 
-    print('saving variables...')
+    
     if save:
+        print('saving variables...')
         saveCompressed(sv_folder+'%s.npz'%session,unit_info=res['unit_info'],info_trial=res['info_trial'],data_concat=res['data_concat'],
              var_names=np.array(res['var_names']),time_bin=res['time_bin'],post_trial_dur=res['post_trial_dur'],
              pre_trial_dur=res['pre_trial_dur'],force_zip64=True)
