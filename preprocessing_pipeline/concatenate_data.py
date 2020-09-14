@@ -45,7 +45,7 @@ occupancy_bin_sec = 60 # at least one spike per min
 occupancy_rate_th = 0.1 #hz
 
 linearprobe_sampling_fq = 20000
-utah_array_sappling_fq = 30000
+utah_array_sampling_fq = 30000
 
 
 for session in concat_list:
@@ -144,7 +144,7 @@ for session in concat_list:
 
     # compute additional quality metrics
     res['unit_info'] = extract_presecnce_rate(occupancy_bin_sec,occupancy_rate_th,res['unit_info'],session,
-                           user_paths,utah_array_sappling_fq,linearprobe_sampling_fq)
+                           user_paths,utah_array_sampling_fq,linearprobe_sampling_fq)
 
 
     print('saving variables...')
