@@ -7,6 +7,7 @@ main_dir = os.path.dirname(folder_name)
 sys.path.append(os.path.join(main_dir,'preprocessing_pipeline'))
 sys.path.append(os.path.join(main_dir,'preprocessing_pipeline/util_preproc'))
 sys.path.append(os.path.join(main_dir,'GAM_Repo/GAM_library'))
+sys.path.append(os.path.join(main_dir,'GAM_Repo/firefly_utils/'))
 sys.path.append(os.path.join(main_dir,'GAM_Repo/preprocessing_pipeline'))
 sys.path.append(os.path.join(main_dir,'GAM_Repo/preprocessing_pipeline/util_preproc'))
 from utils_loading import unpack_preproc_data, add_smooth
@@ -22,10 +23,10 @@ user_paths = get_paths_class()
 
 tot_fits = 1
 plot_res = False
-fit_fully_coupled = True
+fit_fully_coupled = False
 use_k_fold = True
 reducedAdaptive = False
-num_folds = 10
+num_folds = 5
 
 print('folder name')
 print(folder_name)

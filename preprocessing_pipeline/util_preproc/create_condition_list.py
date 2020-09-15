@@ -15,10 +15,14 @@ sys.path.append(os.path.join(main_dir,'preprocessing_pipeline'))
 from utils_loading import unpack_preproc_data, add_smooth
 import itertools
 import pandas as pd
+from path_class import get_paths_class
 
-session = 'm91s25'
+user_paths = get_paths_class()
 
-fhName = '/Users/jean-paulnoel/Documents/Savin-Angelaki/saved/%s.npz'%session
+
+session = 'm53s91'
+
+fhName = os.path.join(user_paths.get_path('local_concat'),'%s.npz'%session)
 save_fld = ''
 
 
