@@ -14,7 +14,7 @@ user_paths = get_paths_class()
 # list of session to be concatenated
 concat_list = ['m91s25']
 save = True
-send = False
+send = True
 # destination folder
 #sv_folder = '/Volumes/WD Edo/firefly_analysis/LFP_band/DATASET/PPC+PFC+MST/'
 # sv_folder = '/Users/edoardo/Work/Code/GAM_code/fitting/'

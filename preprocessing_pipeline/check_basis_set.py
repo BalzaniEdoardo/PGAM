@@ -1,11 +1,14 @@
 ## script to control that kernel are not forced to zero by the algorithm
-import sys
-sys.path.append('/Users/jean-paulnoel/Documents/Savin-Angelaki/GAM_Repo/GAM_library')
-sys.path.append( '/Users/jean-paulnoel/Documents/Savin-Angelaki/GAM_Repo/preprocessing_pipeline/util_preproc/')
-
+import sys,os
+# sys.path.append('/Users/jean-paulnoel/Documents/Savin-Angelaki/GAM_Repo/GAM_library')
+# sys.path.append( '/Users/jean-paulnoel/Documents/Savin-Angelaki/GAM_Repo/preprocessing_pipeline/util_preproc/')
+folder_name = os.path.dirname(os.path.realpath(__file__))
+main_dir = os.path.dirname(folder_name)
+sys.path.append(os.path.join(main_dir,'GAM_library'))
+sys.path.append(os.path.join(main_dir,'firefly_utils'))
+sys.path.append(os.path.join(folder_name,'util_preproc'))
 from copy import deepcopy
 from time import perf_counter
-import os
 from GAM_library import *
 from data_handler import *
 from gam_data_handlers import *
@@ -17,6 +20,9 @@ import statsmodels.api as sm
 from basis_set_param_per_session import *
 from knots_util import *
 from utils_loading import *
+from path_class import get_paths_class
+
+user_paths = get_paths_class()
 
 plt.close('all')
 all_var_fit = False
@@ -24,12 +30,13 @@ reload = True
 k_fold = False
 plot_res = True
 fit_neuron = False
-session = 'm53s91'
+session = 'm91s25'
 analyze_unit = 3
 sbfld = 'PPC+PFC+MST'
-var = 'eye_vert'
+var = 'eye_hori'
 skip_var = ''
 WLS_solver = 'negative_weights'
+send = False
 
 folder_name = os.path.dirname(os.path.realpath(__file__))
 print('folder name')
@@ -297,3 +304,9 @@ if fit_neuron:
 
             cc+=1
             cc_plot+=1
+
+if send:
+    print('sending to server...')
+    send_script = os.path.join(user_paths.get_path('basis_info_local'),'basis_set_param_per_session.py')
+    dest_folder = user_paths.get_path('basis_info_cluster')
+    os.system('sshpass -p "%s" scp %s jpn5@prince.hpc.nyu.edu:%s' % ('savin123!', send_script,dest_folder))
