@@ -1,7 +1,7 @@
 ## script to control that kernel are not forced to zero by the algorithm
 import sys
-sys.path.append('/Users/edoardo/Work/Code/Angelaki-Savin/GAM_library/')
-sys.path.append('/scratch/jpn5/GAM_library/')
+sys.path.append('/Users/jean-paulnoel/Documents/Savin-Angelaki/GAM_Repo/GAM_library')
+sys.path.append( '/Users/jean-paulnoel/Documents/Savin-Angelaki/GAM_Repo/preprocessing_pipeline/util_preproc/')
 
 from copy import deepcopy
 from time import perf_counter
@@ -23,7 +23,7 @@ all_var_fit = False
 reload = True
 k_fold = False
 plot_res = True
-fit_neuron = True
+fit_neuron = False
 session = 'm53s91'
 analyze_unit = 3
 sbfld = 'PPC+PFC+MST'
@@ -39,7 +39,7 @@ print(' ')
 # use
 use_fisher_scoring = False
 
-fhName = '/Volumes/WD Edo/firefly_analysis/LFP_band/DATASET/%s/%s.npz'%(sbfld,session)
+fhName = '/Users/jean-paulnoel/Documents/Savin-Angelaki/saved/%s.npz'%(session)
 cont_names = np.array(['rad_vel', 'ang_vel', 'rad_path', 'ang_path', 'rad_target', 'ang_target', 'phase','lfp_beta','lfp_theta','lfp_alpha', 'eye_vert', 'eye_hori'])
 event_names = np.array(['t_move', 't_flyOFF', 't_stop', 't_reward','spike_hist'])
 if reload:
@@ -179,7 +179,7 @@ if fit_neuron:
                          max_iter=10000,gcv_sel_tol=10**-13,random_init=False,
                          use_dgcv=True,initial_smooths_guess=False,
                          fit_initial_beta=True,th_pval=0.001,
-                         trial_num_vec=trial_idx,k_fold = k_fold,fold_num=5,WLS_solver=WLS_solver)
+                         trial_num_vec=trial_idx,k_fold = k_fold,fold_num=5)
     if plot_res:
         dict_xlim = {'rad_vel': (0., 200),
                      'ang_vel': (-90, 90),

@@ -5,6 +5,10 @@ folder_name = os.path.dirname(os.path.realpath(__file__))
 main_dir = os.path.dirname(folder_name)
 sys.path.append(os.path.join(main_dir,'GAM_library'))
 sys.path.append(os.path.join(main_dir,'preprocessing_pipeline'))
+sys.path.append(os.path.join(main_dir,'preprocessing_pipeline/util_preproc'))
+sys.path.append(os.path.join(main_dir,'GAM_Repo/GAM_library'))
+sys.path.append(os.path.join(main_dir,'GAM_Repo/preprocessing_pipeline'))
+sys.path.append(os.path.join(main_dir,'GAM_Repo/preprocessing_pipeline/util_preproc'))
 from utils_loading import unpack_preproc_data, add_smooth
 from GAM_library import *
 from time import perf_counter
@@ -18,7 +22,7 @@ user_paths = get_paths_class()
 
 tot_fits = 1
 plot_res = False
-fit_fully_coupled = True
+fit_fully_coupled = False
 use_k_fold = True
 reducedAdaptive = False
 num_folds = 10
@@ -39,7 +43,7 @@ except:
     print('EXCEPTION RAISED')
     folder_name = ''
     sv_folder_base = ''
-    fhName = os.path.join(user_paths.get_path('local_concat'),'m53s91.npz')
+    fhName = os.path.join(user_paths.get_path('local_concat'),'m51s120.npz')
     # fhName = '/Users/edoardo/Downloads/PPC+PFC+MST/m53s109.npz'
     if fhName.endswith('.mat'):
         dat = loadmat(fhName)
@@ -72,15 +76,15 @@ session = os.path.basename(fhName).split('.')[0]
 
 try:  # IF CLUSTER JOB IS RUNNING
     JOB = int(sys.argv[1]) - 1
-    list_condition = np.load(os.path.join(user_paths.get_path('code_hpc'),'condiiton_list_%s.npy' % session))
+    list_condition = np.load(os.path.join(user_paths.get_path('code_hpc'),'condition_list_%s.npy' % session))
     neuron_list = list_condition[JOB:JOB + tot_fits]['neuron']
     cond_type_list = list_condition[JOB:JOB + tot_fits]['condition']
     cond_value_list = list_condition[JOB:JOB + tot_fits]['value']
     pop_size_max = yt.shape[1]
 except Exception as ex:
     JOB = 1
-    list_condition = np.load(os.path.join(os.path.join(main_dir,'preprocessing_pipeline'),
-        'condiiton_list_%s.npy' % session))
+    list_condition = np.load(os.path.join(os.path.join(main_dir,'GAM_Repo/preprocessing_pipeline/util_preproc/'),
+        'condition_list_%s.npy' % session))
     neuron_list = list_condition[JOB:JOB + tot_fits]['neuron']
     cond_type_list = list_condition[JOB:JOB + tot_fits]['condition']
     cond_value_list = list_condition[JOB:JOB + tot_fits]['value']

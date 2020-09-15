@@ -13,11 +13,11 @@ from extract_presence_rate import *
 user_paths = get_paths_class()
 # list of session to be concatenated
 concat_list = ['m53s120']
-save = False
+save = True
 send = False
 # destination folder
 #sv_folder = '/Volumes/WD Edo/firefly_analysis/LFP_band/DATASET/PPC+PFC+MST/'
-sv_folder = '/Users/edoardo/Work/Code/GAM_code/fitting/'
+# sv_folder = '/Users/edoardo/Work/Code/GAM_code/fitting/'
 
 # path to files
 
@@ -149,7 +149,8 @@ for session in concat_list:
 
     print('saving variables...')
     if save:
-        saveCompressed(sv_folder+'%s.npz'%session,unit_info=res['unit_info'],info_trial=res['info_trial'],data_concat=res['data_concat'],
+        sv_folder = user_paths.get_path('local_concat')
+        saveCompressed(os.path.join(sv_folder,'%s.npz'%session),unit_info=res['unit_info'],info_trial=res['info_trial'],data_concat=res['data_concat'],
              var_names=np.array(res['var_names']),time_bin=res['time_bin'],post_trial_dur=res['post_trial_dur'],
              pre_trial_dur=res['pre_trial_dur'],force_zip64=True)
 
@@ -157,7 +158,8 @@ for session in concat_list:
         try:
             print('...sending %s.npz to server'%session)
             sendfrom = sv_folder.replace(' ','\ ')
-            os.system('sshpass -p "%s" scp %s jpn5@prince.hpc.nyu.edu:/scratch/jpn5/dataset_firefly' % ('savin123!', sendfrom+'%s.npz'%session))
+            dest_folder = user_paths.get_path('data_hpc')
+            os.system('sshpass -p "%s" scp %s jpn5@prince.hpc.nyu.edu:%s' % ('savin123!', os.path.join(sendfrom,'%s.npz'%session),dest_folder))
         except Exception as e:
             print(e)
             print('could not send files to the HPC cluster')

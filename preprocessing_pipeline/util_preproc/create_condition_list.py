@@ -16,9 +16,9 @@ from utils_loading import unpack_preproc_data, add_smooth
 import itertools
 import pandas as pd
 
-session = 'm53s91'
+session = 'm53s120'
 
-fhName = '/Volumes/WD Edo/firefly_analysis/LFP_band/DATASET/PPC+PFC+MST/%s.npz'%session
+fhName = '/Users/jean-paulnoel/Documents/Savin-Angelaki/saved/%s.npz'%session
 save_fld = ''
 
 
@@ -41,11 +41,11 @@ neuron_use = np.arange(1,isi_v_filter.shape[0]+1)[combine_filter]
 
 # create all the conditions that you are interested to fit
 
-cond_dict = {'all':[True],'replay':[0,1]}
+cond_dict = {'all':[True]}
 
 dict_type = {'names':('neuron', 'condition', 'value'),'formats':(int,'U30',float)}
 
-cond_list = np.array(0,dtype=dict_type)
+cond_list = np.zeros(0,dtype=dict_type)
 
 for condition in cond_dict.keys():
     for value in cond_dict[condition]:
@@ -59,6 +59,6 @@ for condition in cond_dict.keys():
             print('trial of type %s %s not present'%(condition,value))
 
 print(pd.DataFrame(tmp_cond_list)[:10])
-np.save(os.path.join(save_fld, 'condition_list.npy'),cond_list)
+np.save(os.path.join(save_fld, 'condition_list_%s.npy'%session),cond_list)
 
     

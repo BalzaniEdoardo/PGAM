@@ -1,8 +1,15 @@
 import numpy as np
 from python_monkey_info import monkey_info_class
 import os,sys
+folder_name = os.path.dirname(os.path.realpath(__file__))
+main_dir = os.path.dirname(folder_name)
+sys.path.append(os.path.join(main_dir,'GAM_library'))
+sys.path.append(os.path.join(main_dir,'firefly_utils'))
+sys.path.append(os.path.join(folder_name,'util_preproc'))
+from path_class import get_paths_class
+user_paths = get_paths_class()
 
-list_all_dir = [x[0] for x in os.walk('/Users/edoardo/Work/Code/ecephys_spike_sorting')]
+list_all_dir = [x[0] for x in os.walk(user_paths.get_path('ecephys_spike_sorting'))]
 
 for dir_name in list_all_dir:
     sys.path.append(dir_name)
