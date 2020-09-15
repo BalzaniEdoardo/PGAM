@@ -72,7 +72,7 @@ session = os.path.basename(fhName).split('.')[0]
 
 try:  # IF CLUSTER JOB IS RUNNING
     JOB = int(sys.argv[1]) - 1
-    list_condition = np.load(os.path.join(user_paths.get_path('code_hpc'),'condiiton_list_%s.npy' % session))
+    list_condition = np.load(os.path.join(user_paths.get_path('code_hpc'),'condition_list_%s.npy' % session))
     neuron_list = list_condition[JOB:JOB + tot_fits]['neuron']
     cond_type_list = list_condition[JOB:JOB + tot_fits]['condition']
     cond_value_list = list_condition[JOB:JOB + tot_fits]['value']
@@ -80,7 +80,7 @@ try:  # IF CLUSTER JOB IS RUNNING
 except Exception as ex:
     JOB = 1
     list_condition = np.load(os.path.join(os.path.join(main_dir,'preprocessing_pipeline'),
-        'condiiton_list_%s.npy' % session))
+        'condition_list_%s.npy' % session))
     neuron_list = list_condition[JOB:JOB + tot_fits]['neuron']
     cond_type_list = list_condition[JOB:JOB + tot_fits]['condition']
     cond_value_list = list_condition[JOB:JOB + tot_fits]['value']

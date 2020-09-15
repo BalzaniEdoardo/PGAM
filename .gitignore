@@ -5,4 +5,4 @@
 *.npy
 *.mat
 *path_class.py
-
+venv/*

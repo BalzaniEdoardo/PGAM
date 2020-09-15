@@ -41,7 +41,7 @@ neuron_use = np.arange(1,isi_v_filter.shape[0]+1)[combine_filter]
 
 # create all the conditions that you are interested to fit
 
-cond_dict = {'all':[True],'replay':[0,1]}
+cond_dict = {'all':[True]}#,'replay':[0,1]}
 
 dict_type = {'names':('neuron', 'condition', 'value'),'formats':(int,'U30',float)}
 
@@ -59,6 +59,6 @@ for condition in cond_dict.keys():
             print('trial of type %s %s not present'%(condition,value))
 
 print(pd.DataFrame(tmp_cond_list)[:10])
-np.save(os.path.join(save_fld, 'condition_list.npy'),cond_list)
+np.save(os.path.join(save_fld, 'condition_list_%s.npy'%session),cond_list)
 
     
