@@ -22,7 +22,7 @@ user_paths = get_paths_class()
 
 tot_fits = 1
 plot_res = False
-fit_fully_coupled = False
+fit_fully_coupled = True
 use_k_fold = True
 reducedAdaptive = False
 num_folds = 10
@@ -43,7 +43,7 @@ except:
     print('EXCEPTION RAISED')
     folder_name = ''
     sv_folder_base = ''
-    fhName = os.path.join(user_paths.get_path('local_concat'),'m51s120.npz')
+    fhName = os.path.join(user_paths.get_path('local_concat'),'m91s25.npz')
     # fhName = '/Users/edoardo/Downloads/PPC+PFC+MST/m53s109.npz'
     if fhName.endswith('.mat'):
         dat = loadmat(fhName)
@@ -83,11 +83,8 @@ try:  # IF CLUSTER JOB IS RUNNING
     pop_size_max = yt.shape[1]
 except Exception as ex:
     JOB = 1
-<<<<<<< HEAD
-    list_condition = np.load(os.path.join(os.path.join(main_dir,'GAM_Repo/preprocessing_pipeline/util_preproc/'),
-=======
-    list_condition = np.load(os.path.join(os.path.join(main_dir,'preprocessing_pipeline'),
->>>>>>> a71f5128c69bcbcab03bc95d102305ea50201696
+    list_condition = np.load(os.path.join(os.path.join(main_dir,'preprocessing_pipeline', 'util_preproc'),
+
         'condition_list_%s.npy' % session))
     neuron_list = list_condition[JOB:JOB + tot_fits]['neuron']
     cond_type_list = list_condition[JOB:JOB + tot_fits]['condition']
