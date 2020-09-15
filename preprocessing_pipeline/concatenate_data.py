@@ -12,7 +12,7 @@ from extract_presence_rate import *
 
 user_paths = get_paths_class()
 # list of session to be concatenated
-concat_list = ['m53s120']
+concat_list = ['m91s25']
 save = True
 send = False
 # destination folder
@@ -57,9 +57,7 @@ for session in concat_list:
         use_eye = 'right'
 
 
-    if not os.path.exists(sv_folder):
-        os.mkdir(sv_folder)
-
+    
 
     print('loading session %s...'%session)
     pre_trial_dur = 0.2
@@ -149,13 +147,12 @@ for session in concat_list:
 
     
     if save:
-<<<<<<< HEAD
-        sv_folder = user_paths.get_path('local_concat')
-        saveCompressed(os.path.join(sv_folder,'%s.npz'%session),unit_info=res['unit_info'],info_trial=res['info_trial'],data_concat=res['data_concat'],
-=======
         print('saving variables...')
-        saveCompressed(sv_folder+'%s.npz'%session,unit_info=res['unit_info'],info_trial=res['info_trial'],data_concat=res['data_concat'],
->>>>>>> a71f5128c69bcbcab03bc95d102305ea50201696
+        sv_folder = user_paths.get_path('local_concat')
+        if not os.path.exists(sv_folder):
+            os.mkdir(sv_folder)
+
+        saveCompressed(os.path.join(sv_folder,'%s.npz'%session),unit_info=res['unit_info'],info_trial=res['info_trial'],data_concat=res['data_concat'],
              var_names=np.array(res['var_names']),time_bin=res['time_bin'],post_trial_dur=res['post_trial_dur'],
              pre_trial_dur=res['pre_trial_dur'],force_zip64=True)
 
