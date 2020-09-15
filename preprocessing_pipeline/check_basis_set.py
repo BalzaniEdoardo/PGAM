@@ -30,7 +30,7 @@ reload = True
 k_fold = False
 plot_res = True
 fit_neuron = False
-session = 'm91s25'
+session = 'm53s120'
 analyze_unit = 3
 sbfld = 'PPC+PFC+MST'
 var = 'eye_hori'
@@ -46,7 +46,7 @@ print(' ')
 # use
 use_fisher_scoring = False
 
-fhName = '/Users/jean-paulnoel/Documents/Savin-Angelaki/saved/%s.npz'%(session)
+fhName = os.path.join(user_paths.get_path('local_concat'),'%s.npz'%(session))
 cont_names = np.array(['rad_vel', 'ang_vel', 'rad_path', 'ang_path', 'rad_target', 'ang_target', 'phase','lfp_beta','lfp_theta','lfp_alpha', 'eye_vert', 'eye_hori'])
 event_names = np.array(['t_move', 't_flyOFF', 't_stop', 't_reward','spike_hist'])
 if reload:

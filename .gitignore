@@ -1,4 +1,7 @@
-__pycache__/
+.RHistory
+firefly_utils/__pycache__/*
+__pycache__/*
+/GAM_library/__pycache__/*
 *.h5
 .DS*
 *.pdf
