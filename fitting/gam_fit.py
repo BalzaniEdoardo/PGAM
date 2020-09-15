@@ -3,7 +3,7 @@ import numpy as np
 import sys, os, dill
 folder_name = os.path.dirname(os.path.realpath(__file__))
 main_dir = os.path.dirname(folder_name)
-sys.path.append(os.path.join(main_dir,'GAM_library'))
+# sys.path.append(os.path.join(main_dir,'GAM_library'))
 sys.path.append(os.path.join(main_dir,'preprocessing_pipeline'))
 sys.path.append(os.path.join(main_dir,'preprocessing_pipeline/util_preproc'))
 sys.path.append(os.path.join(main_dir,'GAM_Repo/GAM_library'))
@@ -43,7 +43,7 @@ except:
     print('EXCEPTION RAISED')
     folder_name = ''
     sv_folder_base = ''
-    fhName = os.path.join(user_paths.get_path('local_concat'),'m91s25.npz')
+    fhName = os.path.join(user_paths.get_path('local_concat'),'m53s91.npz')
     # fhName = '/Users/edoardo/Downloads/PPC+PFC+MST/m53s109.npz'
     if fhName.endswith('.mat'):
         dat = loadmat(fhName)

@@ -3,7 +3,7 @@ from scipy.io import loadmat
 import os
 import re
 from  datetime import datetime
-
+import platform
 class monkey_info_class(object):
     def __init__(self,path=''):
         monkey_info = loadmat(os.path.join(path,'monkey_info.mat'))['monkeyInfo']
@@ -17,9 +17,16 @@ class monkey_info_class(object):
             monkey_info_dict[exp] = {}
             for name in monkey_info.dtype.names:
                 if name == 'folder':
-                    monkey_info_dict[exp][name] = monkey_info[name][0][exp].flatten()[0][0].replace('\\','/')
-                    string = monkey_info[name][0][exp].flatten()[0][0]
-                    string = string.upper()
+                    tmp = monkey_info[name][0][exp].flatten()
+                    while not type(tmp) is np.str_:
+                        tmp = tmp[0]
+                    
+                    if platform.system() == 'Windows':
+                        monkey_info_dict[exp][name] = tmp.replace('/','\\')
+                    else:
+                        monkey_info_dict[exp][name] = tmp.replace('\\','/')
+                    
+                    string = tmp.upper()
                     st_regex_month = '(?:JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC|JANAURY|FEBRUARY|MARCH|MAY|APRIL|JUNE|JULY|AUGUST|SEPTEMBER|OCTOBER|NOVEMBER|DECEMBER)'
                     regex_all = r'%s\s[\d]{1,2}\s[\d]{4}'%st_regex_month
                     date = re.findall(regex_all, string)
