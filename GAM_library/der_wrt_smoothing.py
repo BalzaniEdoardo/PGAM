@@ -21,7 +21,6 @@ try:
     import fast_summations
 except:
     pass
-from opt_einsum import contract
 import matplotlib.pylab as plt
 # from GAM_library import GAM_result,general_additive_model
 
@@ -303,14 +302,14 @@ def d3beta_unpenalized_ll(beta,y,X,family,phi_est):
     dmu_deta = np.clip(1 / family.link.deriv(mu), FLOAT_EPS, np.inf)
     # d3beta_ll = -1/phi_est * np.einsum('i,i,im,ir,il->mrl',dalpha_dmu,dmu_deta,X,X,X)
     t0 = perf_counter()
-    temp = -1/phi_est*contract('i,i,im,ir,il->mrl',dalpha_dmu,dmu_deta,X,X,X)
+    temp = -1/phi_est*np.einsum('i,i,im,ir,il->mrl',dalpha_dmu,dmu_deta,X,X,X,optimize=True)
     t1 = perf_counter()
     print('optim einsum:',t1-t0)
     t0 = perf_counter()
     try:
         d3beta_ll = -1/phi_est * fast_summations.d3beta_unpenalized_ll_summation(X,dalpha_dmu,dmu_deta)
     except:
-        d3beta_ll =  -1/phi_est*np.einsum('i,i,im,ir,il->mrl', dalpha_dmu, dmu_deta, X, X, X)
+        d3beta_ll =  -1/phi_est*np.einsum('i,i,im,ir,il->mrl', dalpha_dmu, dmu_deta, X, X, X,optimize=True)
     t1 = perf_counter()
     print('fastsum:', t1 - t0)
     return d3beta_ll
