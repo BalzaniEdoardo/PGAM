@@ -25,6 +25,8 @@ path_jpn5_base = os.path.dirname(os.path.dirname(user_paths.get_path('data_hpc')
 path_to_fit_fld = os.path.join(path_jpn5_base,'jp_final_gam_fit_coupling')
 
 # send gam_fit.py
+print('\nsending:')
+print(os.path.join(path_fitting_fld,'gam_fit.py'))
 os.system('sshpass -p "%s" scp %s jpn5@prince.hpc.nyu.edu:%s' % ('savin123!', os.path.join(path_fitting_fld,'gam_fit.py'),path_to_fit_fld))
 
 
@@ -36,20 +38,22 @@ for root, dirs, files in os.walk(main_dir):
     for fhname in files:
         if 'condition_list_' in fhname:
             fh_path = os.path.join(root,fhname)
-            # print('sending: \n',fh_path)
+            print('sending: \n',fh_path)
             os.system('sshpass -p "%s" scp %s jpn5@prince.hpc.nyu.edu:%s' % ('savin123!', fh_path, path_to_fit_fld))
-
+            print('sent')
             session = fhname.split('.')[0].split('condition_list_')[1]
             with open(os.path.join(main_dir,'sh_template.sh'),'r') as fh:
                 sh_text = fh.read()
                 fh.close()
-                
+            
+            
             sh_text = sh_text.replace('template',session)
             with open(os.path.join(main_dir,'gam_fit_%s.sh'%session),'w') as fh:
                 fh.write(sh_text)
                 fh.close()
-            
-            os.system('sshpass -p "%s" scp %s jpn5@prince.hpc.nyu.edu:%s' % ('savin123!', os.path.join(main_dir,'gam_fit_%s.sh'%session), path_fitting_fld))
+            print('sending: \n',os.path.join(main_dir,'gam_fit_%s.sh'%session))
+            os.system('sshpass -p "%s" scp %s jpn5@prince.hpc.nyu.edu:%s' % ('savin123!', os.path.join(main_dir,'gam_fit_%s.sh'%session), path_to_fit_fld))
+            print('sent')
             os.remove(os.path.join(main_dir,'gam_fit_%s.sh'%session))
             
 print('=================\n')
@@ -57,6 +61,8 @@ print('=================\n')
 
 # send basis set 
 path_to_basisscript = os.path.join(path_util_preproc,'basis_set_param_per_session.py')
+print('\nsending:')
+print(path_to_basisscript)
 dest_fld = os.path.join(path_jpn5_base,'GAM_Repo','preprocessing_pipeline','util_preproc')
 os.system('sshpass -p "%s" scp %s jpn5@prince.hpc.nyu.edu:%s' % ('savin123!', path_to_basisscript, dest_fld))
 
