@@ -45,7 +45,7 @@ occupancy_bin_sec = 60 # at least one spike per min
 occupancy_rate_th = 0.1 #hz
 
 linearprobe_sampling_fq = 20000
-utah_array_sappling_fq = 30000
+utah_array_sampling_fq = 30000
 
 
 for session in concat_list:
@@ -144,13 +144,18 @@ for session in concat_list:
 
     # compute additional quality metrics
     res['unit_info'] = extract_presecnce_rate(occupancy_bin_sec,occupancy_rate_th,res['unit_info'],session,
-                           user_paths,utah_array_sappling_fq,linearprobe_sampling_fq)
+                           user_paths,utah_array_sampling_fq,linearprobe_sampling_fq)
 
 
-    print('saving variables...')
+    
     if save:
+<<<<<<< HEAD
         sv_folder = user_paths.get_path('local_concat')
         saveCompressed(os.path.join(sv_folder,'%s.npz'%session),unit_info=res['unit_info'],info_trial=res['info_trial'],data_concat=res['data_concat'],
+=======
+        print('saving variables...')
+        saveCompressed(sv_folder+'%s.npz'%session,unit_info=res['unit_info'],info_trial=res['info_trial'],data_concat=res['data_concat'],
+>>>>>>> a71f5128c69bcbcab03bc95d102305ea50201696
              var_names=np.array(res['var_names']),time_bin=res['time_bin'],post_trial_dur=res['post_trial_dur'],
              pre_trial_dur=res['pre_trial_dur'],force_zip64=True)
 

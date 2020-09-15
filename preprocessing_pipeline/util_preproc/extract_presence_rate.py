@@ -89,7 +89,7 @@ def extract_presecnce_rate(occupancy_bin_sec,occupancy_rate_th,unit_info,session
         max_time = np.max(spike_times)
         min_time = np.min(spike_times)
         num_bins_occ = int(np.floor((max_time - min_time) / occupancy_bin_sec))
-        print('dur recording array: %f' % (max_time - min_time))
+        print('dur recording probe: %f' % (max_time - min_time))
         # index of the liear probe in the stacked files
         select_array = (unit_info['brain_area'] != 'PPC') * (unit_info['brain_area'] != 'PFC')
 

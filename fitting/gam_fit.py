@@ -83,7 +83,11 @@ try:  # IF CLUSTER JOB IS RUNNING
     pop_size_max = yt.shape[1]
 except Exception as ex:
     JOB = 1
+<<<<<<< HEAD
     list_condition = np.load(os.path.join(os.path.join(main_dir,'GAM_Repo/preprocessing_pipeline/util_preproc/'),
+=======
+    list_condition = np.load(os.path.join(os.path.join(main_dir,'preprocessing_pipeline'),
+>>>>>>> a71f5128c69bcbcab03bc95d102305ea50201696
         'condition_list_%s.npy' % session))
     neuron_list = list_condition[JOB:JOB + tot_fits]['neuron']
     cond_type_list = list_condition[JOB:JOB + tot_fits]['condition']

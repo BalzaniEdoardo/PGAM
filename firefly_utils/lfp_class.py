@@ -282,7 +282,6 @@ if __name__ == '__main__':
     from scipy.io import loadmat
     from behav_class import *
     from spike_times_class import *
-    import h5py
     dat = loadmat('/Volumes/WD Edo/firefly_analysis/LFP_band/DATASET/MST/m53s127_new.mat')
     lfp_beta = loadmat('/Volumes/WD Edo/firefly_analysis/LFP_band/DATASET/MST/lfp_beta_m53s127.mat')
     lfp_alpha = loadmat('/Volumes/WD Edo/firefly_analysis/LFP_band/DATASET/MST/lfp_alpha_m53s127.mat')

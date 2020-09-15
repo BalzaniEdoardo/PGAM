@@ -41,7 +41,11 @@ neuron_use = np.arange(1,isi_v_filter.shape[0]+1)[combine_filter]
 
 # create all the conditions that you are interested to fit
 
+<<<<<<< HEAD
 cond_dict = {'all':[True]}
+=======
+cond_dict = {'all':[True]}#,'replay':[0,1]}
+>>>>>>> a71f5128c69bcbcab03bc95d102305ea50201696
 
 dict_type = {'names':('neuron', 'condition', 'value'),'formats':(int,'U30',float)}
 
