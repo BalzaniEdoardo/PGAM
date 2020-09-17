@@ -12,7 +12,7 @@ from extract_presence_rate import *
 
 user_paths = get_paths_class()
 # list of session to be concatenated
-concat_list = ['m53s91']
+concat_list = ['m91s19']
 save = True
 send = True
 # destination folder
