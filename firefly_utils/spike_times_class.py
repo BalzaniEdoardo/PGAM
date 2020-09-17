@@ -45,6 +45,8 @@ class spike_counts(object):
     def unpack_struct_N_times_1(self,units,key):
         length = units[key].shape[0]
         datatype = units[key][0].dtype.type
+        if np.dtype(datatype).kind == 'i':
+            datatype = np.int64
 
         shape = units[key][0].shape
 
