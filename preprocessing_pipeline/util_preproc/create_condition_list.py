@@ -9,9 +9,10 @@ Created on Tue Oct 29 10:01:36 2019
 import numpy as np
 import sys, os
 folder_name = os.path.dirname(os.path.realpath(__file__))
-main_dir = os.path.dirname(folder_name)
+main_dir = os.path.dirname(os.path.dirname(folder_name))
 sys.path.append(os.path.join(main_dir,'GAM_library'))
 sys.path.append(os.path.join(main_dir,'preprocessing_pipeline'))
+sys.path.append(os.path.join(main_dir, 'firefly_utils'))
 from utils_loading import unpack_preproc_data, add_smooth
 import itertools
 import pandas as pd
