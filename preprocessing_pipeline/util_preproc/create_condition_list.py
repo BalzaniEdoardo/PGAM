@@ -20,7 +20,7 @@ from path_class import get_paths_class
 user_paths = get_paths_class()
 
 
-session = 'm53s91'
+session = 'm91s25'
 
 fhName = os.path.join(user_paths.get_path('local_concat'),'%s.npz'%session)
 save_fld = ''
@@ -45,8 +45,10 @@ neuron_use = np.arange(1,isi_v_filter.shape[0]+1)[combine_filter]
 
 # create all the conditions that you are interested to fit
 
-cond_dict = {'all':[True]}
-
+#cond_dict = {'all':[True]}
+#cond_dict = {'all':[True], 'ptb':[0, 1]}
+#cond_dict = {'all':[True], 'controlgain':[1, 1.5, 2]}
+cond_dict = {'all':[True], 'density':[0.0001, 0.005]}
 
 dict_type = {'names':('neuron', 'condition', 'value'),'formats':(int,'U30',float)}
 
