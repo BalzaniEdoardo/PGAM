@@ -1,3 +1,4 @@
+*.dill
 gam_m*
 *_old.py
 __pycache__/
