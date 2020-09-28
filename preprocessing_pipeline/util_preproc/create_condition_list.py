@@ -46,8 +46,10 @@ neuron_use = np.arange(1,isi_v_filter.shape[0]+1)[combine_filter]
 
 # create all the conditions that you are interested to fit
 
-cond_dict = {'all':[True]}
-
+#cond_dict = {'all':[True]}
+#cond_dict = {'all':[True], 'ptb':[0, 1]}
+#cond_dict = {'all':[True], 'controlgain':[1, 1.5, 2]}
+cond_dict = {'all':[True], 'density':[0.0001, 0.005]}
 
 dict_type = {'names':('neuron', 'condition', 'value'),'formats':(int,'U30',float)}
 
