@@ -674,9 +674,9 @@ class covarate_smooth(object):
         elif kernel_direction == 1:
             if knots is None:
                 int_knots = np.linspace(0.000001, knots_num, knots_num - 2 * repeats)
-            else:
-                int_knots = np.copy(knots)
-            knots = np.hstack(([int_knots[0]] * repeats, int_knots, [(int_knots[-1])] * repeats))
+                knots = np.hstack(([int_knots[0]] * repeats, int_knots, [(int_knots[-1])] * repeats))
+            
+            
             times_pos = np.linspace(0,knots[-1],(kernel_length+1)//2)
             times_neg = np.linspace(-knots[-1],-times_pos[1],(kernel_length-1)//2)
             times = np.hstack((times_neg,times_pos))
@@ -684,11 +684,13 @@ class covarate_smooth(object):
         elif kernel_direction == -1:
             if knots is None:
                 int_knots = np.linspace(0.000001, knots_num, knots_num - 2 * repeats)
-            else:
-                int_knots = np.copy(knots)
+                knots = np.hstack(([int_knots[0]] * repeats, int_knots, [(int_knots[-1])] * repeats))
+                knots = -knots[::-1]
+            
+            # else:
+            #     int_knots = np.copy(knots)
 
-            knots = np.hstack(([int_knots[0]] * repeats, int_knots, [(int_knots[-1])] * repeats))
-            knots = -knots[::-1]
+           
             times_neg = np.linspace(knots[0],0, (kernel_length + 1) // 2)
             times_pos = np.linspace(-times_neg[-2], -knots[0], (kernel_length - 1) // 2)
             times = np.hstack((times_neg, times_pos))
