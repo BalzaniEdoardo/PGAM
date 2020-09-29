@@ -891,7 +891,23 @@ class general_additive_model(object):
                   compute_AIC=compute_AIC,random_init=random_init,bounds_rho=bounds_rho,gcv_sel_tol=gcv_sel_tol,
                                        fit_initial_beta=fit_initial_beta,filter_trials=bool_train,compute_MI=compute_MI)
 
-            kfold_pseudo_r2[test_idx] = model_fit.adj_pseudo_r2
+            ## compute pr2 on test
+            exog, index_var = self.sm_handler.get_exog_mat(model_fit.var_list)
+            exog = exog[bool_test, :]
+            lin_pred = np.dot(exog, model_fit.beta)
+            mu = self.family.fitted(lin_pred)
+    
+            res_dev_t = self.family.resid_dev(self.y[bool_test], mu)
+            resid_deviance = np.sum(res_dev_t ** 2)
+    
+            null_mu = self.y[bool_test].sum()/self.y[bool_test].shape[0]
+            null_dev_t = self.family.resid_dev(self.y[bool_test], [null_mu]*self.y[bool_test].shape[0])
+            null_deviance = np.sum(null_dev_t ** 2)
+    
+            pseudo_r2 = (null_deviance - resid_deviance) / null_deviance
+            
+            
+            kfold_pseudo_r2[test_idx] = pseudo_r2
             model_dict[test_idx] = model_fit
         # select best fit
         select = np.argmax(kfold_pseudo_r2)
