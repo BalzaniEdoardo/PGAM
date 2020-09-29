@@ -1,3 +1,7 @@
+*.dill
+*.pdf
+*.jpg
+*.png
 __pycache__
 .Rhistory
 .DS*
