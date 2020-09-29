@@ -1,1 +1,7 @@
+__pycache__
+.Rhistory
 .DS*
+*.npy
+*.npz
+*_old.*
+
