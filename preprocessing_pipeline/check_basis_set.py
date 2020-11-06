@@ -32,8 +32,9 @@ plot_res = True
 fit_neuron = False
 session = 'm91s2'
 analyze_unit = 3
-sbfld = 'PPC+PFC'
-var = 'rad_vel'
+<<<<<<< HEAD
+sbfld = 'PPC+PFC+MST'
+var = 'ang_target'
 skip_var = ''
 WLS_solver = 'negative_weights'
 send = False

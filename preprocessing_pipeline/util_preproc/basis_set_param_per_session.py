@@ -11844,8 +11844,8 @@ basis_info[session]['rad_target'] = {
     'order': 4, # for all except spike_hist
     'penalty_type':'der', # for all except spike_hist
     'der': 2, # always penalize energy (2nd der) if order is 4
-    'dkn_min': 40, # min distance between knots (range is between 0 and 200...)
-    'dkn_max': 80, # max distance between knots (range is between 0 and 200...)
+    'dkn_min': 50, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': 100, # max distance between knots (range is between 0 and 200...)
     'init_knots_num': 15, # initial knots number
     'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
     'perc_high':99, # max knot value as a percentile of the input vector of velocities
@@ -12012,6 +12012,243 @@ basis_info[session]['spike_hist'] = {
 # Session m91s10
 ########################################################################################################################
 session = 'm91s10'
+basis_info[session] = {}
+basis_info[session]['rad_vel'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 17, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': 40, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 20, # initial knots number
+    'perc_low': 2, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':97.2, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None,
+}
+
+basis_info[session]['ang_vel'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 10, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': 50, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 20, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities,
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+basis_info[session]['rad_path'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 40, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': 80, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+
+basis_info[session]['ang_path'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 12, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': 30, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 20, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+
+basis_info[session]['rad_target'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 40, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': 80, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+
+basis_info[session]['ang_target'] = {
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 8, # min distance between knots (range is approx between -40 and 200...)
+    'dkn_max': 30, # max distance between knots (range is between -40 and 40...)
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':False,
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None,
+}
+
+basis_info[session]['lfp_beta'] = {
+'knot_0':-np.pi,
+'knot_end':np.pi,
+    'knots_type':'fix_range', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': np.pi/6, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': np.pi/2, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 8, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':True,
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+basis_info[session]['eye_vert'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 4, # min distance between knots (range is between -20 and 20...)
+    'dkn_max': 10, # max distance between knots (range is between -20 and 20...)
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+
+basis_info[session]['eye_hori'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 5, # min distance between knots (range is between -20 and 20...)
+    'dkn_max': 20, # max distance between knots (range is between -20 and 20...)
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+basis_info[session]['lfp_alpha'] = {
+'knot_0':-np.pi,
+'knot_end':np.pi,
+    'knots_type':'fix_range', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': np.pi/6, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': np.pi/2, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 8, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':True,
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+
+basis_info[session]['lfp_theta'] = {
+'knot_0':-np.pi,
+'knot_end':np.pi,
+    'knots_type':'fix_range', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': np.pi/6, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': np.pi/2, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 8, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':True,
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+basis_info[session]['phase'] = {
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq or temporal
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': np.pi/6, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': np.pi/2, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 8, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':True,
+    'kernel_length': None, # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+basis_info[session]['t_move'] = {
+    'knots_type':'temporal', # can be equi_spaced, eq_freq or temporal
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'kernel_length': 161, # total duration of the temporal kernel
+    'init_knots_num': 10, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':False,
+    'kernel_direction':0,
+}
+
+basis_info[session]['t_stop'] = deepcopy(basis_info[session]['t_move'])
+basis_info[session]['t_reward'] = deepcopy(basis_info[session]['t_move'])
+
+basis_info[session]['t_flyOFF'] = {
+    'knots_type':'temporal', # can be equi_spaced, eq_freq or temporal
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'kernel_length': 322, # total duration of the temporal kernel
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':False,
+    'kernel_direction':0
+}
+
+basis_info[session]['spike_hist'] = {
+    'knots_type':'temporal', # can be equi_spaced, eq_freq or temporal
+    'order':1, # for all except spike_hist
+    'penalty_type':'EqSpaced', # for all except spike_hist
+    'der': None, # always penalize energy (2nd der) if order is 4
+    'kernel_length': 11, # total duration of the temporal kernel
+    'kernel_direction': 1,
+    'init_knots_num': 5,# initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':False
+}
+
+########################################################################################################################
+# Session m91s12
+########################################################################################################################
+session = 'm91s12'
 basis_info[session] = {}
 basis_info[session]['rad_vel'] = {
     'is_cyclic':False,
@@ -16996,8 +17233,1193 @@ basis_info[session]['rad_vel'] = {
     'order': 4, # for all except spike_hist
     'penalty_type':'der', # for all except spike_hist
     'der': 2, # always penalize energy (2nd der) if order is 4
-    'dkn_min': 10, # min distance between knots (range is between 0 and 200...)
+    'dkn_min': 15, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': 50, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 30, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None,
+}
+
+basis_info[session]['ang_vel'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 8, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': 25, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 20, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities,
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+basis_info[session]['rad_path'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 40, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': 80, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+
+basis_info[session]['ang_path'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 12, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': 30, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 20, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+
+basis_info[session]['rad_target'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 40, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': 80, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+
+basis_info[session]['ang_target'] = {
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 8, # min distance between knots (range is approx between -40 and 200...)
+    'dkn_max': 30, # max distance between knots (range is between -40 and 40...)
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':False,
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None,
+}
+
+basis_info[session]['lfp_beta'] = {
+'knot_0':-np.pi,
+'knot_end':np.pi,
+    'knots_type':'fix_range', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': np.pi/6, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': np.pi/2, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 8, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':True,
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+basis_info[session]['eye_vert'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 2, # min distance between knots (range is between -20 and 20...)
+    'dkn_max': 4, # max distance between knots (range is between -20 and 20...)
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+
+basis_info[session]['eye_hori'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 5, # min distance between knots (range is between -20 and 20...)
+    'dkn_max': 10, # max distance between knots (range is between -20 and 20...)
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+basis_info[session]['lfp_alpha'] = {
+'knot_0':-np.pi,
+'knot_end':np.pi,
+    'knots_type':'fix_range', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': np.pi/6, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': np.pi/2, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 8, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':True,
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+
+basis_info[session]['lfp_theta'] = {
+'knot_0':-np.pi,
+'knot_end':np.pi,
+    'knots_type':'fix_range', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': np.pi/6, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': np.pi/2, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 8, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':True,
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+basis_info[session]['phase'] = {
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq or temporal
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': np.pi/6, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': np.pi/2, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 8, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':True,
+    'kernel_length': None, # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+basis_info[session]['t_move'] = {
+    'knots_type':'temporal', # can be equi_spaced, eq_freq or temporal
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'kernel_length': 161, # total duration of the temporal kernel
+    'init_knots_num': 10, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':False,
+    'kernel_direction':0,
+}
+
+basis_info[session]['t_stop'] = deepcopy(basis_info[session]['t_move'])
+basis_info[session]['t_reward'] = deepcopy(basis_info[session]['t_move'])
+
+basis_info[session]['t_flyOFF'] = {
+    'knots_type':'temporal', # can be equi_spaced, eq_freq or temporal
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'kernel_length': 322, # total duration of the temporal kernel
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':False,
+    'kernel_direction':0
+}
+
+basis_info[session]['spike_hist'] = {
+    'knots_type':'temporal', # can be equi_spaced, eq_freq or temporal
+    'order':1, # for all except spike_hist
+    'penalty_type':'EqSpaced', # for all except spike_hist
+    'der': None, # always penalize energy (2nd der) if order is 4
+    'kernel_length': 11, # total duration of the temporal kernel
+    'kernel_direction': 1,
+    'init_knots_num': 5,# initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':False
+}
+
+########################################################################################################################
+# Session m44s206
+########################################################################################################################
+session = 'm44s206'
+basis_info[session] = {}
+basis_info[session]['rad_vel'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 15, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': 50, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 30, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None,
+}
+
+basis_info[session]['ang_vel'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 8, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': 25, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 20, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities,
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+basis_info[session]['rad_path'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 40, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': 80, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+
+basis_info[session]['ang_path'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 12, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': 30, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 20, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+
+basis_info[session]['rad_target'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 40, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': 80, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+
+basis_info[session]['ang_target'] = {
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 8, # min distance between knots (range is approx between -40 and 200...)
+    'dkn_max': 30, # max distance between knots (range is between -40 and 40...)
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':False,
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None,
+}
+
+basis_info[session]['lfp_beta'] = {
+'knot_0':-np.pi,
+'knot_end':np.pi,
+    'knots_type':'fix_range', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': np.pi/6, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': np.pi/2, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 8, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':True,
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+basis_info[session]['eye_vert'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 2, # min distance between knots (range is between -20 and 20...)
+    'dkn_max': 4, # max distance between knots (range is between -20 and 20...)
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+
+basis_info[session]['eye_hori'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 5, # min distance between knots (range is between -20 and 20...)
+    'dkn_max': 10, # max distance between knots (range is between -20 and 20...)
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+basis_info[session]['lfp_alpha'] = {
+'knot_0':-np.pi,
+'knot_end':np.pi,
+    'knots_type':'fix_range', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': np.pi/6, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': np.pi/2, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 8, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':True,
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+
+basis_info[session]['lfp_theta'] = {
+'knot_0':-np.pi,
+'knot_end':np.pi,
+    'knots_type':'fix_range', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': np.pi/6, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': np.pi/2, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 8, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':True,
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+basis_info[session]['phase'] = {
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq or temporal
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': np.pi/6, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': np.pi/2, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 8, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':True,
+    'kernel_length': None, # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+basis_info[session]['t_move'] = {
+    'knots_type':'temporal', # can be equi_spaced, eq_freq or temporal
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'kernel_length': 161, # total duration of the temporal kernel
+    'init_knots_num': 10, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':False,
+    'kernel_direction':0,
+}
+
+basis_info[session]['t_stop'] = deepcopy(basis_info[session]['t_move'])
+basis_info[session]['t_reward'] = deepcopy(basis_info[session]['t_move'])
+
+basis_info[session]['t_flyOFF'] = {
+    'knots_type':'temporal', # can be equi_spaced, eq_freq or temporal
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'kernel_length': 322, # total duration of the temporal kernel
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':False,
+    'kernel_direction':0
+}
+
+basis_info[session]['spike_hist'] = {
+    'knots_type':'temporal', # can be equi_spaced, eq_freq or temporal
+    'order':1, # for all except spike_hist
+    'penalty_type':'EqSpaced', # for all except spike_hist
+    'der': None, # always penalize energy (2nd der) if order is 4
+    'kernel_length': 11, # total duration of the temporal kernel
+    'kernel_direction': 1,
+    'init_knots_num': 5,# initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':False
+}
+
+########################################################################################################################
+# Session m44s207
+########################################################################################################################
+session = 'm44s207'
+basis_info[session] = {}
+basis_info[session]['rad_vel'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 15, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': 50, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 30, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None,
+}
+
+basis_info[session]['ang_vel'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 8, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': 25, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 20, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities,
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+basis_info[session]['rad_path'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 40, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': 80, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+
+basis_info[session]['ang_path'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 12, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': 30, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 20, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+
+basis_info[session]['rad_target'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 40, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': 80, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+
+basis_info[session]['ang_target'] = {
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 8, # min distance between knots (range is approx between -40 and 200...)
+    'dkn_max': 30, # max distance between knots (range is between -40 and 40...)
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':False,
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None,
+}
+
+basis_info[session]['lfp_beta'] = {
+'knot_0':-np.pi,
+'knot_end':np.pi,
+    'knots_type':'fix_range', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': np.pi/6, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': np.pi/2, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 8, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':True,
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+basis_info[session]['eye_vert'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 2, # min distance between knots (range is between -20 and 20...)
+    'dkn_max': 4, # max distance between knots (range is between -20 and 20...)
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+
+basis_info[session]['eye_hori'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 5, # min distance between knots (range is between -20 and 20...)
+    'dkn_max': 10, # max distance between knots (range is between -20 and 20...)
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+basis_info[session]['lfp_alpha'] = {
+'knot_0':-np.pi,
+'knot_end':np.pi,
+    'knots_type':'fix_range', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': np.pi/6, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': np.pi/2, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 8, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':True,
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+
+basis_info[session]['lfp_theta'] = {
+'knot_0':-np.pi,
+'knot_end':np.pi,
+    'knots_type':'fix_range', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': np.pi/6, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': np.pi/2, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 8, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':True,
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+basis_info[session]['phase'] = {
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq or temporal
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': np.pi/6, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': np.pi/2, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 8, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':True,
+    'kernel_length': None, # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+basis_info[session]['t_move'] = {
+    'knots_type':'temporal', # can be equi_spaced, eq_freq or temporal
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'kernel_length': 161, # total duration of the temporal kernel
+    'init_knots_num': 10, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':False,
+    'kernel_direction':0,
+}
+
+basis_info[session]['t_stop'] = deepcopy(basis_info[session]['t_move'])
+basis_info[session]['t_reward'] = deepcopy(basis_info[session]['t_move'])
+
+basis_info[session]['t_flyOFF'] = {
+    'knots_type':'temporal', # can be equi_spaced, eq_freq or temporal
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'kernel_length': 322, # total duration of the temporal kernel
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':False,
+    'kernel_direction':0
+}
+
+basis_info[session]['spike_hist'] = {
+    'knots_type':'temporal', # can be equi_spaced, eq_freq or temporal
+    'order':1, # for all except spike_hist
+    'penalty_type':'EqSpaced', # for all except spike_hist
+    'der': None, # always penalize energy (2nd der) if order is 4
+    'kernel_length': 11, # total duration of the temporal kernel
+    'kernel_direction': 1,
+    'init_knots_num': 5,# initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':False
+}
+
+########################################################################################################################
+# Session m44s208
+########################################################################################################################
+session = 'm44s208'
+basis_info[session] = {}
+basis_info[session]['rad_vel'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 20, # min distance between knots (range is between 0 and 200...)
     'dkn_max': 45, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 35, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None,
+}
+
+basis_info[session]['ang_vel'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 8, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': 25, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 20, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities,
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+basis_info[session]['rad_path'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 40, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': 80, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+
+basis_info[session]['ang_path'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 12, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': 30, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 20, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+
+basis_info[session]['rad_target'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 40, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': 80, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+
+basis_info[session]['ang_target'] = {
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 8, # min distance between knots (range is approx between -40 and 200...)
+    'dkn_max': 30, # max distance between knots (range is between -40 and 40...)
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':False,
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None,
+}
+
+basis_info[session]['lfp_beta'] = {
+'knot_0':-np.pi,
+'knot_end':np.pi,
+    'knots_type':'fix_range', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': np.pi/6, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': np.pi/2, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 8, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':True,
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+basis_info[session]['eye_vert'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 2, # min distance between knots (range is between -20 and 20...)
+    'dkn_max': 4, # max distance between knots (range is between -20 and 20...)
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+
+basis_info[session]['eye_hori'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 5, # min distance between knots (range is between -20 and 20...)
+    'dkn_max': 10, # max distance between knots (range is between -20 and 20...)
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+basis_info[session]['lfp_alpha'] = {
+'knot_0':-np.pi,
+'knot_end':np.pi,
+    'knots_type':'fix_range', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': np.pi/6, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': np.pi/2, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 8, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':True,
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+
+basis_info[session]['lfp_theta'] = {
+'knot_0':-np.pi,
+'knot_end':np.pi,
+    'knots_type':'fix_range', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': np.pi/6, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': np.pi/2, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 8, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':True,
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+basis_info[session]['phase'] = {
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq or temporal
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': np.pi/6, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': np.pi/2, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 8, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':True,
+    'kernel_length': None, # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+basis_info[session]['t_move'] = {
+    'knots_type':'temporal', # can be equi_spaced, eq_freq or temporal
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'kernel_length': 161, # total duration of the temporal kernel
+    'init_knots_num': 10, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':False,
+    'kernel_direction':0,
+}
+
+basis_info[session]['t_stop'] = deepcopy(basis_info[session]['t_move'])
+basis_info[session]['t_reward'] = deepcopy(basis_info[session]['t_move'])
+
+basis_info[session]['t_flyOFF'] = {
+    'knots_type':'temporal', # can be equi_spaced, eq_freq or temporal
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'kernel_length': 322, # total duration of the temporal kernel
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':False,
+    'kernel_direction':0
+}
+
+basis_info[session]['spike_hist'] = {
+    'knots_type':'temporal', # can be equi_spaced, eq_freq or temporal
+    'order':1, # for all except spike_hist
+    'penalty_type':'EqSpaced', # for all except spike_hist
+    'der': None, # always penalize energy (2nd der) if order is 4
+    'kernel_length': 11, # total duration of the temporal kernel
+    'kernel_direction': 1,
+    'init_knots_num': 5,# initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':False
+}
+
+########################################################################################################################
+# Session m44s209
+########################################################################################################################
+session = 'm44s209'
+basis_info[session] = {}
+basis_info[session]['rad_vel'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 10, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': 40, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 35, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None,
+}
+
+basis_info[session]['ang_vel'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 8, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': 25, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 20, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities,
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+basis_info[session]['rad_path'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 40, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': 80, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+
+basis_info[session]['ang_path'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 12, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': 30, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 20, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+
+basis_info[session]['rad_target'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 40, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': 80, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+
+basis_info[session]['ang_target'] = {
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 8, # min distance between knots (range is approx between -40 and 200...)
+    'dkn_max': 30, # max distance between knots (range is between -40 and 40...)
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':False,
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None,
+}
+
+basis_info[session]['lfp_beta'] = {
+'knot_0':-np.pi,
+'knot_end':np.pi,
+    'knots_type':'fix_range', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': np.pi/6, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': np.pi/2, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 8, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':True,
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+basis_info[session]['eye_vert'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 2, # min distance between knots (range is between -20 and 20...)
+    'dkn_max': 4, # max distance between knots (range is between -20 and 20...)
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+
+basis_info[session]['eye_hori'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 5, # min distance between knots (range is between -20 and 20...)
+    'dkn_max': 10, # max distance between knots (range is between -20 and 20...)
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+basis_info[session]['lfp_alpha'] = {
+'knot_0':-np.pi,
+'knot_end':np.pi,
+    'knots_type':'fix_range', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': np.pi/6, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': np.pi/2, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 8, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':True,
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+
+basis_info[session]['lfp_theta'] = {
+'knot_0':-np.pi,
+'knot_end':np.pi,
+    'knots_type':'fix_range', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': np.pi/6, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': np.pi/2, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 8, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':True,
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+basis_info[session]['phase'] = {
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq or temporal
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': np.pi/6, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': np.pi/2, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 8, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':True,
+    'kernel_length': None, # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+basis_info[session]['t_move'] = {
+    'knots_type':'temporal', # can be equi_spaced, eq_freq or temporal
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'kernel_length': 161, # total duration of the temporal kernel
+    'init_knots_num': 10, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':False,
+    'kernel_direction':0,
+}
+
+basis_info[session]['t_stop'] = deepcopy(basis_info[session]['t_move'])
+basis_info[session]['t_reward'] = deepcopy(basis_info[session]['t_move'])
+
+basis_info[session]['t_flyOFF'] = {
+    'knots_type':'temporal', # can be equi_spaced, eq_freq or temporal
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'kernel_length': 322, # total duration of the temporal kernel
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':False,
+    'kernel_direction':0
+}
+
+basis_info[session]['spike_hist'] = {
+    'knots_type':'temporal', # can be equi_spaced, eq_freq or temporal
+    'order':1, # for all except spike_hist
+    'penalty_type':'EqSpaced', # for all except spike_hist
+    'der': None, # always penalize energy (2nd der) if order is 4
+    'kernel_length': 11, # total duration of the temporal kernel
+    'kernel_direction': 1,
+    'init_knots_num': 5,# initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':False
+}
+
+########################################################################################################################
+# Session m44s211
+########################################################################################################################
+session = 'm44s211'
+basis_info[session] = {}
+basis_info[session]['rad_vel'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 15, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': 40, # max distance between knots (range is between 0 and 200...)
     'init_knots_num': 30, # initial knots number
     'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
     'perc_high':100, # max knot value as a percentile of the input vector of velocities
@@ -17222,5 +18644,3321 @@ basis_info[session]['spike_hist'] = {
     'is_cyclic':False
 }
 
+########################################################################################################################
+# Session m44s212
+########################################################################################################################
+session = 'm44s212'
+basis_info[session] = {}
+basis_info[session]['rad_vel'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 15, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': 40, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 30, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None,
+}
+
+basis_info[session]['ang_vel'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 8, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': 25, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 20, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities,
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+basis_info[session]['rad_path'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 40, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': 80, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+
+basis_info[session]['ang_path'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 12, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': 30, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 20, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+
+basis_info[session]['rad_target'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 40, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': 80, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+
+basis_info[session]['ang_target'] = {
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 8, # min distance between knots (range is approx between -40 and 200...)
+    'dkn_max': 30, # max distance between knots (range is between -40 and 40...)
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':False,
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None,
+}
+
+basis_info[session]['lfp_beta'] = {
+'knot_0':-np.pi,
+'knot_end':np.pi,
+    'knots_type':'fix_range', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': np.pi/6, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': np.pi/2, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 8, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':True,
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+basis_info[session]['eye_vert'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 3, # min distance between knots (range is between -20 and 20...)
+    'dkn_max': 6, # max distance between knots (range is between -20 and 20...)
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+
+basis_info[session]['eye_hori'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 5, # min distance between knots (range is between -20 and 20...)
+    'dkn_max': 10, # max distance between knots (range is between -20 and 20...)
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+basis_info[session]['lfp_alpha'] = {
+'knot_0':-np.pi,
+'knot_end':np.pi,
+    'knots_type':'fix_range', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': np.pi/6, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': np.pi/2, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 8, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':True,
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+
+basis_info[session]['lfp_theta'] = {
+'knot_0':-np.pi,
+'knot_end':np.pi,
+    'knots_type':'fix_range', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': np.pi/6, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': np.pi/2, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 8, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':True,
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+basis_info[session]['phase'] = {
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq or temporal
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': np.pi/6, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': np.pi/2, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 8, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':True,
+    'kernel_length': None, # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+basis_info[session]['t_move'] = {
+    'knots_type':'temporal', # can be equi_spaced, eq_freq or temporal
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'kernel_length': 161, # total duration of the temporal kernel
+    'init_knots_num': 10, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':False,
+    'kernel_direction':0,
+}
+
+basis_info[session]['t_stop'] = deepcopy(basis_info[session]['t_move'])
+basis_info[session]['t_reward'] = deepcopy(basis_info[session]['t_move'])
+
+basis_info[session]['t_flyOFF'] = {
+    'knots_type':'temporal', # can be equi_spaced, eq_freq or temporal
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'kernel_length': 322, # total duration of the temporal kernel
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':False,
+    'kernel_direction':0
+}
+
+basis_info[session]['spike_hist'] = {
+    'knots_type':'temporal', # can be equi_spaced, eq_freq or temporal
+    'order':1, # for all except spike_hist
+    'penalty_type':'EqSpaced', # for all except spike_hist
+    'der': None, # always penalize energy (2nd der) if order is 4
+    'kernel_length': 11, # total duration of the temporal kernel
+    'kernel_direction': 1,
+    'init_knots_num': 5,# initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':False
+}
+
+########################################################################################################################
+# Session m44s213
+########################################################################################################################
+session = 'm44s213'
+basis_info[session] = {}
+basis_info[session]['rad_vel'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 15, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': 40, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 30, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None,
+}
+
+basis_info[session]['ang_vel'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 8, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': 25, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 20, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities,
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+basis_info[session]['rad_path'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 40, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': 80, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+
+basis_info[session]['ang_path'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 12, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': 30, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 20, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+
+basis_info[session]['rad_target'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 40, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': 80, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+
+basis_info[session]['ang_target'] = {
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 8, # min distance between knots (range is approx between -40 and 200...)
+    'dkn_max': 30, # max distance between knots (range is between -40 and 40...)
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':False,
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None,
+}
+
+basis_info[session]['lfp_beta'] = {
+'knot_0':-np.pi,
+'knot_end':np.pi,
+    'knots_type':'fix_range', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': np.pi/6, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': np.pi/2, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 8, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':True,
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+basis_info[session]['eye_vert'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 3, # min distance between knots (range is between -20 and 20...)
+    'dkn_max': 6, # max distance between knots (range is between -20 and 20...)
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+
+basis_info[session]['eye_hori'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 5, # min distance between knots (range is between -20 and 20...)
+    'dkn_max': 10, # max distance between knots (range is between -20 and 20...)
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+basis_info[session]['lfp_alpha'] = {
+'knot_0':-np.pi,
+'knot_end':np.pi,
+    'knots_type':'fix_range', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': np.pi/6, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': np.pi/2, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 8, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':True,
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+
+basis_info[session]['lfp_theta'] = {
+'knot_0':-np.pi,
+'knot_end':np.pi,
+    'knots_type':'fix_range', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': np.pi/6, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': np.pi/2, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 8, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':True,
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+basis_info[session]['phase'] = {
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq or temporal
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': np.pi/6, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': np.pi/2, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 8, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':True,
+    'kernel_length': None, # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+basis_info[session]['t_move'] = {
+    'knots_type':'temporal', # can be equi_spaced, eq_freq or temporal
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'kernel_length': 161, # total duration of the temporal kernel
+    'init_knots_num': 10, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':False,
+    'kernel_direction':0,
+}
+
+basis_info[session]['t_stop'] = deepcopy(basis_info[session]['t_move'])
+basis_info[session]['t_reward'] = deepcopy(basis_info[session]['t_move'])
+
+basis_info[session]['t_flyOFF'] = {
+    'knots_type':'temporal', # can be equi_spaced, eq_freq or temporal
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'kernel_length': 322, # total duration of the temporal kernel
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':False,
+    'kernel_direction':0
+}
+
+basis_info[session]['spike_hist'] = {
+    'knots_type':'temporal', # can be equi_spaced, eq_freq or temporal
+    'order':1, # for all except spike_hist
+    'penalty_type':'EqSpaced', # for all except spike_hist
+    'der': None, # always penalize energy (2nd der) if order is 4
+    'kernel_length': 11, # total duration of the temporal kernel
+    'kernel_direction': 1,
+    'init_knots_num': 5,# initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':False
+}
+
+########################################################################################################################
+# Session m44s215
+########################################################################################################################
+session = 'm44s215'
+basis_info[session] = {}
+basis_info[session]['rad_vel'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 15, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': 40, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 30, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None,
+}
+
+basis_info[session]['ang_vel'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 8, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': 25, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 20, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities,
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+basis_info[session]['rad_path'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 40, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': 80, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+
+basis_info[session]['ang_path'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 12, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': 30, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 20, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+
+basis_info[session]['rad_target'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 40, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': 80, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+
+basis_info[session]['ang_target'] = {
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 8, # min distance between knots (range is approx between -40 and 200...)
+    'dkn_max': 30, # max distance between knots (range is between -40 and 40...)
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':False,
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None,
+}
+
+basis_info[session]['lfp_beta'] = {
+'knot_0':-np.pi,
+'knot_end':np.pi,
+    'knots_type':'fix_range', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': np.pi/6, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': np.pi/2, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 8, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':True,
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+basis_info[session]['eye_vert'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 3, # min distance between knots (range is between -20 and 20...)
+    'dkn_max': 6, # max distance between knots (range is between -20 and 20...)
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+
+basis_info[session]['eye_hori'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 5, # min distance between knots (range is between -20 and 20...)
+    'dkn_max': 10, # max distance between knots (range is between -20 and 20...)
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+basis_info[session]['lfp_alpha'] = {
+'knot_0':-np.pi,
+'knot_end':np.pi,
+    'knots_type':'fix_range', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': np.pi/6, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': np.pi/2, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 8, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':True,
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+
+basis_info[session]['lfp_theta'] = {
+'knot_0':-np.pi,
+'knot_end':np.pi,
+    'knots_type':'fix_range', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': np.pi/6, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': np.pi/2, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 8, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':True,
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+basis_info[session]['phase'] = {
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq or temporal
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': np.pi/6, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': np.pi/2, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 8, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':True,
+    'kernel_length': None, # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+basis_info[session]['t_move'] = {
+    'knots_type':'temporal', # can be equi_spaced, eq_freq or temporal
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'kernel_length': 161, # total duration of the temporal kernel
+    'init_knots_num': 10, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':False,
+    'kernel_direction':0,
+}
+
+basis_info[session]['t_stop'] = deepcopy(basis_info[session]['t_move'])
+basis_info[session]['t_reward'] = deepcopy(basis_info[session]['t_move'])
+
+basis_info[session]['t_flyOFF'] = {
+    'knots_type':'temporal', # can be equi_spaced, eq_freq or temporal
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'kernel_length': 322, # total duration of the temporal kernel
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':False,
+    'kernel_direction':0
+}
+
+basis_info[session]['spike_hist'] = {
+    'knots_type':'temporal', # can be equi_spaced, eq_freq or temporal
+    'order':1, # for all except spike_hist
+    'penalty_type':'EqSpaced', # for all except spike_hist
+    'der': None, # always penalize energy (2nd der) if order is 4
+    'kernel_length': 11, # total duration of the temporal kernel
+    'kernel_direction': 1,
+    'init_knots_num': 5,# initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':False
+}
+
+########################################################################################################################
+# Session m44s216
+########################################################################################################################
+session = 'm44s216'
+basis_info[session] = {}
+basis_info[session]['rad_vel'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 15, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': 40, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 30, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None,
+}
+
+basis_info[session]['ang_vel'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 8, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': 25, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 20, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities,
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+basis_info[session]['rad_path'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 40, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': 80, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+
+basis_info[session]['ang_path'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 12, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': 30, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 20, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+
+basis_info[session]['rad_target'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 40, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': 80, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+
+basis_info[session]['ang_target'] = {
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 8, # min distance between knots (range is approx between -40 and 200...)
+    'dkn_max': 30, # max distance between knots (range is between -40 and 40...)
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':False,
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None,
+}
+
+basis_info[session]['lfp_beta'] = {
+'knot_0':-np.pi,
+'knot_end':np.pi,
+    'knots_type':'fix_range', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': np.pi/6, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': np.pi/2, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 8, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':True,
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+basis_info[session]['eye_vert'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 3, # min distance between knots (range is between -20 and 20...)
+    'dkn_max': 6, # max distance between knots (range is between -20 and 20...)
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+
+basis_info[session]['eye_hori'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 5, # min distance between knots (range is between -20 and 20...)
+    'dkn_max': 10, # max distance between knots (range is between -20 and 20...)
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+basis_info[session]['lfp_alpha'] = {
+'knot_0':-np.pi,
+'knot_end':np.pi,
+    'knots_type':'fix_range', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': np.pi/6, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': np.pi/2, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 8, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':True,
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+
+basis_info[session]['lfp_theta'] = {
+'knot_0':-np.pi,
+'knot_end':np.pi,
+    'knots_type':'fix_range', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': np.pi/6, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': np.pi/2, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 8, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':True,
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+basis_info[session]['phase'] = {
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq or temporal
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': np.pi/6, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': np.pi/2, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 8, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':True,
+    'kernel_length': None, # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+basis_info[session]['t_move'] = {
+    'knots_type':'temporal', # can be equi_spaced, eq_freq or temporal
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'kernel_length': 161, # total duration of the temporal kernel
+    'init_knots_num': 10, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':False,
+    'kernel_direction':0,
+}
+
+basis_info[session]['t_stop'] = deepcopy(basis_info[session]['t_move'])
+basis_info[session]['t_reward'] = deepcopy(basis_info[session]['t_move'])
+
+basis_info[session]['t_flyOFF'] = {
+    'knots_type':'temporal', # can be equi_spaced, eq_freq or temporal
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'kernel_length': 322, # total duration of the temporal kernel
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':False,
+    'kernel_direction':0
+}
+
+basis_info[session]['spike_hist'] = {
+    'knots_type':'temporal', # can be equi_spaced, eq_freq or temporal
+    'order':1, # for all except spike_hist
+    'penalty_type':'EqSpaced', # for all except spike_hist
+    'der': None, # always penalize energy (2nd der) if order is 4
+    'kernel_length': 11, # total duration of the temporal kernel
+    'kernel_direction': 1,
+    'init_knots_num': 5,# initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':False
+}
+
+########################################################################################################################
+# Session m44s217
+########################################################################################################################
+session = 'm44s217'
+basis_info[session] = {}
+basis_info[session]['rad_vel'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 10, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': 35, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 30, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None,
+}
+
+basis_info[session]['ang_vel'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 8, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': 25, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 20, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities,
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+basis_info[session]['rad_path'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 40, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': 80, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+
+basis_info[session]['ang_path'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 12, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': 30, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 20, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+
+basis_info[session]['rad_target'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 40, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': 80, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+
+basis_info[session]['ang_target'] = {
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 8, # min distance between knots (range is approx between -40 and 200...)
+    'dkn_max': 30, # max distance between knots (range is between -40 and 40...)
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':False,
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None,
+}
+
+basis_info[session]['lfp_beta'] = {
+'knot_0':-np.pi,
+'knot_end':np.pi,
+    'knots_type':'fix_range', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': np.pi/6, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': np.pi/2, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 8, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':True,
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+basis_info[session]['eye_vert'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 3, # min distance between knots (range is between -20 and 20...)
+    'dkn_max': 6, # max distance between knots (range is between -20 and 20...)
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+
+basis_info[session]['eye_hori'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 5, # min distance between knots (range is between -20 and 20...)
+    'dkn_max': 10, # max distance between knots (range is between -20 and 20...)
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+basis_info[session]['lfp_alpha'] = {
+'knot_0':-np.pi,
+'knot_end':np.pi,
+    'knots_type':'fix_range', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': np.pi/6, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': np.pi/2, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 8, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':True,
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+
+basis_info[session]['lfp_theta'] = {
+'knot_0':-np.pi,
+'knot_end':np.pi,
+    'knots_type':'fix_range', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': np.pi/6, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': np.pi/2, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 8, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':True,
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+basis_info[session]['phase'] = {
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq or temporal
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': np.pi/6, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': np.pi/2, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 8, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':True,
+    'kernel_length': None, # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+basis_info[session]['t_move'] = {
+    'knots_type':'temporal', # can be equi_spaced, eq_freq or temporal
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'kernel_length': 161, # total duration of the temporal kernel
+    'init_knots_num': 10, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':False,
+    'kernel_direction':0,
+}
+
+basis_info[session]['t_stop'] = deepcopy(basis_info[session]['t_move'])
+basis_info[session]['t_reward'] = deepcopy(basis_info[session]['t_move'])
+
+basis_info[session]['t_flyOFF'] = {
+    'knots_type':'temporal', # can be equi_spaced, eq_freq or temporal
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'kernel_length': 322, # total duration of the temporal kernel
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':False,
+    'kernel_direction':0
+}
+
+basis_info[session]['spike_hist'] = {
+    'knots_type':'temporal', # can be equi_spaced, eq_freq or temporal
+    'order':1, # for all except spike_hist
+    'penalty_type':'EqSpaced', # for all except spike_hist
+    'der': None, # always penalize energy (2nd der) if order is 4
+    'kernel_length': 11, # total duration of the temporal kernel
+    'kernel_direction': 1,
+    'init_knots_num': 5,# initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':False
+}
+
+########################################################################################################################
+# Session m44s218
+########################################################################################################################
+session = 'm44s218'
+basis_info[session] = {}
+basis_info[session]['rad_vel'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 15, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': 40, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 30, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None,
+}
+
+basis_info[session]['ang_vel'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 8, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': 25, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 20, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities,
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+basis_info[session]['rad_path'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 40, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': 80, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+
+basis_info[session]['ang_path'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 12, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': 30, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 20, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+
+basis_info[session]['rad_target'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 40, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': 80, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+
+basis_info[session]['ang_target'] = {
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 8, # min distance between knots (range is approx between -40 and 200...)
+    'dkn_max': 30, # max distance between knots (range is between -40 and 40...)
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':False,
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None,
+}
+
+basis_info[session]['lfp_beta'] = {
+'knot_0':-np.pi,
+'knot_end':np.pi,
+    'knots_type':'fix_range', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': np.pi/6, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': np.pi/2, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 8, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':True,
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+basis_info[session]['eye_vert'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 4, # min distance between knots (range is between -20 and 20...)
+    'dkn_max': 8, # max distance between knots (range is between -20 and 20...)
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+
+basis_info[session]['eye_hori'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 5, # min distance between knots (range is between -20 and 20...)
+    'dkn_max': 10, # max distance between knots (range is between -20 and 20...)
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+basis_info[session]['lfp_alpha'] = {
+'knot_0':-np.pi,
+'knot_end':np.pi,
+    'knots_type':'fix_range', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': np.pi/6, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': np.pi/2, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 8, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':True,
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+
+basis_info[session]['lfp_theta'] = {
+'knot_0':-np.pi,
+'knot_end':np.pi,
+    'knots_type':'fix_range', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': np.pi/6, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': np.pi/2, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 8, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':True,
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+basis_info[session]['phase'] = {
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq or temporal
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': np.pi/6, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': np.pi/2, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 8, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':True,
+    'kernel_length': None, # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+basis_info[session]['t_move'] = {
+    'knots_type':'temporal', # can be equi_spaced, eq_freq or temporal
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'kernel_length': 161, # total duration of the temporal kernel
+    'init_knots_num': 10, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':False,
+    'kernel_direction':0,
+}
+
+basis_info[session]['t_stop'] = deepcopy(basis_info[session]['t_move'])
+basis_info[session]['t_reward'] = deepcopy(basis_info[session]['t_move'])
+
+basis_info[session]['t_flyOFF'] = {
+    'knots_type':'temporal', # can be equi_spaced, eq_freq or temporal
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'kernel_length': 322, # total duration of the temporal kernel
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':False,
+    'kernel_direction':0
+}
+
+basis_info[session]['spike_hist'] = {
+    'knots_type':'temporal', # can be equi_spaced, eq_freq or temporal
+    'order':1, # for all except spike_hist
+    'penalty_type':'EqSpaced', # for all except spike_hist
+    'der': None, # always penalize energy (2nd der) if order is 4
+    'kernel_length': 11, # total duration of the temporal kernel
+    'kernel_direction': 1,
+    'init_knots_num': 5,# initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':False
+}
+
+########################################################################################################################
+# Session m44s219
+########################################################################################################################
+session = 'm44s219'
+basis_info[session] = {}
+basis_info[session]['rad_vel'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 15, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': 40, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 30, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None,
+}
+
+basis_info[session]['ang_vel'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 8, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': 25, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 20, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities,
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+basis_info[session]['rad_path'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 40, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': 80, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'kernel_direction': None
+}
+
+
+basis_info[session]['ang_path'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 12, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': 30, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 20, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+
+basis_info[session]['rad_target'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 40, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': 80, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+
+basis_info[session]['ang_target'] = {
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 8, # min distance between knots (range is approx between -40 and 200...)
+    'dkn_max': 30, # max distance between knots (range is between -40 and 40...)
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':False,
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None,
+}
+
+basis_info[session]['lfp_beta'] = {
+'knot_0':-np.pi,
+'knot_end':np.pi,
+    'knots_type':'fix_range', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': np.pi/6, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': np.pi/2, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 8, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':True,
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+basis_info[session]['eye_vert'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 4, # min distance between knots (range is between -20 and 20...)
+    'dkn_max': 8, # max distance between knots (range is between -20 and 20...)
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+
+basis_info[session]['eye_hori'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 5, # min distance between knots (range is between -20 and 20...)
+    'dkn_max': 10, # max distance between knots (range is between -20 and 20...)
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+basis_info[session]['lfp_alpha'] = {
+'knot_0':-np.pi,
+'knot_end':np.pi,
+    'knots_type':'fix_range', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': np.pi/6, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': np.pi/2, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 8, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':True,
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+
+basis_info[session]['lfp_theta'] = {
+'knot_0':-np.pi,
+'knot_end':np.pi,
+    'knots_type':'fix_range', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': np.pi/6, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': np.pi/2, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 8, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':True,
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+basis_info[session]['phase'] = {
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq or temporal
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': np.pi/6, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': np.pi/2, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 8, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':True,
+    'kernel_length': None, # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+basis_info[session]['t_move'] = {
+    'knots_type':'temporal', # can be equi_spaced, eq_freq or temporal
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'kernel_length': 161, # total duration of the temporal kernel
+    'init_knots_num': 10, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':False,
+    'kernel_direction':0,
+}
+
+basis_info[session]['t_stop'] = deepcopy(basis_info[session]['t_move'])
+basis_info[session]['t_reward'] = deepcopy(basis_info[session]['t_move'])
+
+basis_info[session]['t_flyOFF'] = {
+    'knots_type':'temporal', # can be equi_spaced, eq_freq or temporal
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'kernel_length': 322, # total duration of the temporal kernel
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':False,
+    'kernel_direction':0
+}
+
+basis_info[session]['spike_hist'] = {
+    'knots_type':'temporal', # can be equi_spaced, eq_freq or temporal
+    'order':1, # for all except spike_hist
+    'penalty_type':'EqSpaced', # for all except spike_hist
+    'der': None, # always penalize energy (2nd der) if order is 4
+    'kernel_length': 11, # total duration of the temporal kernel
+    'kernel_direction': 1,
+    'init_knots_num': 5,# initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':False
+}
+
+########################################################################################################################
+# Session m44s220
+########################################################################################################################
+session = 'm44s220'
+basis_info[session] = {}
+basis_info[session]['rad_vel'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 15, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': 45, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 35, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None,
+}
+
+basis_info[session]['ang_vel'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 8, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': 25, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 20, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities,
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+basis_info[session]['rad_path'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 40, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': 80, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+
+basis_info[session]['ang_path'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 12, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': 30, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 20, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+
+basis_info[session]['rad_target'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 40, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': 80, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+
+basis_info[session]['ang_target'] = {
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 8, # min distance between knots (range is approx between -40 and 200...)
+    'dkn_max': 30, # max distance between knots (range is between -40 and 40...)
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':False,
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None,
+}
+
+basis_info[session]['lfp_beta'] = {
+'knot_0':-np.pi,
+'knot_end':np.pi,
+    'knots_type':'fix_range', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': np.pi/6, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': np.pi/2, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 8, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':True,
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+basis_info[session]['eye_vert'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 3, # min distance between knots (range is between -20 and 20...)
+    'dkn_max': 6, # max distance between knots (range is between -20 and 20...)
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+
+basis_info[session]['eye_hori'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 5, # min distance between knots (range is between -20 and 20...)
+    'dkn_max': 10, # max distance between knots (range is between -20 and 20...)
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+basis_info[session]['lfp_alpha'] = {
+'knot_0':-np.pi,
+'knot_end':np.pi,
+    'knots_type':'fix_range', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': np.pi/6, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': np.pi/2, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 8, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':True,
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+
+basis_info[session]['lfp_theta'] = {
+'knot_0':-np.pi,
+'knot_end':np.pi,
+    'knots_type':'fix_range', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': np.pi/6, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': np.pi/2, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 8, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':True,
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+basis_info[session]['phase'] = {
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq or temporal
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': np.pi/6, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': np.pi/2, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 8, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':True,
+    'kernel_length': None, # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+basis_info[session]['t_move'] = {
+    'knots_type':'temporal', # can be equi_spaced, eq_freq or temporal
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'kernel_length': 161, # total duration of the temporal kernel
+    'init_knots_num': 10, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':False,
+    'kernel_direction':0,
+}
+
+basis_info[session]['t_stop'] = deepcopy(basis_info[session]['t_move'])
+basis_info[session]['t_reward'] = deepcopy(basis_info[session]['t_move'])
+
+basis_info[session]['t_flyOFF'] = {
+    'knots_type':'temporal', # can be equi_spaced, eq_freq or temporal
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'kernel_length': 322, # total duration of the temporal kernel
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':False,
+    'kernel_direction':0
+}
+
+basis_info[session]['spike_hist'] = {
+    'knots_type':'temporal', # can be equi_spaced, eq_freq or temporal
+    'order':1, # for all except spike_hist
+    'penalty_type':'EqSpaced', # for all except spike_hist
+    'der': None, # always penalize energy (2nd der) if order is 4
+    'kernel_length': 11, # total duration of the temporal kernel
+    'kernel_direction': 1,
+    'init_knots_num': 5,# initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':False
+}
+
+########################################################################################################################
+# Session m44s221
+########################################################################################################################
+session = 'm44s221'
+basis_info[session] = {}
+basis_info[session]['rad_vel'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 10, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': 50, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 30, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None,
+}
+
+basis_info[session]['ang_vel'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 8, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': 25, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 20, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities,
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+basis_info[session]['rad_path'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 40, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': 80, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+
+basis_info[session]['ang_path'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 12, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': 30, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 20, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+
+basis_info[session]['rad_target'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 40, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': 80, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+
+basis_info[session]['ang_target'] = {
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 8, # min distance between knots (range is approx between -40 and 200...)
+    'dkn_max': 30, # max distance between knots (range is between -40 and 40...)
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':False,
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None,
+}
+
+basis_info[session]['lfp_beta'] = {
+'knot_0':-np.pi,
+'knot_end':np.pi,
+    'knots_type':'fix_range', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': np.pi/6, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': np.pi/2, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 8, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':True,
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+basis_info[session]['eye_vert'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 3, # min distance between knots (range is between -20 and 20...)
+    'dkn_max': 6, # max distance between knots (range is between -20 and 20...)
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+
+basis_info[session]['eye_hori'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 5, # min distance between knots (range is between -20 and 20...)
+    'dkn_max': 10, # max distance between knots (range is between -20 and 20...)
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+basis_info[session]['lfp_alpha'] = {
+'knot_0':-np.pi,
+'knot_end':np.pi,
+    'knots_type':'fix_range', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': np.pi/6, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': np.pi/2, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 8, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':True,
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+
+basis_info[session]['lfp_theta'] = {
+'knot_0':-np.pi,
+'knot_end':np.pi,
+    'knots_type':'fix_range', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': np.pi/6, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': np.pi/2, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 8, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':True,
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+basis_info[session]['phase'] = {
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq or temporal
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': np.pi/6, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': np.pi/2, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 8, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':True,
+    'kernel_length': None, # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+basis_info[session]['t_move'] = {
+    'knots_type':'temporal', # can be equi_spaced, eq_freq or temporal
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'kernel_length': 161, # total duration of the temporal kernel
+    'init_knots_num': 10, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':False,
+    'kernel_direction':0,
+}
+
+basis_info[session]['t_stop'] = deepcopy(basis_info[session]['t_move'])
+basis_info[session]['t_reward'] = deepcopy(basis_info[session]['t_move'])
+
+basis_info[session]['t_flyOFF'] = {
+    'knots_type':'temporal', # can be equi_spaced, eq_freq or temporal
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'kernel_length': 322, # total duration of the temporal kernel
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':False,
+    'kernel_direction':0
+}
+
+basis_info[session]['spike_hist'] = {
+    'knots_type':'temporal', # can be equi_spaced, eq_freq or temporal
+    'order':1, # for all except spike_hist
+    'penalty_type':'EqSpaced', # for all except spike_hist
+    'der': None, # always penalize energy (2nd der) if order is 4
+    'kernel_length': 11, # total duration of the temporal kernel
+    'kernel_direction': 1,
+    'init_knots_num': 5,# initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':False
+}
+
+########################################################################################################################
+# Session m91s6
+########################################################################################################################
+session = 'm91s6'
+basis_info[session] = {}
+basis_info[session]['rad_vel'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 30, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': 60, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 20, # initial knots number
+    'perc_low': 2, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':98, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None,
+}
+
+basis_info[session]['ang_vel'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 10, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': 50, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 20, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities,
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+basis_info[session]['rad_path'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 50, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': 90, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+
+basis_info[session]['ang_path'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 12, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': 30, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 20, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+
+basis_info[session]['rad_target'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 50, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': 100, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+
+basis_info[session]['ang_target'] = {
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 8, # min distance between knots (range is approx between -40 and 200...)
+    'dkn_max': 30, # max distance between knots (range is between -40 and 40...)
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':False,
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None,
+}
+
+basis_info[session]['lfp_beta'] = {
+'knot_0':-np.pi,
+'knot_end':np.pi,
+    'knots_type':'fix_range', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': np.pi/6, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': np.pi/2, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 8, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':True,
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+basis_info[session]['eye_vert'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 6, # min distance between knots (range is between -20 and 20...)
+    'dkn_max': 12, # max distance between knots (range is between -20 and 20...)
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+
+basis_info[session]['eye_hori'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 5, # min distance between knots (range is between -20 and 20...)
+    'dkn_max': 20, # max distance between knots (range is between -20 and 20...)
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+basis_info[session]['lfp_alpha'] = {
+'knot_0':-np.pi,
+'knot_end':np.pi,
+    'knots_type':'fix_range', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': np.pi/6, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': np.pi/2, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 8, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':True,
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+
+basis_info[session]['lfp_theta'] = {
+'knot_0':-np.pi,
+'knot_end':np.pi,
+    'knots_type':'fix_range', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': np.pi/6, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': np.pi/2, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 8, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':True,
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+basis_info[session]['phase'] = {
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq or temporal
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': np.pi/6, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': np.pi/2, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 8, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':True,
+    'kernel_length': None, # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+basis_info[session]['t_move'] = {
+    'knots_type':'temporal', # can be equi_spaced, eq_freq or temporal
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'kernel_length': 161, # total duration of the temporal kernel
+    'init_knots_num': 10, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':False,
+    'kernel_direction':0,
+}
+
+basis_info[session]['t_stop'] = deepcopy(basis_info[session]['t_move'])
+basis_info[session]['t_reward'] = deepcopy(basis_info[session]['t_move'])
+
+basis_info[session]['t_flyOFF'] = {
+    'knots_type':'temporal', # can be equi_spaced, eq_freq or temporal
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'kernel_length': 322, # total duration of the temporal kernel
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':False,
+    'kernel_direction':0
+}
+
+basis_info[session]['spike_hist'] = {
+    'knots_type':'temporal', # can be equi_spaced, eq_freq or temporal
+    'order':1, # for all except spike_hist
+    'penalty_type':'EqSpaced', # for all except spike_hist
+    'der': None, # always penalize energy (2nd der) if order is 4
+    'kernel_length': 11, # total duration of the temporal kernel
+    'kernel_direction': 1,
+    'init_knots_num': 5,# initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':False
+}
+
+########################################################################################################################
+# Session m91s7
+########################################################################################################################
+session = 'm91s7'
+basis_info[session] = {}
+basis_info[session]['rad_vel'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 30, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': 60, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 20, # initial knots number
+    'perc_low': 2, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':98, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None,
+}
+
+basis_info[session]['ang_vel'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 10, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': 50, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 20, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities,
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+basis_info[session]['rad_path'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 50, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': 90, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+
+basis_info[session]['ang_path'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 15, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': 35, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 20, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+
+basis_info[session]['rad_target'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 50, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': 80, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+
+basis_info[session]['ang_target'] = {
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 8, # min distance between knots (range is approx between -40 and 200...)
+    'dkn_max': 30, # max distance between knots (range is between -40 and 40...)
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':False,
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None,
+}
+
+basis_info[session]['lfp_beta'] = {
+'knot_0':-np.pi,
+'knot_end':np.pi,
+    'knots_type':'fix_range', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': np.pi/6, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': np.pi/2, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 8, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':True,
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+basis_info[session]['eye_vert'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 6, # min distance between knots (range is between -20 and 20...)
+    'dkn_max': 12, # max distance between knots (range is between -20 and 20...)
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+
+basis_info[session]['eye_hori'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 5, # min distance between knots (range is between -20 and 20...)
+    'dkn_max': 20, # max distance between knots (range is between -20 and 20...)
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+basis_info[session]['lfp_alpha'] = {
+'knot_0':-np.pi,
+'knot_end':np.pi,
+    'knots_type':'fix_range', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': np.pi/6, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': np.pi/2, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 8, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':True,
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+
+basis_info[session]['lfp_theta'] = {
+'knot_0':-np.pi,
+'knot_end':np.pi,
+    'knots_type':'fix_range', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': np.pi/6, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': np.pi/2, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 8, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':True,
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+basis_info[session]['phase'] = {
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq or temporal
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': np.pi/6, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': np.pi/2, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 8, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':True,
+    'kernel_length': None, # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+basis_info[session]['t_move'] = {
+    'knots_type':'temporal', # can be equi_spaced, eq_freq or temporal
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'kernel_length': 161, # total duration of the temporal kernel
+    'init_knots_num': 10, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':False,
+    'kernel_direction':0,
+}
+
+basis_info[session]['t_stop'] = deepcopy(basis_info[session]['t_move'])
+basis_info[session]['t_reward'] = deepcopy(basis_info[session]['t_move'])
+
+basis_info[session]['t_flyOFF'] = {
+    'knots_type':'temporal', # can be equi_spaced, eq_freq or temporal
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'kernel_length': 322, # total duration of the temporal kernel
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':False,
+    'kernel_direction':0
+}
+
+basis_info[session]['spike_hist'] = {
+    'knots_type':'temporal', # can be equi_spaced, eq_freq or temporal
+    'order':1, # for all except spike_hist
+    'penalty_type':'EqSpaced', # for all except spike_hist
+    'der': None, # always penalize energy (2nd der) if order is 4
+    'kernel_length': 11, # total duration of the temporal kernel
+    'kernel_direction': 1,
+    'init_knots_num': 5,# initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':False
+}
+
+########################################################################################################################
+# Session m91s20
+########################################################################################################################
+session = 'm91s20'
+basis_info[session] = {}
+basis_info[session]['rad_vel'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 15, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': 40, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 20, # initial knots number
+    'perc_low': 2, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':98.5, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None,
+}
+
+basis_info[session]['ang_vel'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 10, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': 50, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 20, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities,
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+basis_info[session]['rad_path'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 50, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': 90, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+
+basis_info[session]['ang_path'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 15, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': 35, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 20, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+
+basis_info[session]['rad_target'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 40, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': 80, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+
+basis_info[session]['ang_target'] = {
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 8, # min distance between knots (range is approx between -40 and 200...)
+    'dkn_max': 30, # max distance between knots (range is between -40 and 40...)
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':False,
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None,
+}
+
+basis_info[session]['lfp_beta'] = {
+'knot_0':-np.pi,
+'knot_end':np.pi,
+    'knots_type':'fix_range', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': np.pi/6, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': np.pi/2, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 8, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':True,
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+basis_info[session]['eye_vert'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 6, # min distance between knots (range is between -20 and 20...)
+    'dkn_max': 12, # max distance between knots (range is between -20 and 20...)
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+
+basis_info[session]['eye_hori'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 5, # min distance between knots (range is between -20 and 20...)
+    'dkn_max': 20, # max distance between knots (range is between -20 and 20...)
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+basis_info[session]['lfp_alpha'] = {
+'knot_0':-np.pi,
+'knot_end':np.pi,
+    'knots_type':'fix_range', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': np.pi/6, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': np.pi/2, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 8, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':True,
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+
+basis_info[session]['lfp_theta'] = {
+'knot_0':-np.pi,
+'knot_end':np.pi,
+    'knots_type':'fix_range', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': np.pi/6, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': np.pi/2, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 8, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':True,
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+basis_info[session]['phase'] = {
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq or temporal
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': np.pi/6, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': np.pi/2, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 8, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':True,
+    'kernel_length': None, # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+basis_info[session]['t_move'] = {
+    'knots_type':'temporal', # can be equi_spaced, eq_freq or temporal
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'kernel_length': 161, # total duration of the temporal kernel
+    'init_knots_num': 10, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':False,
+    'kernel_direction':0,
+}
+
+basis_info[session]['t_stop'] = deepcopy(basis_info[session]['t_move'])
+basis_info[session]['t_reward'] = deepcopy(basis_info[session]['t_move'])
+
+basis_info[session]['t_flyOFF'] = {
+    'knots_type':'temporal', # can be equi_spaced, eq_freq or temporal
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'kernel_length': 322, # total duration of the temporal kernel
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':False,
+    'kernel_direction':0
+}
+
+basis_info[session]['spike_hist'] = {
+    'knots_type':'temporal', # can be equi_spaced, eq_freq or temporal
+    'order':1, # for all except spike_hist
+    'penalty_type':'EqSpaced', # for all except spike_hist
+    'der': None, # always penalize energy (2nd der) if order is 4
+    'kernel_length': 11, # total duration of the temporal kernel
+    'kernel_direction': 1,
+    'init_knots_num': 5,# initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':False
+}
+
+########################################################################################################################
+# Session m91s24
+########################################################################################################################
+session = 'm91s24'
+basis_info[session] = {}
+basis_info[session]['rad_vel'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 15, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': 40, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 20, # initial knots number
+    'perc_low': 2, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':98.5, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None,
+}
+
+basis_info[session]['ang_vel'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 10, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': 30, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 20, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities,
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+basis_info[session]['rad_path'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 50, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': 90, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+
+basis_info[session]['ang_path'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 15, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': 35, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 20, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+
+basis_info[session]['rad_target'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 40, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': 80, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+
+basis_info[session]['ang_target'] = {
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 8, # min distance between knots (range is approx between -40 and 200...)
+    'dkn_max': 30, # max distance between knots (range is between -40 and 40...)
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':False,
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None,
+}
+
+basis_info[session]['lfp_beta'] = {
+'knot_0':-np.pi,
+'knot_end':np.pi,
+    'knots_type':'fix_range', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': np.pi/6, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': np.pi/2, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 8, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':True,
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+basis_info[session]['eye_vert'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 6, # min distance between knots (range is between -20 and 20...)
+    'dkn_max': 12, # max distance between knots (range is between -20 and 20...)
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+
+basis_info[session]['eye_hori'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 5, # min distance between knots (range is between -20 and 20...)
+    'dkn_max': 20, # max distance between knots (range is between -20 and 20...)
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+basis_info[session]['lfp_alpha'] = {
+'knot_0':-np.pi,
+'knot_end':np.pi,
+    'knots_type':'fix_range', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': np.pi/6, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': np.pi/2, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 8, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':True,
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+
+basis_info[session]['lfp_theta'] = {
+'knot_0':-np.pi,
+'knot_end':np.pi,
+    'knots_type':'fix_range', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': np.pi/6, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': np.pi/2, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 8, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':True,
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+basis_info[session]['phase'] = {
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq or temporal
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': np.pi/6, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': np.pi/2, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 8, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':True,
+    'kernel_length': None, # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+basis_info[session]['t_move'] = {
+    'knots_type':'temporal', # can be equi_spaced, eq_freq or temporal
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'kernel_length': 161, # total duration of the temporal kernel
+    'init_knots_num': 10, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':False,
+    'kernel_direction':0,
+}
+
+basis_info[session]['t_stop'] = deepcopy(basis_info[session]['t_move'])
+basis_info[session]['t_reward'] = deepcopy(basis_info[session]['t_move'])
+
+basis_info[session]['t_flyOFF'] = {
+    'knots_type':'temporal', # can be equi_spaced, eq_freq or temporal
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'kernel_length': 322, # total duration of the temporal kernel
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':False,
+    'kernel_direction':0
+}
+
+basis_info[session]['spike_hist'] = {
+    'knots_type':'temporal', # can be equi_spaced, eq_freq or temporal
+    'order':1, # for all except spike_hist
+    'penalty_type':'EqSpaced', # for all except spike_hist
+    'der': None, # always penalize energy (2nd der) if order is 4
+    'kernel_length': 11, # total duration of the temporal kernel
+    'kernel_direction': 1,
+    'init_knots_num': 5,# initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':False
+}
+
+########################################################################################################################
+# Session m91s26
+########################################################################################################################
+session = 'm91s26'
+basis_info[session] = {}
+basis_info[session]['rad_vel'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 15, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': 40, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 20, # initial knots number
+    'perc_low': 2, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':98.5, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None,
+}
+
+basis_info[session]['ang_vel'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 10, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': 30, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 20, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities,
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+basis_info[session]['rad_path'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 50, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': 90, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+
+basis_info[session]['ang_path'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 15, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': 35, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 20, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+
+basis_info[session]['rad_target'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 40, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': 80, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+
+basis_info[session]['ang_target'] = {
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 8, # min distance between knots (range is approx between -40 and 200...)
+    'dkn_max': 30, # max distance between knots (range is between -40 and 40...)
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':False,
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None,
+}
+
+basis_info[session]['lfp_beta'] = {
+'knot_0':-np.pi,
+'knot_end':np.pi,
+    'knots_type':'fix_range', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': np.pi/6, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': np.pi/2, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 8, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':True,
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+basis_info[session]['eye_vert'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 6, # min distance between knots (range is between -20 and 20...)
+    'dkn_max': 12, # max distance between knots (range is between -20 and 20...)
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+
+basis_info[session]['eye_hori'] = {
+    'is_cyclic':False,
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': 5, # min distance between knots (range is between -20 and 20...)
+    'dkn_max': 20, # max distance between knots (range is between -20 and 20...)
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 1, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':99, # max knot value as a percentile of the input vector of velocities
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+basis_info[session]['lfp_alpha'] = {
+'knot_0':-np.pi,
+'knot_end':np.pi,
+    'knots_type':'fix_range', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': np.pi/6, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': np.pi/2, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 8, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':True,
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+
+basis_info[session]['lfp_theta'] = {
+'knot_0':-np.pi,
+'knot_end':np.pi,
+    'knots_type':'fix_range', # can be equi_spaced or equi_freq
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': np.pi/6, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': np.pi/2, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 8, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':True,
+    'kernel_length': None,  # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+basis_info[session]['phase'] = {
+    'knots_type':'equi_freq', # can be equi_spaced or equi_freq or temporal
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'dkn_min': np.pi/6, # min distance between knots (range is between 0 and 200...)
+    'dkn_max': np.pi/2, # max distance between knots (range is between 0 and 200...)
+    'init_knots_num': 8, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':True,
+    'kernel_length': None, # total duration of the temporal kernel
+    'kernel_direction': None
+}
+
+basis_info[session]['t_move'] = {
+    'knots_type':'temporal', # can be equi_spaced, eq_freq or temporal
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'kernel_length': 161, # total duration of the temporal kernel
+    'init_knots_num': 10, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':False,
+    'kernel_direction':0,
+}
+
+basis_info[session]['t_stop'] = deepcopy(basis_info[session]['t_move'])
+basis_info[session]['t_reward'] = deepcopy(basis_info[session]['t_move'])
+
+basis_info[session]['t_flyOFF'] = {
+    'knots_type':'temporal', # can be equi_spaced, eq_freq or temporal
+    'order': 4, # for all except spike_hist
+    'penalty_type':'der', # for all except spike_hist
+    'der': 2, # always penalize energy (2nd der) if order is 4
+    'kernel_length': 322, # total duration of the temporal kernel
+    'init_knots_num': 15, # initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':False,
+    'kernel_direction':0
+}
+
+basis_info[session]['spike_hist'] = {
+    'knots_type':'temporal', # can be equi_spaced, eq_freq or temporal
+    'order':1, # for all except spike_hist
+    'penalty_type':'EqSpaced', # for all except spike_hist
+    'der': None, # always penalize energy (2nd der) if order is 4
+    'kernel_length': 11, # total duration of the temporal kernel
+    'kernel_direction': 1,
+    'init_knots_num': 5,# initial knots number
+    'perc_low': 0, # min knot value as percentile of input vector (a couple of outliers with neg velocity)
+    'perc_high':100, # max knot value as a percentile of the input vector of velocities
+    'is_cyclic':False
+}
 
 del session

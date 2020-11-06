@@ -12,8 +12,7 @@ from extract_presence_rate import *
 
 user_paths = get_paths_class()
 # list of session to be concatenated
-concat_list = ['m44s203', 'm44s205', 'm44s206', 'm44s207', 'm44s208', 'm44s209', 'm44s211', 'm44s212', 'm44s213', 'm44s215', 'm44s216', 'm44s217',
-               'm44s218', 'm44s219', 'm44s220', 'm44s221']
+concat_list = ['m91s2', 'm91s6', 'm91s7', 'm91s9', 'm91s10']
 
 save = True
 send = True
