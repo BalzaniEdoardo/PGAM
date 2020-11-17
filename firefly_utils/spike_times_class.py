@@ -160,6 +160,41 @@ class spike_counts(object):
                     # add the last bin
                     bins = np.hstack((bins, bins[-1] + dt))
                 self.binned_spikes[unt,idx],_ = np.histogram(self.spike_times[unt,tr],bins=bins)
+                
+    def select_spike_times(self,t_start,t_stop,select=None):
+
+        # extract freq in ms, use round to get the theoretical acquisition freq.
+
+        if not select is None:
+            spks_tmp = self.spike_times[:,select]
+            edges_sel = np.arange(self.n_trials)[select]
+        else:
+            spks_tmp = self.spike_times
+            edges_sel = np.arange(self.n_trials)
+
+        cut_spikes = np.zeros((self.num_units,spks_tmp.shape[1]),dtype=object)
+
+        for unt in range(self.num_units):
+            for idx in range(spks_tmp.shape[1]):
+
+                tr = edges_sel[idx]
+                
+            
+                # if start is a scalar, always takes times greater than t_start
+                if np.isscalar(t_start):
+                    t0 = t_start
+                # otherwise consider as start the time t0 indicated by the dictionary with t_starts
+                else:
+                    t0 = float(t_start[tr])
+                # same for t_stop
+                if np.isscalar(t_stop):
+                    t1 = t_stop
+                else:
+                    t1 = float(t_stop[tr])
+                sele_times = (self.spike_times[unt,tr] > t0) & (self.spike_times[unt,tr] < t1)
+                cut_spikes[unt,idx] = self.spike_times[unt,tr][sele_times]
+        return cut_spikes
+                
 
 
 

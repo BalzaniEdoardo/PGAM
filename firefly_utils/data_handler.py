@@ -120,6 +120,14 @@ class data_handler(object):
                                                       self.spikes.brain_area)
                 var_dict[var] = self.lfp.cut_phase(phase, time_stamps, t_start=t_start, t_stop=t_stop,
                                                           select=self.filter,idx0=None,idx1=None)
+            elif var == 'lfp_beta_power':
+               # compute phase using hilbert transform in all trials (the filtering is applied with cut_continous)
+                all_tr = np.ones(self.lfp.n_trials,dtype=bool)
+                # assert (self.lfp.compute_phase)
+                amplitude = self.lfp.extract_phase_x_unit(self.lfp.lfp_beta_power,all_tr,self.spikes.channel_id,
+                                                      self.spikes.brain_area)
+                var_dict[var] = self.lfp.cut_phase(amplitude, time_stamps, t_start=t_start, t_stop=t_stop,
+                                                          select=self.filter,idx0=None,idx1=None)
             elif var == 'lfp_alpha':
                 # compute phase using hilbert transform in all trials (the filtering is applied with cut_continous)
                 all_tr = np.ones(self.lfp.n_trials,dtype=bool)
@@ -128,6 +136,14 @@ class data_handler(object):
                                                       self.spikes.brain_area)
                 var_dict[var] = self.lfp.cut_phase(phase, time_stamps, t_start=t_start, t_stop=t_stop,
                                                           select=self.filter,idx0=None,idx1=None)
+            elif var == 'lfp_alpha_power':
+               # compute phase using hilbert transform in all trials (the filtering is applied with cut_continous)
+                all_tr = np.ones(self.lfp.n_trials,dtype=bool)
+                # assert (self.lfp.compute_phase)
+                amplitude = self.lfp.extract_phase_x_unit(self.lfp.lfp_alpha_power,all_tr,self.spikes.channel_id,
+                                                      self.spikes.brain_area)
+                var_dict[var] = self.lfp.cut_phase(amplitude, time_stamps, t_start=t_start, t_stop=t_stop,
+                                                          select=self.filter,idx0=None,idx1=None)
             elif var == 'lfp_theta':
                 # compute phase using hilbert transform in all trials (the filtering is applied with cut_continous)
                 all_tr = np.ones(self.lfp.n_trials,dtype=bool)
@@ -135,6 +151,14 @@ class data_handler(object):
                 phase = self.lfp.extract_phase_x_unit(self.lfp.lfp_theta, all_tr, self.spikes.channel_id,
                                                       self.spikes.brain_area)
                 var_dict[var] = self.lfp.cut_phase(phase, time_stamps, t_start=t_start, t_stop=t_stop,
+                                                          select=self.filter,idx0=None,idx1=None)
+            elif var == 'lfp_theta_power':
+               # compute phase using hilbert transform in all trials (the filtering is applied with cut_continous)
+                all_tr = np.ones(self.lfp.n_trials,dtype=bool)
+                # assert (self.lfp.compute_phase)
+                amplitude = self.lfp.extract_phase_x_unit(self.lfp.lfp_theta_power,all_tr,self.spikes.channel_id,
+                                                      self.spikes.brain_area)
+                var_dict[var] = self.lfp.cut_phase(amplitude, time_stamps, t_start=t_start, t_stop=t_stop,
                                                           select=self.filter,idx0=None,idx1=None)
 
             # elif var == 'phase':
@@ -146,7 +170,8 @@ class data_handler(object):
 
             else:
                 raise ValueError('variable %s is unknown'%var)
-            if not (var in ['phase','lfp_beta','lfp_alpha','lfp_theta']):
+            if not (var in ['phase','lfp_beta','lfp_alpha','lfp_theta',
+                            'lfp_beta_power','lfp_theta_power','lfp_alpha_power']):
                 var_dict[var] = dict_to_vec(var_dict[var])
             else:
                 first = True
@@ -159,7 +184,8 @@ class data_handler(object):
                 var_dict[var] = phase_stack
 
             # check that the variables have same sizes
-            if not (var in ['phase','lfp_beta','lfp_alpha','lfp_theta']):
+            if not (var in ['phase','lfp_beta','lfp_alpha','lfp_theta',
+                            'lfp_beta_power','lfp_theta_power','lfp_alpha_power']):
                 if var_dict[var].shape[0] != spikes.shape[1]:
                     raise ValueError('%s counts and spike counts have different sizes'%var)
             else:

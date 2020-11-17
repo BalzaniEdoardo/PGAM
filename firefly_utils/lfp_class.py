@@ -24,27 +24,31 @@ class lfp_class(object):
             self.n_trials = self.lfp.shape[1]
 
         if not lfp_beta is None:
-            self.lfp_beta = self.extract_lfp_x_band(lfp_beta,'lfp_beta')
+            self.lfp_beta,self.lfp_beta_power = self.extract_lfp_x_band(lfp_beta,'lfp_beta')
 
         if not lfp_alpha is None:
-            self.lfp_alpha = self.extract_lfp_x_band(lfp_alpha,'lfp_alpha')
+            self.lfp_alpha,self.lfp_alpha_power = self.extract_lfp_x_band(lfp_alpha,'lfp_alpha')
 
 
         if not lfp_theta is None:
-            self.lfp_theta = self.extract_lfp_x_band(lfp_theta,'lfp_theta')
+            self.lfp_theta,self.lfp_theta_power = self.extract_lfp_x_band(lfp_theta,'lfp_theta')
 
 
 
     def extract_lfp_x_band(self,lfp_band,band_label):
         num_trials = lfp_band[0,0]['trials'].shape[1]
         lfp_band_all = np.zeros((self.n_channels, num_trials), dtype=object)
+        lfp_power_all = np.zeros((self.n_channels, num_trials), dtype=object)
+
         for chan in range(self.n_channels):
             for tr in range(num_trials):
                 if self.compute_phase:
                     lfp_band_all[chan, tr] = np.array(np.angle(lfp_band[0, chan]['trials'][0, tr][band_label].flatten()),dtype=np.float32)
+                    lfp_power_all[chan, tr] = np.array(np.abs(lfp_band[0, chan]['trials'][0, tr][band_label].flatten())**2,dtype=np.float32)
                 else:
                     lfp_band_all[chan, tr] = lfp_band[0, chan]['trials'][0, tr][band_label].flatten()
-        return lfp_band_all
+                    lfp_power_all = None
+        return lfp_band_all,lfp_power_all
 
 
     def extract_lfp(self,lfps):
