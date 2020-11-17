@@ -26,7 +26,9 @@ import matplotlib.pylab as plt
 from copy import deepcopy
 from time import perf_counter
 from scipy.io import savemat
-
+from spline_basis_toolbox import *
+from scipy.integrate import simps
+plt.ion()
 
 def get_npz_filepath(basefld, session):
     fh_name = session + '.npz'
@@ -34,6 +36,33 @@ def get_npz_filepath(basefld, session):
         if fh_name in files:
             return os.path.join(root,fh_name)
     return None
+
+def compute_integral_mean(gam_res,var,discr=1000):
+     
+    knots = gam_res.smooth_info[var]['knots'][0]
+    order = gam_res.smooth_info[var]['ord']
+    
+    if 'lfp' in var:
+        is_cyclic = True
+    else:
+        is_cyclic = False
+
+
+    # construct the basis function
+    if gam_res.smooth_info[var]['is_temporal_kernel'] and var == 'spike_hist':
+        exp_bspline = spline_basis(knots, order, is_cyclic=is_cyclic)
+    elif gam_res.smooth_info[var]['is_temporal_kernel']:
+        exp_bspline = spline_basis(knots/2., order, is_cyclic=is_cyclic)
+    else:
+        exp_bspline = spline_basis(knots, order, is_cyclic=is_cyclic)
+    
+    select = gam_res.index_dict[var]
+    beta = np.hstack((gam_res.beta[select],[0]))
+    tuning = tuning_function(exp_bspline, beta, subtract_integral_mean=True)
+    x = np.linspace(knots[0], knots[-1]-0.0001, discr)
+    y = tuning(x) ** 2
+    integr = simps(y, dx=x[1] - x[0]) / (x[-1] - x[0])
+    return integr
 
 session = 'm91s24'
 unit = 15
@@ -148,50 +177,18 @@ plt.tight_layout(rect=[0, 0.03, 1, 0.95])
 
 
 variables = np.copy(full.var_list)
-# keep = np.ones(variables.shape[0],dtype=bool)
-# k = 0
-# for var in full.var_list:
-#     if var.startswith('neu_'):
-#         keep[k] = False
-#     k+=1
+resp_magnitude_full = []
+resp_magnitude_reduced = []
+for var in variables:
+    resp_magnitude_full += ['%s_resp_magn_full'%var]
 
-# variables = variables[keep]
-# dict_type = {
-#     'names':('session','unit','cluster_id','electrode_id','channel_id','brain_area',)+tuple(variables),
-#     'formats':('U30',) + (int,)*4 + ('U3',) + (bool,)*variables.shape[0]
-#         }
-# table_report = np.zeros(1,dtype=dict_type)
-
-# table_report['session'][0] = session
-# table_report['unit'][0] = unit
-
-# # matlab indexing was used for the name
-# table_report['cluster_id'][0] = cluster_id[unit-1]
-# table_report['channel_id'][0] = channel_id[unit-1]
-# table_report['electrode_id'][0] = electrode_id[unit-1]
-# table_report['brain_area'][0] = brain_area[unit-1]
-
-# for var in reduced.var_list:
-#     if var.startswith('neu'):
-#         continue
-#     idx = np.where(reduced.covariate_significance['covariate'] == var)[0]
-#     if reduced.covariate_significance['p-val'][idx]>0.001:
-#         table_report[var][0] = True
-        
-# # if you want to stack another neuron you can do this
-# tmp = np.zeros(1,dtype=dict_type)
-# # insert the info and then
-# table_report = np.hstack((table_report,tmp))
-
-
-# # this saves it as a struct
-# savemat('table_report.mat',{'table_report':table_report})
-
-
-
+for var in variables:
+    resp_magnitude_reduced += ['%s_resp_magn_reduced'%var]
 dict_type = {
-                'names':('session','unit','cluster_id','electrode_id','channel_id','brain_area',)+tuple(variables),
-                'formats':('U30',) + (int,)*4 + ('U3',) + (bool,)*variables.shape[0]
+                'names':('session','unit','cluster_id','electrode_id','channel_id','brain_area',)+tuple(variables)
+                +tuple(resp_magnitude_full)+tuple(resp_magnitude_reduced),
+                'formats':('U30',) + (int,)*4 + ('U3',) + (bool,)*variables.shape[0] + (float,)*variables.shape[0]
+                + (float,)*variables.shape[0]
                     }
 table_report = np.zeros(0,dtype=dict_type)
 
@@ -200,7 +197,8 @@ for gam_sess in os.listdir('/Volumes/WD Edo/firefly_analysis/LFP_band/cubic_gam_
     if not gam_sess.startswith('gam'):
         continue
     session = gam_sess.split('_')[1]
-
+    # if session != 'm91s24':
+    #     continue
     for dill_name in os.listdir(os.path.join('/Volumes/WD Edo/firefly_analysis/LFP_band/cubic_gam_fit_with_coupling/',gam_sess)):
         print(dill_name)
         if not 'all' in dill_name:
@@ -208,12 +206,20 @@ for gam_sess in os.listdir('/Volumes/WD Edo/firefly_analysis/LFP_band/cubic_gam_
         try:
             with open(os.path.join('/Volumes/WD Edo/firefly_analysis/LFP_band/cubic_gam_fit_with_coupling/',gam_sess,dill_name),'rb') as fh:
                 result_dict = dill.load(fh)
-                
-            tmp = np.zeros(1,dtype=dict_type)
+
+            table_report_tmp = np.zeros(1,dtype=dict_type)
             
             full = result_dict['full']
             reduced = result_dict['reduced']
             
+            for var in variables:
+                table_report_tmp['%s_resp_magn_full'%var] = compute_integral_mean(full,var)
+                if var in reduced.var_list:
+                    table_report_tmp['%s_resp_magn_reduced' % var] = compute_integral_mean(reduced, var)
+                else:
+                    table_report_tmp['%s_resp_magn_reduced' % var] = 0
+
+            unit = int(dill_name.split('_c')[1].split('_')[0])
             npz_file = get_npz_filepath('/Volumes/WD Edo/firefly_analysis/LFP_band/DATASET/', session)
             dat = np.load(npz_file,allow_pickle=True)
             unit_info = dat['unit_info'].all()
@@ -233,7 +239,7 @@ for gam_sess in os.listdir('/Volumes/WD Edo/firefly_analysis/LFP_band/cubic_gam_
             
             variables = variables[keep]
             
-            table_report_tmp = np.zeros(1,dtype=dict_type)
+            # table_report_tmp = np.zeros(1,dtype=dict_type)
 
             
             table_report_tmp['session'][0] = session

@@ -11,8 +11,9 @@ from data_handler import *
 from extract_presence_rate import *
 
 user_paths = get_paths_class()
+ 
 # list of session to be concatenated
-concat_list = ['m91s2', 'm91s6', 'm91s7', 'm91s9', 'm91s10']
+concat_list = ['m53s91']
 
 save = True
 send = True
@@ -25,7 +26,7 @@ send = True
 # path to preproc mat files
 #base_file = '/Volumes/WD Edo/firefly_analysis/LFP_band/DATASET/PPC+PFC+MST/'
 base_file = user_paths.get_path('local_concat','m44s174')
-
+baseflld = os.path.dirname(base_file)
 
 #result_fld = '/Volumes/WD Edo/firefly_analysis/LFP_band/results_radTarg/'
 
@@ -98,7 +99,8 @@ for session in concat_list:
 
 
     var_names = ('rad_vel','ang_vel','rad_path','ang_path','rad_target','ang_target',
-                 'lfp_beta','lfp_alpha','lfp_theta','t_move','t_flyOFF','t_stop','t_reward','eye_vert','eye_hori')
+                 'lfp_beta','lfp_alpha','lfp_theta','t_move','t_flyOFF','t_stop','t_reward','eye_vert','eye_hori','lfp_alpha_power',
+                 'lfp_theta_power','lfp_beta_power')
     try:
         y, X, trial_idx = exp_data.concatenate_inputs(*var_names, t_start=t_start, t_stop=t_stop)
     except Exception as ex:
