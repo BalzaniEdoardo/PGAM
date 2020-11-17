@@ -170,7 +170,8 @@ class data_handler(object):
 
             else:
                 raise ValueError('variable %s is unknown'%var)
-            if not (var in ['phase','lfp_beta','lfp_alpha','lfp_theta']):
+            if not (var in ['phase','lfp_beta','lfp_alpha','lfp_theta',
+                            'lfp_beta_power','lfp_theta_power','lfp_alpha_power']):
                 var_dict[var] = dict_to_vec(var_dict[var])
             else:
                 first = True
@@ -183,7 +184,8 @@ class data_handler(object):
                 var_dict[var] = phase_stack
 
             # check that the variables have same sizes
-            if not (var in ['phase','lfp_beta','lfp_alpha','lfp_theta']):
+            if not (var in ['phase','lfp_beta','lfp_alpha','lfp_theta',
+                            'lfp_beta_power','lfp_theta_power','lfp_alpha_power']):
                 if var_dict[var].shape[0] != spikes.shape[1]:
                     raise ValueError('%s counts and spike counts have different sizes'%var)
             else:

@@ -1,5 +1,5 @@
 import numpy as np
-import sys,os
+import sys,os,re
 folder_name = os.path.dirname(os.path.realpath(__file__))
 main_dir = os.path.dirname(folder_name)
 sys.path.append(os.path.join(main_dir,'GAM_library'))
@@ -11,9 +11,26 @@ from data_handler import *
 from extract_presence_rate import *
 
 user_paths = get_paths_class()
- 
+
+# =============================================================================
+# Here you should give the base directory that contains the .mat
+# the code will walk through alll subdirectory, and if it will find a
+# mat file with the correct name it will list it as a file to be concatenated
+#
+# =============================================================================
+DIRECT = "/Volumes/WD Edo/firefly_analysis/LFP_band/DATASET"
+
+print('The code assumes that the lfp_session.mat  files are in the same folder as the session.mat file!')
 # list of session to be concatenated
-concat_list = ['m53s91']
+concat_list = []
+fld_list = []
+pattern_fh = '^m\d+s\d+.mat$'
+for root, dirs, files in os.walk(DIRECT, topdown=False):
+    for name in files:
+        if re.match(pattern_fh,name):
+            concat_list += [name.split('.mat')[0]]
+            fld_list += [root]
+           
 
 save = True
 send = True
@@ -49,7 +66,7 @@ occupancy_rate_th = 0.1 #hz
 linearprobe_sampling_fq = 20000
 utah_array_sampling_fq = 30000
 
-
+cnt_concat = 0
 for session in concat_list:
 
 
@@ -58,6 +75,8 @@ for session in concat_list:
     else:
         use_eye = 'right'
 
+    base_file = fld_list[cnt_concat]
+    cnt_concat += 1
 
     
 
@@ -74,6 +93,8 @@ for session in concat_list:
     lfp_beta = loadmat(os.path.join(base_file,'lfp_beta_%s.mat'%session))
     lfp_alpha = loadmat(os.path.join(base_file,'lfp_alpha_%s.mat'%session))
     lfp_theta = loadmat(os.path.join(base_file,'lfp_theta_%s.mat'%session))
+    
+    
 
     if 'is_phase' in lfp_beta.keys():
         is_phase = lfp_beta['is_phase'][0,0]
@@ -84,6 +105,7 @@ for session in concat_list:
                             post_trial_dur=post_trial_dur,
                             lfp_beta=lfp_beta['lfp_beta'], lfp_alpha=lfp_alpha['lfp_alpha'],lfp_theta=lfp_theta['lfp_theta'], extract_lfp_phase=(not is_phase),
                             use_eye=use_eye)
+    
 
     exp_data.set_filters('all', True)
     # impose all replay trials
@@ -103,18 +125,21 @@ for session in concat_list:
                  'lfp_theta_power','lfp_beta_power')
     try:
         y, X, trial_idx = exp_data.concatenate_inputs(*var_names, t_start=t_start, t_stop=t_stop)
-    except Exception as ex:
+    except RuntimeError as ex:
         print('\n\ncould not open %s'%session)
         print(ex,'\n\n')
         continue
 
     res = {'data_concat':{},'var_names':var_names}
     res['data_concat']['Yt'] = y.T
-    res['data_concat']['Xt'] = np.zeros((X[var_names[0]].shape[0],len(var_names)))
+    res['data_concat']['Xt'] = np.zeros((X[var_names[0]].shape[0],len(var_names)-3))
     res['data_concat']['lfp_beta'] = X['lfp_beta'].T
     res['data_concat']['lfp_alpha'] = X['lfp_alpha'].T
     res['data_concat']['lfp_theta'] = X['lfp_theta'].T
     res['data_concat']['trial_idx'] = trial_idx
+    res['lfp_alpha_power'] = X['lfp_alpha_power'].T
+    res['lfp_theta_power'] = X['lfp_theta_power'].T
+    res['lfp_beta_power'] = X['lfp_beta_power'].T
     res['info_trial'] = exp_data.info
     res['pre_trial_dur'] = pre_trial_dur
     res['post_trial_dur'] = post_trial_dur
@@ -135,8 +160,8 @@ for session in concat_list:
 
     print('num units',exp_data.spikes.unit_type.shape)
     cc = 0
-    for var in var_names:
-        if var in ['phase','lfp_beta','lfp_alpha','lfp_theta']:
+    for var in var_names[:-3]:
+        if var in ['phase','lfp_beta','lfp_alpha','lfp_theta'] or 'lfp' in var:
             res['data_concat']['Xt'][:, cc] = np.nan
             cc += 1
             continue
