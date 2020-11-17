@@ -120,6 +120,14 @@ class data_handler(object):
                                                       self.spikes.brain_area)
                 var_dict[var] = self.lfp.cut_phase(phase, time_stamps, t_start=t_start, t_stop=t_stop,
                                                           select=self.filter,idx0=None,idx1=None)
+            elif var == 'lfp_beta_power':
+               # compute phase using hilbert transform in all trials (the filtering is applied with cut_continous)
+                all_tr = np.ones(self.lfp.n_trials,dtype=bool)
+                # assert (self.lfp.compute_phase)
+                amplitude = self.lfp.extract_phase_x_unit(self.lfp.lfp_beta_power,all_tr,self.spikes.channel_id,
+                                                      self.spikes.brain_area)
+                var_dict[var] = self.lfp.cut_phase(amplitude, time_stamps, t_start=t_start, t_stop=t_stop,
+                                                          select=self.filter,idx0=None,idx1=None)
             elif var == 'lfp_alpha':
                 # compute phase using hilbert transform in all trials (the filtering is applied with cut_continous)
                 all_tr = np.ones(self.lfp.n_trials,dtype=bool)
@@ -128,6 +136,14 @@ class data_handler(object):
                                                       self.spikes.brain_area)
                 var_dict[var] = self.lfp.cut_phase(phase, time_stamps, t_start=t_start, t_stop=t_stop,
                                                           select=self.filter,idx0=None,idx1=None)
+            elif var == 'lfp_alpha_power':
+               # compute phase using hilbert transform in all trials (the filtering is applied with cut_continous)
+                all_tr = np.ones(self.lfp.n_trials,dtype=bool)
+                # assert (self.lfp.compute_phase)
+                amplitude = self.lfp.extract_phase_x_unit(self.lfp.lfp_alpha_power,all_tr,self.spikes.channel_id,
+                                                      self.spikes.brain_area)
+                var_dict[var] = self.lfp.cut_phase(amplitude, time_stamps, t_start=t_start, t_stop=t_stop,
+                                                          select=self.filter,idx0=None,idx1=None)
             elif var == 'lfp_theta':
                 # compute phase using hilbert transform in all trials (the filtering is applied with cut_continous)
                 all_tr = np.ones(self.lfp.n_trials,dtype=bool)
@@ -135,6 +151,14 @@ class data_handler(object):
                 phase = self.lfp.extract_phase_x_unit(self.lfp.lfp_theta, all_tr, self.spikes.channel_id,
                                                       self.spikes.brain_area)
                 var_dict[var] = self.lfp.cut_phase(phase, time_stamps, t_start=t_start, t_stop=t_stop,
+                                                          select=self.filter,idx0=None,idx1=None)
+            elif var == 'lfp_theta_power':
+               # compute phase using hilbert transform in all trials (the filtering is applied with cut_continous)
+                all_tr = np.ones(self.lfp.n_trials,dtype=bool)
+                # assert (self.lfp.compute_phase)
+                amplitude = self.lfp.extract_phase_x_unit(self.lfp.lfp_theta_power,all_tr,self.spikes.channel_id,
+                                                      self.spikes.brain_area)
+                var_dict[var] = self.lfp.cut_phase(amplitude, time_stamps, t_start=t_start, t_stop=t_stop,
                                                           select=self.filter,idx0=None,idx1=None)
 
             # elif var == 'phase':
