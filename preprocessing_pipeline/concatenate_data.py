@@ -11,8 +11,9 @@ from data_handler import *
 from extract_presence_rate import *
 
 user_paths = get_paths_class()
-# list of session to be concatenated
-concat_list = ['m91s2', 'm91s6', 'm91s7', 'm91s9', 'm91s10']
+# list of session to be concatenatenconcat_list = ['m51s121', 'm51s122'] 
+concat_list = ['m53s110']
+
 
 save = True
 send = True
@@ -162,7 +163,7 @@ for session in concat_list:
             print('...sending %s.npz to server'%session)
             sendfrom = sv_folder.replace(' ','\ ')
             dest_folder = user_paths.get_path('data_hpc')
-            os.system('sshpass -p "%s" scp %s jpn5@prince.hpc.nyu.edu:%s' % ('savin123!', os.path.join(sendfrom,'%s.npz'%session),dest_folder))
+            os.system('sshpass -p "%s" scp %s jpn5@prince.hpc.nyu.edu:%s' % ('savin1234!', os.path.join(sendfrom,'%s.npz'%session),dest_folder))
         except Exception as e:
             print(e)
             print('could not send files to the HPC cluster')
