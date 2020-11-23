@@ -18,7 +18,7 @@ user_paths = get_paths_class()
 # mat file with the correct name it will list it as a file to be concatenated
 #
 # =============================================================================
-DIRECT = "/Volumes/WD Edo/firefly_analysis/LFP_band/DATASET"
+DIRECT = "/Users/jean-paulnoel/Documents/Savin-Angelaki/saved"
 
 print('The code assumes that the lfp_session.mat  files are in the same folder as the session.mat file!')
 # list of session to be concatenated
@@ -31,12 +31,15 @@ for root, dirs, files in os.walk(DIRECT, topdown=False):
             concat_list += [name.split('.mat')[0]]
             fld_list += [root]
            
-ii = np.where(np.array(concat_list)=='m53s31')[0][0]
-concat_list = concat_list[ii:]
-fld_list = fld_list[ii:]
+# ii = np.where(np.array(concat_list)=='m53s31')[0][0]
+# concat_list = concat_list[ii:]
+# fld_list = fld_list[ii:]
 
 save = True
 send = True
+# concat_list = ['m51s38']
+# fld_list = ['Users/jean-paulnoel/Documents/Savin-Angelaki/saved']*len(concat_list)
+
 # destination folder
 #sv_folder = '/Volumes/WD Edo/firefly_analysis/LFP_band/DATASET/PPC+PFC+MST/'
 # sv_folder = '/Users/edoardo/Work/Code/GAM_code/fitting/'
@@ -199,7 +202,8 @@ for session in concat_list:
             print('...sending %s.npz to server'%session)
             sendfrom = sv_folder.replace(' ','\ ')
             dest_folder = user_paths.get_path('data_hpc')
-            os.system('sshpass -p "%s" scp %s eb162@prince.hpc.nyu.edu:%s' % ('', os.path.join(sendfrom,'%s.npz'%session),dest_folder))
+            # os.system('sshpass -p "%s" scp %s eb162@prince.hpc.nyu.edu:%s' % ('', os.path.join(sendfrom,'%s.npz'%session),dest_folder))
+            os.system('sshpass -p "%s" scp %s jpn5@prince.hpc.nyu.edu:%s' % ('savin1234!', os.path.join(sendfrom,'%s.npz'%session),dest_folder))
         except Exception as e:
             print(e)
             print('could not send files to the HPC cluster')

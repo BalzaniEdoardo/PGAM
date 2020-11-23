@@ -30,11 +30,10 @@ reload = True
 k_fold = False
 plot_res = True
 fit_neuron = False
-session = 'm91s2'
+session = 'm53s110'
 analyze_unit = 3
-<<<<<<< HEAD
 sbfld = 'PPC+PFC+MST'
-var = 'ang_target'
+var = 'eye_hori'
 skip_var = ''
 WLS_solver = 'negative_weights'
 send = False
