@@ -5,11 +5,9 @@ folder_name = os.path.dirname(os.path.realpath(__file__))
 main_dir = os.path.dirname(folder_name)
 # sys.path.append(os.path.join(main_dir,'GAM_library'))
 sys.path.append(os.path.join(main_dir,'preprocessing_pipeline'))
-sys.path.append(os.path.join(main_dir,'preprocessing_pipeline/util_preproc'))
-sys.path.append(os.path.join(main_dir,'GAM_Repo/GAM_library'))
-sys.path.append(os.path.join(main_dir,'GAM_Repo/firefly_utils/'))
-sys.path.append(os.path.join(main_dir,'GAM_Repo/preprocessing_pipeline'))
-sys.path.append(os.path.join(main_dir,'GAM_Repo/preprocessing_pipeline/util_preproc'))
+sys.path.append(os.path.join(main_dir,os.path.join('preprocessing_pipeline','util_preproc')))
+sys.path.append(os.path.join(main_dir,os.path.join('GAM_library')))
+sys.path.append(os.path.join(main_dir,os.path.join('firefly_utils')))
 from utils_loading import unpack_preproc_data, add_smooth
 from GAM_library import *
 from time import perf_counter
@@ -24,7 +22,7 @@ user_paths = get_paths_class()
 tot_fits = 1
 plot_res = False
 fit_fully_coupled = False
-use_k_fold = True
+use_k_fold = False
 reducedAdaptive = False
 num_folds = 5
 
