@@ -79,7 +79,10 @@ def extract_presecnce_rate(occupancy_bin_sec,occupancy_rate_th,unit_info,session
     # second extract linear prove
     sorted_fold = path_user.get_path('cluster_array_data',session)
     if not 'Utah Array' in sorted_fold and not session.startswith('m51'):
-
+        if session == 'm53s35':
+            split_sortlfd = sorted_fold.split(os.path.sep)
+            iidxx = np.where(np.array(split_sortlfd)=='Utah Array')[0][0]
+            sorted_fold = os.path.sep.join(split_sortlfd[:iidxx+1]+['Feb 05 2018/neural data/Sorted/Sorted/'])
         spike_times, spike_clusters, spike_templates, amplitudes, templates, channel_map, clusterIDs, cluster_quality = \
             load_kilosort_data(sorted_fold, \
                                linearprobe_sampling_fq, \

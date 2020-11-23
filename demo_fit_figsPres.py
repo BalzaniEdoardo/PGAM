@@ -24,9 +24,9 @@ with open('spat_and_temp_filt.dill','rb') as fh:
 ## inputs parameters
 num_events = 5000
 time_points = 3*10**5 # 30 mins at 0.006 ms resolution
-rate = 1.5 * 0.006 # Hz rate of the final kernel
+rate = 1.* 0.006 # Hz rate of the final kernel
 variance = 5. # spatial input and nuisance variance
-corr = 0.7 # spatial input and nuisance correlation
+corr = 0.2 # spatial input and nuisance correlation
 int_knots_num = 20 # num of internal knots for the spline basis
 order = 4 # spline order
 
@@ -85,7 +85,7 @@ sm_handler.add_smooth('temporal', [events], ord=order, knots_num=30,
                       penalty_type='der', der=2, kernel_length=165,
                       kernel_direction=kern_dir,trial_idx=np.ones(time_points),
                       is_temporal_kernel=True, time_bin=0.006,
-                      event_input=True,lam=5*10**(-8))
+                      event_input=True,lam=1*10**(-2))
 
 
 # add spatial variable and nuisance
@@ -95,7 +95,7 @@ sm_handler.add_smooth('spatial', [XT], ord=4, knots=[int_knots],
                           is_temporal_kernel=False,lam=0.1)
 sm_handler.add_smooth('spatial_nuis', [XN], ord=4, knots=[int_knots],
                       penalty_type='der', der=2,
-                      is_temporal_kernel=False,lam=5*10**(-6))
+                      is_temporal_kernel=False,lam=1*10**(-3))
 
 
 
@@ -121,7 +121,7 @@ full,reduced = gam_model.fit_full_and_reduced(sm_handler.smooths_var,th_pval=0.0
                                               use_dgcv=True,
                                               fit_initial_beta=True,
                                               trial_num_vec=np.ones(time_points),saveBetaHist=True,
-                                              k_fold_reducedOnly=False,reducedAdaptive=False)
+                                              k_fold_reducedOnly=True)
 plt.figure(figsize=[8,6])
 
 # plot the basis set
@@ -136,13 +136,13 @@ plt.plot(time, fX)
 ax1.spines['top'].set_visible(False)
 ax1.spines['right'].set_visible(False)
 
-ax2 = plt.subplot(222)
-xx = np.linspace(-5,5,1000)
-fX = reduced.eval_basis([xx],'spatial').toarray()
-plt.title('spatial basis')
-plt.plot(xx, fX)
-ax2.spines['top'].set_visible(False)
-ax2.spines['right'].set_visible(False)
+# ax2 = plt.subplot(222)
+# xx = np.linspace(-5,5,1000)
+# fX = reduced.eval_basis([xx],'spatial').toarray()
+# plt.title('spatial basis')
+# plt.plot(xx, fX)
+# ax2.spines['top'].set_visible(False)
+# ax2.spines['right'].set_visible(False)
 
 
 
@@ -176,37 +176,38 @@ ax3.spines['top'].set_visible(False)
 ax3.spines['right'].set_visible(False)
 
 
-ax4 = plt.subplot(224)
-xx = np.linspace(-5,5, 1000)
-fX,fX_p_ci,fX_m_ci = reduced.smooth_compute([xx],'spatial',perc=0.99)
-interc1 = np.nanmedian(fX-resp_func(xx))
-plt.plot(xx,resp_func(xx),'k',label='True')
+# ax4 = plt.subplot(224)
+# xx = np.linspace(-5,5, 1000)
+# fX,fX_p_ci,fX_m_ci = reduced.smooth_compute([xx],'spatial',perc=0.99)
+# interc1 = np.nanmedian(fX-resp_func(xx))
+# plt.plot(xx,resp_func(xx),'k',label='True')
 
-plt.plot(xx,fX-interc1,color='r', label='GAM')
-plt.fill_between(xx, fX_m_ci - interc1, fX_p_ci- interc1,alpha=0.3,color='r')
+# plt.plot(xx,fX-interc1,color='r', label='GAM')
+# plt.fill_between(xx, fX_m_ci - interc1, fX_p_ci- interc1,alpha=0.3,color='r')
 
-plt.title('spatial')
-# nuisance
-fX, fX_p_ci, fX_m_ci = full.smooth_compute([xx], 'spatial_nuis', perc=0.99)
+# plt.title('spatial')
+# # nuisance
+# fX, fX_p_ci, fX_m_ci = full.smooth_compute([xx], 'spatial_nuis', perc=0.99)
 
-plt.plot(xx, fX, color=(125 / 255.,) * 3, label='nuisance')
-plt.fill_between(xx, fX_m_ci, fX_p_ci, color=(125 / 255.,) * 3, alpha=0.3)
+# plt.plot(xx, fX, color=(125 / 255.,) * 3, label='nuisance')
+# plt.fill_between(xx, fX_m_ci, fX_p_ci, color=(125 / 255.,) * 3, alpha=0.3)
 
-plt.legend(frameon=False)
-ax4.spines['top'].set_visible(False)
-ax4.spines['right'].set_visible(False)
-plt.xlabel('x')
+# plt.legend(frameon=False)
+# ax4.spines['top'].set_visible(False)
+# ax4.spines['right'].set_visible(False)
+# plt.xlabel('x')
 
-plt.tight_layout(rect=[0, 0.03, 1, 0.95])
+# plt.tight_layout(rect=[0, 0.03, 1, 0.95])
 
 
-f1 = plt.figure(figsize=[7.22, 4.05])
+
+
+f = plt.figure(figsize=[7.22, 4.05])
 iters = [1,2,4]
 ax_dict = {}
 kk=1
-#
-for bet in [full.beta_hist[0],full.beta_hist[1],full.beta_hist[4]]:
-    reduced_copy = deepcopy(full)
+for bet in [reduced.beta_hist[0],reduced.beta_hist[1],reduced.beta_hist[4]]:
+    reduced_copy = deepcopy(reduced)
     reduced_copy.beta = bet
     filter_used = dict_tuning['temporal']['filteronly']
 
@@ -238,156 +239,24 @@ for bet in [full.beta_hist[0],full.beta_hist[1],full.beta_hist[4]]:
     plt.title('iteration %d'%(iters[kk-1]))
     plt.yticks([])
     ax_dict[kk] = ax
-    ax.set_xlabel('time(ms)',fontsize=15)
-    plt.xticks(fontsize=12)
-    # ax.set_xticklabels(labs,fontsize=12)
     kk += 1
-plt.tight_layout()
-
+ 
 kk=1
 for bet in [full.beta_hist[0],full.beta_hist[1],full.beta_hist[-1]]:
     ax=ax_dict[kk]
     reduced_copy = deepcopy(full)
     reduced_copy.beta = bet
     xx = np.linspace(-5,5, 1000)
-    fX, fX_p_ci, fX_m_ci = reduced_copy.smooth_compute([xx], 'spatial_nuis', perc=0.99)
+    fX, fX_p_ci, fX_m_ci = full.smooth_compute([xx], 'spatial_nuis', perc=0.99)
 
     
     xx = np.linspace(time[0],time[-1],xx.shape[0])
     
     ax.plot(xx,fX,color=(125./255,)*3, label='Nuisance')
     ax.fill_between(xx, fX_m_ci , fX_p_ci ,alpha=0.3,color=(125./255,)*3)
+    ax.set_xlabel('time(ms)')
     
-    # ax.legend(fontsize=15)
     kk += 1
-
     
 plt.tight_layout()
-
-
-
-
-f2 = plt.figure(figsize=[7.22, 4.05])
-iters = [1,2,4]
-ax_dict = {}
-kk=1
-#
-for bet in [full.beta_hist[0],full.beta_hist[1],full.beta_hist[4]]:
-    reduced_copy = deepcopy(full)
-    reduced_copy.beta = bet
-    filter_used = dict_tuning['temporal']['filteronly']
-
-    ax = plt.subplot(1,3,kk)
-    time = np.arange(len(filter_used)) * (-0.006)
-    time = time[::-1] + 0.5
-    keep = time < 0
-    kernel_length = 165
-    impulse = np.zeros(kernel_length)
-    impulse[(kernel_length-1)//2] = 1
-    fX,fX_p_ci,fX_m_ci = reduced_copy.smooth_compute([impulse],'temporal',perc=0.99)
-    fX = fX[keep]
-    fX_p_ci = fX_p_ci[keep]
-    fX_m_ci = fX_m_ci[keep]
-    filter_used = filter_used[keep]
-    time = time[keep]
-    fX = fX[:-1]
-    fX_p_ci = fX_p_ci[:-1]
-    fX_m_ci = fX_m_ci[:-1]
-    filter_used = filter_used[:-1]
-    time = time[:-1]
-    interc1 = np.nanmedian(fX[-30:]-filter_used[-30:])
-    plt.plot(time,filter_used,'k',label='True',lw=2)
-    plt.plot(time,fX-interc1,color='r', label='GAM',lw=2)
-    # plt.fill_between(time, fX_m_ci - interc1, fX_p_ci - interc1,alpha=0.3,color='r')
-    plt.xlabel('time(ms)')
-    ax.spines['top'].set_visible(False)
-    ax.spines['right'].set_visible(False)
-    plt.title('iteration %d'%(iters[kk-1]))
-    plt.yticks([])
-    ax_dict[kk] = ax
-    ax.set_xlabel('time(ms)',fontsize=15)
-    plt.xticks(fontsize=12)
-    # ax.set_xticklabels(labs,fontsize=12)
-    kk += 1
-plt.tight_layout()
-
-kk=1
-for bet in [full.beta_hist[0],full.beta_hist[1],full.beta_hist[-1]]:
-    ax=ax_dict[kk]
-    reduced_copy = deepcopy(full)
-    reduced_copy.beta = bet
-    xx = np.linspace(-5,5, 1000)
-    fX, fX_p_ci, fX_m_ci = reduced_copy.smooth_compute([xx], 'spatial_nuis', perc=0.99)
-
-    
-    xx = np.linspace(time[0],time[-1],xx.shape[0])
-    
-    ax.plot(xx,fX,color=(125./255,)*3, label='Nuisance',lw=2)
-    # ax.fill_between(xx, fX_m_ci , fX_p_ci ,alpha=0.3,color=(125./255,)*3)
-    
-    # ax.legend(fontsize=15)
-    kk += 1
-
-    
-plt.tight_layout()
-
-
-# f = plt.figure(figsize=[7.22, 4.05])
-# iters = [1,2,4]
-# ax_dict = {}
-# kk=1
-# #
-# for bet in [reduced.beta_hist[0],reduced.beta_hist[1],reduced.beta_hist[4]]:
-#     reduced_copy = deepcopy(reduced)
-#     reduced_copy.beta = bet
-#     filter_used = dict_tuning['temporal']['filteronly']
-
-#     ax = plt.subplot(1,3,kk)
-#     time = np.arange(len(filter_used)) * (-0.006)
-#     time = time[::-1] + 0.5
-#     keep = time < 0
-#     kernel_length = 165
-#     impulse = np.zeros(kernel_length)
-#     impulse[(kernel_length-1)//2] = 1
-#     fX,fX_p_ci,fX_m_ci = reduced_copy.smooth_compute([impulse],'temporal',perc=0.99)
-#     fX = fX[keep]
-#     fX_p_ci = fX_p_ci[keep]
-#     fX_m_ci = fX_m_ci[keep]
-#     filter_used = filter_used[keep]
-#     time = time[keep]
-#     fX = fX[:-1]
-#     fX_p_ci = fX_p_ci[:-1]
-#     fX_m_ci = fX_m_ci[:-1]
-#     filter_used = filter_used[:-1]
-#     time = time[:-1]
-#     interc1 = np.nanmedian(fX[-30:]-filter_used[-30:])
-#     plt.plot(time,filter_used,'k',label='True')
-#     plt.plot(time,fX-interc1,color='r', label='GAM')
-#     plt.fill_between(time, fX_m_ci - interc1, fX_p_ci - interc1,alpha=0.3,color='r')
-#     plt.xlabel('time(ms)')
-#     ax.spines['top'].set_visible(False)
-#     ax.spines['right'].set_visible(False)
-#     plt.title('iteration %d'%(iters[kk-1]))
-#     plt.yticks([])
-#     ax_dict[kk] = ax
-#     kk += 1
- 
-# kk=1
-# for bet in [full.beta_hist[0],full.beta_hist[1],full.beta_hist[-1]]:
-#     ax=ax_dict[kk]
-#     reduced_copy = deepcopy(full)
-#     reduced_copy.beta = bet
-#     xx = np.linspace(-5,5, 1000)
-#     fX, fX_p_ci, fX_m_ci = reduced_copy.smooth_compute([xx], 'spatial_nuis', perc=0.99)
-
-    
-#     xx = np.linspace(time[0],time[-1],xx.shape[0])
-    
-#     ax.plot(xx,fX,color=(125./255,)*3, label='Nuisance')
-#     ax.fill_between(xx, fX_m_ci , fX_p_ci ,alpha=0.3,color=(125./255,)*3)
-#     ax.set_xlabel('time(ms)')
-    
-#     kk += 1
-    
-# plt.tight_layout()
 

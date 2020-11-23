@@ -31,6 +31,9 @@ for root, dirs, files in os.walk(DIRECT, topdown=False):
             concat_list += [name.split('.mat')[0]]
             fld_list += [root]
            
+ii = np.where(np.array(concat_list)=='m53s31')[0][0]
+concat_list = concat_list[ii:]
+fld_list = fld_list[ii:]
 
 save = True
 send = True
@@ -66,6 +69,7 @@ occupancy_rate_th = 0.1 #hz
 linearprobe_sampling_fq = 20000
 utah_array_sampling_fq = 30000
 
+phase_precomputed = []
 cnt_concat = 0
 for session in concat_list:
 
@@ -100,6 +104,10 @@ for session in concat_list:
         is_phase = lfp_beta['is_phase'][0,0]
     else:
         is_phase = False
+    
+    if is_phase:
+        phase_precomputed += [session]
+        continue
 
     exp_data = data_handler(dat, behav_dat_key, spike_key, lfp_key, behav_stat_key, pre_trial_dur=pre_trial_dur,
                             post_trial_dur=post_trial_dur,
@@ -176,20 +184,22 @@ for session in concat_list:
     
     if save:
         print('saving variables...')
-        sv_folder = user_paths.get_path('local_concat')
+        sv_folder = base_file#user_paths.get_path('local_concat')
         if not os.path.exists(sv_folder):
             os.mkdir(sv_folder)
 
         saveCompressed(os.path.join(sv_folder,'%s.npz'%session),unit_info=res['unit_info'],info_trial=res['info_trial'],data_concat=res['data_concat'],
              var_names=np.array(res['var_names']),time_bin=res['time_bin'],post_trial_dur=res['post_trial_dur'],
-             pre_trial_dur=res['pre_trial_dur'],force_zip64=True)
+             pre_trial_dur=res['pre_trial_dur'],lfp_alpha_power=res['lfp_alpha_power'],
+             lfp_beta_power=res['lfp_beta_power'],lfp_theta_power=res['lfp_theta_power'],
+             force_zip64=True)
 
     if send:
         try:
             print('...sending %s.npz to server'%session)
             sendfrom = sv_folder.replace(' ','\ ')
             dest_folder = user_paths.get_path('data_hpc')
-            os.system('sshpass -p "%s" scp %s jpn5@prince.hpc.nyu.edu:%s' % ('savin123!', os.path.join(sendfrom,'%s.npz'%session),dest_folder))
+            os.system('sshpass -p "%s" scp %s eb162@prince.hpc.nyu.edu:%s' % ('', os.path.join(sendfrom,'%s.npz'%session),dest_folder))
         except Exception as e:
             print(e)
             print('could not send files to the HPC cluster')
