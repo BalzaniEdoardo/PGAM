@@ -6,6 +6,8 @@ import matplotlib.pylab as plt
 import scipy.stats as sts
 from seaborn import heatmap
 from scipy.io import savemat
+
+
 use_monkey = 'm53'
 monkey_dict = {'m44':'Quigley','m53':'Schro','m91':'Ody','m51':'Bruno'}
 monkey_fld = {'m44':'PPC+MST','m91':'PPC+PFC','m53':'PPC+PFC+MST','m51':'PPC'}
@@ -24,14 +26,17 @@ matrix_theta_all = np.zeros((0,376))
 
 brain_area_all = []
 
-dtype_dict = {'names':('monkey','session','brain_area','channel_id','electrode_id','cluster_id','peak_firing_pos','targ_ON_pos',
+dtype_dict = {'names':('monkey','session','brain_area','channel_id','electrode_id','cluster_id','peak_firing_pos',
+                       'peak_beta_pos','peak_alpha_pos','peak_theta_pos','targ_ON_pos',
               'targ_OFF_pos','t_stop_pos','t_reward_pos'),#'median IEI on/off','median IEI off/stop','median IEI stop/reward'
-              'formats':('U30',int,'U10',int,int,int,float,float,float,float,float)}
+              'formats':('U30',int,'U10',int,int,int,float,float,float,float,float,float,float,float)}
 
 
+cnt_sess = 0
 info_all = np.zeros(0,dtype=dtype_dict)
 for fh_session in list_dir:
-
+    # if cnt_sess == 2:
+    #     break
     if not fh_session.endswith('_multiresc_trials.npz'):
         continue
     if fh_session.startswith('flyON'):
@@ -48,13 +53,17 @@ for fh_session in list_dir:
 
     if session == 'm51s38':
         continue
-    if session != 'm53s113':
-        continue
+    # if session != 'm53s113':
+    #     continue
     print(fh_session)
     dat = np.load(
         '/Volumes/WD_Edo/firefly_analysis/LFP_band/results/processed_dPCA/flyON_%s_multiresc_trials.npz' % session)
+    
+    if not 'rescaled_lfp_beta' in list(dat.keys()):
+        continue
+    
     dat_info = np.load(os.path.join(file_fld + session + '.npz'), allow_pickle=True)
-
+    
     unit_info = dat_info['unit_info'].all()
     brain_area = unit_info['brain_area']
     channel_id = unit_info['channel_id']
@@ -93,7 +102,7 @@ for fh_session in list_dir:
     matrix_beta_all = np.vstack((matrix_beta_all,beta_sess))
     matrix_alpha_all = np.vstack((matrix_alpha_all,alpha_sess))
     matrix_theta_all = np.vstack((matrix_theta_all,theta_sess))
-
+    
     
     info_tmp = np.zeros(brain_area.shape[0], dtype=dtype_dict)
     info_tmp['monkey'] = monkey_dict[use_monkey]
@@ -109,7 +118,14 @@ for fh_session in list_dir:
     idx = np.argmax(z_rate, axis=1)
     info_tmp['peak_firing_pos'][keep] = idx[keep] / (z_rate.shape[1] - 1)
     info_tmp['peak_firing_pos'][~keep] = np.nan
+    
+    
+    
+    
 
+
+
+    
     # time_rescale = np.arange(z_rate.shape[1]) * 0.006
     # extract position of events
     idx_vline = []
@@ -121,146 +137,325 @@ for fh_session in list_dir:
     info_tmp['targ_OFF_pos'] = idx_vline[1] / (z_rate.shape[1] - 1)
     info_tmp['t_stop_pos'] = idx_vline[2] / (z_rate.shape[1] - 1)
     info_tmp['t_reward_pos'] = idx_vline[3] / (z_rate.shape[1] - 1)
+    
+    
+    # extract peak
+    z_rate = sts.zscore(beta_sess, axis=1)
+    keep = np.sum(np.isnan(z_rate), axis=1) == 0
+    idx = np.argmax(z_rate, axis=1)
+    info_tmp['peak_beta_pos'][keep] = idx[keep] / (z_rate.shape[1] - 1)
+    info_tmp['peak_beta_pos'][~keep] = np.nan
+    
+    
+    # extract peak
+    z_rate = sts.zscore(alpha_sess, axis=1)
+    keep = np.sum(np.isnan(z_rate), axis=1) == 0
+    idx = np.argmax(z_rate, axis=1)
+    info_tmp['peak_alpha_pos'][keep] = idx[keep] / (z_rate.shape[1] - 1)
+    info_tmp['peak_alpha_pos'][~keep] = np.nan
+    
+    # extract peak
+    z_rate = sts.zscore(theta_sess, axis=1)
+    keep = np.sum(np.isnan(z_rate), axis=1) == 0
+    idx = np.argmax(z_rate, axis=1)
+    info_tmp['peak_theta_pos'][keep] = idx[keep] / (z_rate.shape[1] - 1)
+    info_tmp['peak_theta_pos'][~keep] = np.nan
+    
+    
+    
+    
     # info_tmp['median IEI on/off'] = time_bounds[1] - time_bounds[0]
     # info_tmp['median IEI off/stop'] = time_bounds[2] - time_bounds[1]
     # info_tmp['median IEI stop/reward'] = time_bounds[3] - time_bounds[2]
 
     info_all = np.hstack((info_all,info_tmp))
+    
+    
+    cnt_sess += 1
 
-# savemat('%s_peak_location_isRew_%s.mat'%(monkey_dict[use_monkey],plt_rewarded),{'peak_location':info_all})
 
-for ba in ['MST','PPC','PFC']:
-    if not ba in file_fld:
-        continue
-    plt.figure()
-    cc_plot = 0
-    plt.suptitle('RATE: %s - %s'%(use_monkey,ba))
+rate_sorted = {'MST': np.zeros((0,matrix_alpha_all.shape[1])),
+               'PPC': np.zeros((0,matrix_alpha_all.shape[1])),
+               'PFC': np.zeros((0,matrix_alpha_all.shape[1]))}
+lfp_alpha_sorted = {'MST': np.zeros((0,matrix_alpha_all.shape[1])),
+               'PPC': np.zeros((0,matrix_alpha_all.shape[1])),
+               'PFC': np.zeros((0,matrix_alpha_all.shape[1]))}
+lfp_beta_sorted = {'MST': np.zeros((0,matrix_alpha_all.shape[1])),
+               'PPC': np.zeros((0,matrix_alpha_all.shape[1])),
+               'PFC': np.zeros((0,matrix_alpha_all.shape[1]))}
+lfp_theta_sorted = {'MST': np.zeros((0,matrix_alpha_all.shape[1])),
+               'PPC': np.zeros((0,matrix_alpha_all.shape[1])),
+               'PFC': np.zeros((0,matrix_alpha_all.shape[1]))}
 
-    ba_rate = matrix_rates_all[brain_area_all==ba,:]
-    zba_rate = sts.zscore(ba_rate,axis=1)
-    keep = np.sum(np.isnan(zba_rate),axis=1) == 0
-    zba_rate = zba_rate[keep,:]
-    idx = np.argmax(zba_rate,axis=1)
-    sort_idx = np.argsort(idx)
-    heatmap(zba_rate[sort_idx,:],vmin=-3.,vmax=4.5)
-    idx_vline = []
-    for k in time_bounds[1:]:
-        idx_vline += [np.where(time_rescale <= k)[0][-1]]
-    ylim = plt.ylim()
 
-    plt.vlines(idx_vline,ylim[0],ylim[1])
-    plt.ylim(ylim)
-    plt.yticks([])
-    plt.ylabel('unit')
-    xaxis = np.hstack(([0],idx_vline))
-    plt.xticks(xaxis,['targ ON','targ OFF','stop','reward'],rotation=90)
-    plt.tight_layout(rect=[0, 0.03, 1, 0.95])
-    plt.savefig('%s_rescaled_rate_multialign_%s_isRew_%s.png'%(ba,use_monkey,plt_rewarded))
-
-    
-for ba in ['MST','PPC','PFC']:
-    if not ba in file_fld:
-        continue
-    plt.figure()
-    cc_plot = 0
-    plt.suptitle('BETA POWER: %s - %s'%(use_monkey,ba))
-    
-    # sort based on the rate
-    ba_rate = matrix_rates_all[brain_area_all==ba,:]
-    zba_rate = sts.zscore(ba_rate,axis=1)
-    keep = np.sum(np.isnan(zba_rate),axis=1) == 0
-    zba_rate = zba_rate[keep,:]
-    idx = np.argmax(zba_rate,axis=1)
-    sort_idx = np.argsort(idx)
-    
-    ba_beta = matrix_beta_all[brain_area_all==ba,:]
-    zba_beta = sts.zscore(ba_beta,axis=1)
-    zba_beta = zba_beta[keep,:]
-    
-    heatmap(zba_beta[sort_idx,:],vmin=-3.,vmax=4.5)
-    idx_vline = []
-    for k in time_bounds[1:]:
-        idx_vline += [np.where(time_rescale <= k)[0][-1]]
-    ylim = plt.ylim()
-
-    plt.vlines(idx_vline,ylim[0],ylim[1])
-    plt.ylim(ylim)
-    plt.yticks([])
-    plt.ylabel('unit')
-    xaxis = np.hstack(([0],idx_vline))
-    plt.xticks(xaxis,['targ ON','targ OFF','stop','reward'],rotation=90)
-    plt.tight_layout(rect=[0, 0.03, 1, 0.95])
-    plt.savefig('%s_rescaled_BETA_multialign_%s_isRew_%s.png'%(ba,use_monkey,plt_rewarded))
-    
-    
-for ba in ['MST','PPC','PFC']:
-    if not ba in file_fld:
-        continue
-    plt.figure()
-    cc_plot = 0
-    plt.suptitle('THETA POWER: %s - %s'%(use_monkey,ba))
-    
-    # sort based on the rate
-    ba_rate = matrix_rates_all[brain_area_all==ba,:]
-    zba_rate = sts.zscore(ba_rate,axis=1)
-    keep = np.sum(np.isnan(zba_rate),axis=1) == 0
-    zba_rate = zba_rate[keep,:]
-    idx = np.argmax(zba_rate,axis=1)
-    sort_idx = np.argsort(idx)
-    
-    ba_beta = matrix_theta_all[brain_area_all==ba,:]
-    zba_beta = sts.zscore(ba_beta,axis=1)
-    zba_beta = zba_beta[keep,:]
-    
-    heatmap(zba_beta[sort_idx,:],vmin=-3.,vmax=4.5)
-    idx_vline = []
-    for k in time_bounds[1:]:
-        idx_vline += [np.where(time_rescale <= k)[0][-1]]
-    ylim = plt.ylim()
-
-    plt.vlines(idx_vline,ylim[0],ylim[1])
-    plt.ylim(ylim)
-    plt.yticks([])
-    plt.ylabel('unit')
-    xaxis = np.hstack(([0],idx_vline))
-    plt.xticks(xaxis,['targ ON','targ OFF','stop','reward'],rotation=90)
-    plt.tight_layout(rect=[0, 0.03, 1, 0.95])
-    plt.savefig('%s_rescaled_THETA_multialign_%s_isRew_%s.png'%(ba,use_monkey,plt_rewarded))
-    
+info_new = {'MST':np.zeros(0,dtype=dtype_dict),
+            'PFC':np.zeros(0,dtype=dtype_dict),
+            
+            'PPC':np.zeros(0,dtype=dtype_dict)}
 
 for ba in ['MST','PPC','PFC']:
-    if not ba in file_fld:
-        continue
-    plt.figure()
-    cc_plot = 0
-    plt.suptitle('ALPHA POWER: %s - %s'%(use_monkey,ba))
+    sele = (info_all['brain_area'] == ba)
+    info_area = info_all[sele]
+    rate_area = matrix_rates_all[sele]
+    beta_area = matrix_beta_all[sele]
+    alpha_area = matrix_alpha_all[sele]
+    theta_area = matrix_theta_all[sele]
     
-    # sort based on the rate
-    ba_rate = matrix_rates_all[brain_area_all==ba,:]
-    zba_rate = sts.zscore(ba_rate,axis=1)
-    keep = np.sum(np.isnan(zba_rate),axis=1) == 0
-    zba_rate = zba_rate[keep,:]
-    idx = np.argmax(zba_rate,axis=1)
-    sort_idx = np.argsort(idx)
     
-    ba_beta = matrix_alpha_all[brain_area_all==ba,:]
-    zba_beta = sts.zscore(ba_beta,axis=1)
-    zba_beta = zba_beta[keep,:]
+    for session in np.unique(info_area['session']):
+        
+        
     
-    heatmap(zba_beta[sort_idx,:],vmin=-3.,vmax=4.5)
-    idx_vline = []
-    for k in time_bounds[1:]:
-        idx_vline += [np.where(time_rescale <= k)[0][-1]]
-    ylim = plt.ylim()
+        bool_sele = (info_area['session'] == session)
 
-    plt.vlines(idx_vline,ylim[0],ylim[1])
-    plt.ylim(ylim)
-    plt.yticks([])
-    plt.ylabel('unit')
-    xaxis = np.hstack(([0],idx_vline))
-    plt.xticks(xaxis,['targ ON','targ OFF','stop','reward'],rotation=90)
-    plt.tight_layout(rect=[0, 0.03, 1, 0.95])
-    plt.savefig('%s_rescaled_ALPHA_multialign_%s_isRew_%s.png'%(ba,use_monkey,plt_rewarded))
+        srt_start = np.where(bool_sele)[0][0]
+        
+        rate_sess = rate_area[bool_sele]
+        beta_sess = beta_area[bool_sele]
+        alpha_sess = alpha_area[bool_sele]
+        theta_sess = theta_area[bool_sele]
+        info_sess = info_area[bool_sele]
+        
+        zba_rate = sts.zscore(rate_sess,axis=1)
+        
+        # sort
+        keep = np.sum(np.isnan(zba_rate),axis=1) == 0
+        zba_rate = zba_rate[keep,:]
+        idx = np.argmax(zba_rate,axis=1)
+        sort_idx = np.argsort(idx)
+        
+        
+        # filter and keep stuff
+        zba_beta = sts.zscore(beta_sess,axis=1)
+        zba_beta = zba_beta[keep,:]
+        
+        zba_alpha = sts.zscore(alpha_sess,axis=1)
+        zba_alpha = zba_alpha[keep,:]
+        
+        zba_theta = sts.zscore(theta_sess,axis=1)
+        zba_theta = zba_theta[keep,:]
+        
+        info_tmp = info_sess[keep]
+        
+        
+        zba_rate = zba_rate[sort_idx]
+        zba_beta = zba_beta[sort_idx]
+        zba_alpha = zba_alpha[sort_idx]
+        zba_theta = zba_theta[sort_idx]
+        
+        info_tmp = info_tmp[sort_idx]
+        
+        
+
+
+        rate_sorted[ba] = np.vstack((rate_sorted[ba], zba_rate))
+        lfp_alpha_sorted[ba] = np.vstack((lfp_alpha_sorted[ba], zba_alpha))
+        lfp_beta_sorted[ba] = np.vstack((lfp_beta_sorted[ba], zba_beta))
+        lfp_theta_sorted[ba] = np.vstack((lfp_theta_sorted[ba], zba_theta))
+        
+        info_new[ba] = np.hstack((info_new[ba],info_tmp))
+
+
+savemat('%s_peak_location_isRew_%s.mat'%(monkey_dict[use_monkey],plt_rewarded),{'peak_location':info_all,
+                                                                                'peak_x_ba':info_new,
+                                                                                'lfp_beta_power':lfp_beta_sorted,
+                                                                                'lfp_alpha_power':lfp_alpha_sorted,
+                                                                                'lfp_theta_power':lfp_theta_sorted,
+                                                                                'rate':rate_sorted})
+
+
+for ba in ['PPC','PFC','MST']:
+    
+    
+        
+    for session in np.unique(info_new[ba]['session']):
+        fig = plt.figure(figsize=(12,4))
+        
+        idx_vline = []
+        
+        for k in time_bounds[1:]:
+            idx_vline += [np.where(time_rescale <= k)[0][-1]]
+        
+        xaxis = np.hstack(([0],idx_vline))
+        
+        
+        plt.suptitle(ba+' '+'session: %d'%session, fontsize=20)
+    
+        ax = plt.subplot(1,4,1)
+        plt.title('RATE',fontsize=15)
+        heatmap(rate_sorted[ba][info_new[ba]['session']==session],vmin=-3.,vmax=4.5,cbar=False)
+        ylim = plt.ylim()
+    
+        plt.vlines(idx_vline,ylim[0],ylim[1])
+        plt.ylim(ylim)
+        plt.xticks(xaxis,['targ ON','targ OFF','stop','reward'],rotation=90)
+        
+        ax = plt.subplot(1,4,2)
+        plt.title('ALPHA POWER',fontsize=15)
+        heatmap(lfp_alpha_sorted[ba][info_new[ba]['session']==session],vmin=-3.,vmax=4.5,cbar=False)
+        ylim = plt.ylim()
+    
+        plt.vlines(idx_vline,ylim[0],ylim[1])
+        plt.ylim(ylim)
+        plt.xticks(xaxis,['targ ON','targ OFF','stop','reward'],rotation=90)
+        
+        ax = plt.subplot(1,4,3)
+        plt.title('BETA POWER',fontsize=15)
+        heatmap(lfp_beta_sorted[ba][info_new[ba]['session']==session],vmin=-3.,vmax=4.5,cbar=False)
+        ylim = plt.ylim()
+    
+        plt.vlines(idx_vline,ylim[0],ylim[1])
+        plt.ylim(ylim)
+        plt.xticks(xaxis,['targ ON','targ OFF','stop','reward'],rotation=90)
+        
+        ax = plt.subplot(1,4,4)
+        plt.title('THETA POWER',fontsize=15)
+
+        heatmap(lfp_theta_sorted[ba][info_new[ba]['session']==session],vmin=-3.,vmax=4.5)
+        ylim = plt.ylim()
+    
+        plt.vlines(idx_vline,ylim[0],ylim[1])
+        plt.ylim(ylim)
+        plt.xticks(xaxis,['targ ON','targ OFF','stop','reward'],rotation=90)
+        
+        
+        
+        
+        plt.tight_layout(rect=[0, 0.03, 1, 0.95])
+        plt.savefig('/Users/edoardo/Work/Code/GAM_code/figures/alignment/%s_%s_s%d_alignment.jpg'%(monkey_dict[use_monkey],ba,session))
+        plt.close('all')
+# for ba in ['MST','PPC','PFC']:
+#     if not ba in file_fld:
+#         continue
+#     plt.figure()
+#     cc_plot = 0
+#     plt.suptitle('RATE: %s - %s'%(use_monkey,ba))
+
+#     ba_rate = matrix_rates_all[brain_area_all==ba,:]
+#     zba_rate = sts.zscore(ba_rate,axis=1)
+#     keep = np.sum(np.isnan(zba_rate),axis=1) == 0
+#     zba_rate = zba_rate[keep,:]
+#     idx = np.argmax(zba_rate,axis=1)
+#     sort_idx = np.argsort(idx)
+#     heatmap(zba_rate[sort_idx,:],vmin=-3.,vmax=4.5)
+#     idx_vline = []
+#     for k in time_bounds[1:]:
+#         idx_vline += [np.where(time_rescale <= k)[0][-1]]
+#     ylim = plt.ylim()
+
+#     plt.vlines(idx_vline,ylim[0],ylim[1])
+#     plt.ylim(ylim)
+#     plt.yticks([])
+#     plt.ylabel('unit')
+#     xaxis = np.hstack(([0],idx_vline))
+#     plt.xticks(xaxis,['targ ON','targ OFF','stop','reward'],rotation=90)
+#     plt.tight_layout(rect=[0, 0.03, 1, 0.95])
+#     plt.savefig('%s_rescaled_rate_multialign_%s_isRew_%s.png'%(ba,use_monkey,plt_rewarded))
+
+    
+# for ba in ['MST','PPC','PFC']:
+#     if not ba in file_fld:
+#         continue
+#     plt.figure()
+#     cc_plot = 0
+#     plt.suptitle('BETA POWER: %s - %s'%(use_monkey,ba))
+    
+#     # sort based on the rate
+#     ba_rate = matrix_rates_all[brain_area_all==ba,:]
+#     zba_rate = sts.zscore(ba_rate,axis=1)
+#     keep = np.sum(np.isnan(zba_rate),axis=1) == 0
+#     zba_rate = zba_rate[keep,:]
+#     idx = np.argmax(zba_rate,axis=1)
+#     sort_idx = np.argsort(idx)
+    
+#     ba_beta = matrix_beta_all[brain_area_all==ba,:]
+#     zba_beta = sts.zscore(ba_beta,axis=1)
+#     zba_beta = zba_beta[keep,:]
+    
+#     heatmap(zba_beta[sort_idx,:],vmin=-3.,vmax=4.5)
+#     idx_vline = []
+#     for k in time_bounds[1:]:
+#         idx_vline += [np.where(time_rescale <= k)[0][-1]]
+#     ylim = plt.ylim()
+
+#     plt.vlines(idx_vline,ylim[0],ylim[1])
+#     plt.ylim(ylim)
+#     plt.yticks([])
+#     plt.ylabel('unit')
+#     xaxis = np.hstack(([0],idx_vline))
+#     plt.xticks(xaxis,['targ ON','targ OFF','stop','reward'],rotation=90)
+#     plt.tight_layout(rect=[0, 0.03, 1, 0.95])
+#     plt.savefig('%s_rescaled_BETA_multialign_%s_isRew_%s.png'%(ba,use_monkey,plt_rewarded))
+    
+    
+# for ba in ['MST','PPC','PFC']:
+#     if not ba in file_fld:
+#         continue
+#     plt.figure()
+#     cc_plot = 0
+#     plt.suptitle('THETA POWER: %s - %s'%(use_monkey,ba))
+    
+#     # sort based on the rate
+#     ba_rate = matrix_rates_all[brain_area_all==ba,:]
+#     zba_rate = sts.zscore(ba_rate,axis=1)
+#     keep = np.sum(np.isnan(zba_rate),axis=1) == 0
+#     zba_rate = zba_rate[keep,:]
+#     idx = np.argmax(zba_rate,axis=1)
+#     sort_idx = np.argsort(idx)
+    
+#     ba_beta = matrix_theta_all[brain_area_all==ba,:]
+#     zba_beta = sts.zscore(ba_beta,axis=1)
+#     zba_beta = zba_beta[keep,:]
+    
+#     heatmap(zba_beta[sort_idx,:],vmin=-3.,vmax=4.5)
+#     idx_vline = []
+#     for k in time_bounds[1:]:
+#         idx_vline += [np.where(time_rescale <= k)[0][-1]]
+#     ylim = plt.ylim()
+
+#     plt.vlines(idx_vline,ylim[0],ylim[1])
+#     plt.ylim(ylim)
+#     plt.yticks([])
+#     plt.ylabel('unit')
+#     xaxis = np.hstack(([0],idx_vline))
+#     plt.xticks(xaxis,['targ ON','targ OFF','stop','reward'],rotation=90)
+#     plt.tight_layout(rect=[0, 0.03, 1, 0.95])
+#     plt.savefig('%s_rescaled_THETA_multialign_%s_isRew_%s.png'%(ba,use_monkey,plt_rewarded))
+    
+
+# for ba in ['MST','PPC','PFC']:
+#     if not ba in file_fld:
+#         continue
+#     plt.figure()
+#     cc_plot = 0
+#     plt.suptitle('ALPHA POWER: %s - %s'%(use_monkey,ba))
+    
+#     # sort based on the rate
+#     ba_rate = matrix_rates_all[brain_area_all==ba,:]
+#     zba_rate = sts.zscore(ba_rate,axis=1)
+#     keep = np.sum(np.isnan(zba_rate),axis=1) == 0
+#     zba_rate = zba_rate[keep,:]
+#     idx = np.argmax(zba_rate,axis=1)
+#     sort_idx = np.argsort(idx)
+    
+#     ba_beta = matrix_alpha_all[brain_area_all==ba,:]
+#     zba_beta = sts.zscore(ba_beta,axis=1)
+#     zba_beta = zba_beta[keep,:]
+    
+#     heatmap(zba_beta[sort_idx,:],vmin=-3.,vmax=4.5)
+#     idx_vline = []
+#     for k in time_bounds[1:]:
+#         idx_vline += [np.where(time_rescale <= k)[0][-1]]
+#     ylim = plt.ylim()
+
+#     plt.vlines(idx_vline,ylim[0],ylim[1])
+#     plt.ylim(ylim)
+#     plt.yticks([])
+#     plt.ylabel('unit')
+#     xaxis = np.hstack(([0],idx_vline))
+#     plt.xticks(xaxis,['targ ON','targ OFF','stop','reward'],rotation=90)
+#     plt.tight_layout(rect=[0, 0.03, 1, 0.95])
+#     plt.savefig('%s_rescaled_ALPHA_multialign_%s_isRew_%s.png'%(ba,use_monkey,plt_rewarded))
     
     # neu_list = np.arange(rescaled_rate.shape[0])
     # sele = np.where(brain_area == ba)[0]
