@@ -180,8 +180,12 @@ for session in concat_list:
         cc += 1
 
     # compute additional quality metrics
-    res['unit_info'] = extract_presecnce_rate(occupancy_bin_sec,occupancy_rate_th,res['unit_info'],session,
+    try:
+        res['unit_info'] = extract_presecnce_rate(occupancy_bin_sec,occupancy_rate_th,res['unit_info'],session,
                            user_paths,utah_array_sampling_fq,linearprobe_sampling_fq)
+    except Exception as e:
+        print(e)
+        print('skip %s'%session)
 
 
     
