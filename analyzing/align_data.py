@@ -25,7 +25,7 @@ from sklearn.decomposition import PCA
 
 
 align_to = 't_flyON'
-save_folder = '/Volumes/WD_Edo/firefly_analysis/LFP_band/results/processed_dPCA/'
+save_folder = 'D:\\Savin-Angelaki\\post-processed\\aligned_activity'
 
 def spike_smooth(x,trials_idx,filter):
     sm_x = np.zeros(x.shape[0])
@@ -382,6 +382,8 @@ for root, dirs, files in os.walk(user_path.base_data_fld, topdown=False):
     if 'not used' in root:
         continue
     for fhName in files:
+        if  ( 'm44' in fhName or 'm51' in fhName or 'm91' in fhName):
+            continue
         if re.match(pattern_fh,fhName):
 
             session_list += [os.path.join(root,fhName)]

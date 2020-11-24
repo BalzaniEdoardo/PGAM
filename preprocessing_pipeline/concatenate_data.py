@@ -18,7 +18,7 @@ user_paths = get_paths_class()
 # mat file with the correct name it will list it as a file to be concatenated
 #
 # =============================================================================
-DIRECT = "/Volumes/WD_Edo/firefly_analysis/LFP_band/DATASET"
+DIRECT = user_paths.local_concat
 
 print('The code assumes that the lfp_session.mat  files are in the same folder as the session.mat file!')
 # list of session to be concatenated
@@ -27,13 +27,16 @@ fld_list = []
 pattern_fh = '^m\d+s\d+.mat$'
 for root, dirs, files in os.walk(DIRECT, topdown=False):
     for name in files:
+        if not 'm53' in name:
+            continue
+
         if re.match(pattern_fh,name):
             concat_list += [name.split('.mat')[0]]
             fld_list += [root]
            
-# ii = np.where(np.array(concat_list)=='m53s31')[0][0]
-# concat_list = concat_list[ii:]
-# fld_list = fld_list[ii:]
+ii = np.where(np.array(concat_list)=='m53s96')[0][0]
+concat_list = concat_list[ii+1:]
+fld_list = fld_list[ii+1:]
 
 save = True
 send = False
