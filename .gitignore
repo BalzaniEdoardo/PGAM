@@ -1,3 +1,4 @@
+*.jpg
 *.dill
 gam_m*
 *_old.py
