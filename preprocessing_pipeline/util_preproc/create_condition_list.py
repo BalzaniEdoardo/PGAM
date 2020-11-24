@@ -21,7 +21,7 @@ from path_class import get_paths_class
 user_paths = get_paths_class()
 
 
-session = 'm53s110'
+session = 'm53s91'
 
 fhName = os.path.join(user_paths.get_path('local_concat'),'%s.npz'%session)
 save_fld = ''
