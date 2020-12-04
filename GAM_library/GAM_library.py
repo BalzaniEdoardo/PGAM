@@ -73,6 +73,10 @@ class GAM_result(object):
         self.pre_trial_dur = pre_trial_dur
         self.post_trial_dur = post_trial_dur
         self.time_bin = time_bin
+        self.domain_fun = {}
+        for var in sm_handler.smooths_var:
+            self.domain_fun[var] = sm_handler[var].domain_fun
+            
         if not beta_hist is None:
             self.beta_hist = beta_hist
 
@@ -319,7 +323,7 @@ class GAM_result(object):
 
 
     def eval_basis(self,X,var_name,sparseX=True,trial_idx=-1,pre_trial_dur=None,
-                   post_trial_dur=None):
+                   post_trial_dur=None,domain_fun=lambda x:np.ones(x,dtype=bool)):
 
         """
         Description: for temporal kernel, if None is passed, then use the ild version
@@ -350,7 +354,7 @@ class GAM_result(object):
 
         if not is_temporal:
             fX = basisAndPenalty(X, knots, is_cyclic=is_cyclic, ord=ord_spline,
-                                             penalty_type=penalty_type, xmin=xmin, xmax=xmax, der=der)[0]
+                                             penalty_type=penalty_type, xmin=xmin, xmax=xmax, der=der,compute_pen=False,domain_fun=self.domain_fun[var_name])[0]
         else:
             if type(basis_kernel) is sparse.csr.csr_matrix or type(basis_kernel) is sparse.csr.csr_matrix:
                 basis_kernel = basis_kernel.toarray()
@@ -415,7 +419,7 @@ class GAM_result(object):
             var_name = var_list[cc]
             # smooth = self.smooth_info[var_name]
             fX = self.eval_basis(X,var_name,sparseX=False,post_trial_dur=post_trial_dur,
-                                 pre_trial_dur=pre_trial_dur,trial_idx=trial_idx)
+                                 pre_trial_dur=pre_trial_dur,trial_idx=trial_idx,domain_fun=self.domain_fun[var_name])
             if type(fX) in [sparse.csr.csr_matrix,sparse.coo.coo_matrix
                             ]:
                 fX = fX.toarray()
@@ -448,7 +452,7 @@ class GAM_result(object):
             nan_filter = np.array(np.sum(np.isnan(np.array(X)), axis=0), dtype=bool)
             var_name = var_list[cc]
             fX = self.eval_basis(X,var_name,sparseX=False,post_trial_dur=post_trial_dur,
-                                 pre_trial_dur=pre_trial_dur,trial_idx=trial_idx)
+                                 pre_trial_dur=pre_trial_dur,trial_idx=trial_idx,domain_fun=self.domain_fun[var_name])
             if type(fX) in [sparse.csr.csr_matrix,sparse.coo.coo_matrix]:
                 fX = fX.toarray()
 
@@ -485,7 +489,7 @@ class GAM_result(object):
         if pre_trial_dur is None:
             pre_trial_dur = self.pre_trial_dur
         fX = self.eval_basis(X,var_name,post_trial_dur=post_trial_dur,
-                                 pre_trial_dur=pre_trial_dur,trial_idx=trial_idx)
+                                 pre_trial_dur=pre_trial_dur,trial_idx=trial_idx,domain_fun=self.domain_fun[var_name])
         nan_filter = np.array(np.sum(np.isnan(np.array(X)), axis=0), dtype=bool)
         # mean center and remove col if more than 1 smooth in the AM
         if len(self.var_list) > 0:
@@ -531,7 +535,10 @@ class GAM_result(object):
         # compute p-vals following chap 6.12.1 of GAM book (Wood 2017)
         # take the edf corrected for the smoothing bias
         r = np.clip([2 * diagF[idx].sum() - diagFF[idx].sum()], 0, beta.shape[0])[0]
-        k = int(np.floor(r))  # consider also the constant term that has been removed forcing the identifiability constraint
+        if r - np.floor(r) > 0.99:
+            k = int(np.ceil(r))
+        else:
+            k = int(np.floor(r))  # consider also the constant term that has been removed forcing the identifiability constraint
         nu = r - k #+ 1
         rho = np.sqrt((1 - nu) * nu * 0.5)
         nu1 = (nu + 1 + (1 - nu ** 2) ** (0.5)) * 0.5
