@@ -535,7 +535,7 @@ class GAM_result(object):
         # compute p-vals following chap 6.12.1 of GAM book (Wood 2017)
         # take the edf corrected for the smoothing bias
         r = np.clip([2 * diagF[idx].sum() - diagFF[idx].sum()], 0, beta.shape[0])[0]
-        if r - np.floor(r) > 0.99:
+        if (r - np.floor(r) > 0.99) and (r - np.floor(r) < 1):
             k = int(np.ceil(r))
         else:
             k = int(np.floor(r))  # consider also the constant term that has been removed forcing the identifiability constraint
