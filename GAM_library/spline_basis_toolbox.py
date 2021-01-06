@@ -295,9 +295,153 @@ class spline_basis(object):
                 return False
         return True
 
+class tensor_spline_basis(object):
+    """
+        Object containing all the spline basis elements
+    """
+    def __init__(self, knots_x, knots_y, order,subtract_integral=False, is_cyclic=[False]):
+        
+        
+        if any(knots_x != np.sort(knots_x)):
+            raise ValueError('sort knots')
+        
+        if any(knots_y != np.sort(knots_y)):
+            raise ValueError('sort knots')
+            
+            
+        xx = np.linspace(knots_x[0],knots_x[-1],10)
+        if not is_cyclic[0]:
+            PX = splineDesign(knots_x, xx, ord=order, der=0, outer_ok=True)
+        else:
+            PX = cSplineDes(knots_x, xx, ord=order, der=0)
+            
+            
+        self.num_basis_elements_x = PX.shape[1]
+        self.basis_x = {}
+        for k in range(self.num_basis_elements_x):
+            self.basis_x[k] = spline_basis_element(k,knots_x,order, is_cyclic=is_cyclic[0])
+
+        # tuning function intercept in additive model in not well defined,therefore a mean centering is mandatory
+        # when comparing 2 tuning functions. The choice is usually to subtract the integral mean
+        if subtract_integral:
+            self.basis_x[k] = spline_intercept_element(knots_y)
+
+
+        self.knots_x = knots_x
+        
+        yy = np.linspace(knots_y[0],knots_y[-1],10)
+        if not is_cyclic[1]:
+            PX = splineDesign(knots_y, yy, ord=order, der=0, outer_ok=True)
+        else:
+            PX = cSplineDes(knots_y, yy, ord=order, der=0)
+            
+            
+        self.num_basis_elements_y = PX.shape[1]
+        self.basis_y = {}
+        for k in range(self.num_basis_elements_y):
+            self.basis_y[k] = spline_basis_element(k,knots_y,order, is_cyclic=is_cyclic[1])
+
+        # tuning function intercept in additive model in not well defined,therefore a mean centering is mandatory
+        # when comparing 2 tuning functions. The choice is usually to subtract the integral mean
+        if subtract_integral:
+            self.basis_y[k] = spline_intercept_element(knots_y)
+
+
+        self.knots_y = knots_y
+        
+        self.num_basis_elements = self.num_basis_elements_x * self.num_basis_elements_y
+        self.order = order
+    
+    # def integral_matrix(self,a=None,b=None,c=None,d=None):
+    #     if a is None:
+    #         a = self.knots_x[0]
+    #     if b is None:
+    #         b = self.knots_x[-1]
+            
+    #     if c is None:
+    #         c = self.knots_y[0]
+    #     if d is None:
+    #         d = self.knots_y[-1]
+            
+    #     M = self.num_basis_elements_x
+    #     N = self.num_basis_elements_y
+
+    #     integral_bbT = np.zeros((M*N,M*N))
+    #     cc = 0
+    #     for cc in range(self.num_basis_elements):
+    #         i = cc // N
+    #         j = cc % N
+    #         ai = self.basis_x[i]
+    #         bj = self.basis_y[j]
+            
+
+    #         for bb in range(self.num_basis_elements):
+    #             h = bb // N
+    #             k = bb % N
+    #             ah = self.basis_x[h]
+    #             bk = self.basis_y[k]
+                
+    #             for knt in bj.keys():
+    #                 if bj[knt] is None or bk[knt] is None:
+    #                     continue
+    #                 bjk = bj[knt] * bk[knt]
+    #                 for knty in ai.keys():
+    #                     if ai[knty] is None or ah[knty] is None:
+    #                         continue
+    #                     aih = ai[knty] * ah[knty]
+    #                     integral_bbT[cc,bb] = integral_bbT[cc,bb] + bjk.integrate(a,b) * aih.integrate(c,d)
+                    
+
+    #     return integral_bbT
+    
 
 
 
+class tensor_tuning_function(object):
+    def __init__(self,spline_basis, beta, mean_subtract=False,range_integr=None,translation=0):
+        """
+        Last element of beta is set to zero in the model fit due to identifiability constraint. The intercept of single
+        tuning funciton is not well defined when we are dealing with a sum of n>1 responses.
+        If comparison between two units tuning func is required, i normalized the integral of the tuning to zero, this is
+        done by flagging subtract_integral_mean to True. it set the last basis set to a constant 1, and the last basis
+        coefficient to the integral mean of the tuning.
+        :param spline_basis:
+        :param beta:
+        :param mean_subtract:
+        """
+        self.spline_basis = spline_basis
+        self.beta = beta
+        if len(beta) != len(self.spline_basis.basis_x.keys())*len(self.spline_basis.basis_y.keys()):
+            raise ValueError('basis elements and coefficients must match in size')
+        
+        self.basis_dim = self.beta.shape[0]
+        self.mean_subtract = mean_subtract # in the feature embed this into the basis set adding the constant shift!!
+        self.translation = translation
+        if mean_subtract and translation != 0:
+            print('MEAN SUBTACT IS TRUE, TRANSLATION IS SET TO ZERO')
+            self.transltion = 0
+        
+
+    def __call__(self,x,y):
+        res = 0
+        M = self.spline_basis.num_basis_elements_y
+        for k in range(self.basis_dim):
+            ii = k // M
+            jj = k % M
+            res = res + self.beta[k] * self.spline_basis.basis_x[ii](x)*self.spline_basis.basis_y[jj](y)
+        # print(np.mean(res))
+        if self.mean_subtract:
+            return res - np.mean(res)
+        return res + self.translation#- np.mean(res)
+
+    # def integrate(self,a,b,c,d):
+    #     keys = self.spline_basis.basis.keys()
+    #     res = 0
+    #     for k in keys:
+    #         bk = self.spline_basis.basis[k]
+    #         res = res + self.beta[k] * bk.integrate(a,b)
+    #     return res
+    
 class tuning_function(object):
     def __init__(self,spline_basis, beta, mean_subtract=False, subtract_integral_mean=False,range_integr=None,translation=0):
         """

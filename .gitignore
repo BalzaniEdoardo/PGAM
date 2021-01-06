@@ -1,3 +1,5 @@
+select_variables/
+TMP/
 *.jpg
 *.dill
 gam_m*

@@ -22,18 +22,33 @@ DIRECT = "/Volumes/WD_Edo/firefly_analysis/LFP_band/DATASET"
 
 print('The code assumes that the lfp_session.mat  files are in the same folder as the session.mat file!')
 # list of session to be concatenated
-concat_list = []
-fld_list = []
-pattern_fh = '^m\d+s\d+.mat$'
-for root, dirs, files in os.walk(DIRECT, topdown=False):
-    for name in files:
-        if re.match(pattern_fh,name):
-            concat_list += [name.split('.mat')[0]]
-            fld_list += [root]
+# concat_list = []
+# fld_list = []
+# pattern_fh = '^m\d+s\d+.mat$'
+# for root, dirs, files in os.walk(DIRECT, topdown=False):
+#     for name in files:
+#         if re.match(pattern_fh,name):
+#             concat_list += [name.split('.mat')[0]]
+#             fld_list += [root]
            
 # ii = np.where(np.array(concat_list)=='m53s31')[0][0]
 # concat_list = concat_list[ii:]
 # fld_list = fld_list[ii:]
+
+ptrn = '^m\d+s\d+.mat$'
+sv_folder = '/Volumes/WD_Edo/firefly_analysis/LFP_band/concatenation_with_accel'
+
+concat_list = []
+for name in os.listdir('/Volumes/WD_Edo/firefly_analysis/LFP_band/DATASET_accel/'):
+    if  not re.match(ptrn,name):
+        continue
+    print(name)
+    svname = name.replace('.mat','.npz')
+    
+    if not os.path.exists(os.path.join(sv_folder,svname)):
+        concat_list += [name.split('.')[0]]
+
+fld_list = ['/Volumes/WD_Edo/firefly_analysis/LFP_band/DATASET_accel/']*len(concat_list)
 
 save = True
 send = False
@@ -49,6 +64,8 @@ send = False
 # path to preproc mat files
 #base_file = '/Volumes/WD Edo/firefly_analysis/LFP_band/DATASET/PPC+PFC+MST/'
 base_file = user_paths.get_path('local_concat','m44s174')
+
+base_file = '/Volumes/WD_Edo/firefly_analysis/LFP_band/DATASET_accel/'
 baseflld = os.path.dirname(base_file)
 
 #result_fld = '/Volumes/WD Edo/firefly_analysis/LFP_band/results_radTarg/'
@@ -96,11 +113,14 @@ for session in concat_list:
     except:
         print('could not find', session)
         continue
-
-    lfp_beta = loadmat(os.path.join(base_file,'lfp_beta_%s.mat'%session))
-    lfp_alpha = loadmat(os.path.join(base_file,'lfp_alpha_%s.mat'%session))
-    lfp_theta = loadmat(os.path.join(base_file,'lfp_theta_%s.mat'%session))
-    
+    try:
+        lfp_beta = loadmat(os.path.join(base_file,'lfp_beta_%s.mat'%session))
+        lfp_alpha = loadmat(os.path.join(base_file,'lfp_alpha_%s.mat'%session))
+        lfp_theta = loadmat(os.path.join(base_file,'lfp_theta_%s.mat'%session))
+    except:
+        print('could not find LFP', session)
+        continue 
+        
     
 
     if 'is_phase' in lfp_beta.keys():
@@ -111,11 +131,14 @@ for session in concat_list:
     if is_phase:
         phase_precomputed += [session]
         continue
-
-    exp_data = data_handler(dat, behav_dat_key, spike_key, lfp_key, behav_stat_key, pre_trial_dur=pre_trial_dur,
+    try:
+        exp_data = data_handler(dat, behav_dat_key, spike_key, lfp_key, behav_stat_key, pre_trial_dur=pre_trial_dur,
                             post_trial_dur=post_trial_dur,
                             lfp_beta=lfp_beta['lfp_beta'], lfp_alpha=lfp_alpha['lfp_alpha'],lfp_theta=lfp_theta['lfp_theta'], extract_lfp_phase=(not is_phase),
                             use_eye=use_eye)
+    except Exception as e:
+        print('unable to open', session,'\n',e)
+        continue
     
 
     exp_data.set_filters('all', True)
@@ -132,25 +155,33 @@ for session in concat_list:
 
 
     var_names = ('rad_vel','ang_vel','rad_path','ang_path','rad_target','ang_target',
-                 'lfp_beta','lfp_alpha','lfp_theta','t_move','t_flyOFF','t_stop','t_reward','eye_vert','eye_hori','lfp_alpha_power',
-                 'lfp_theta_power','lfp_beta_power')
+                 'lfp_beta','lfp_alpha','lfp_theta','t_move','t_flyOFF','t_stop','t_reward','eye_vert','eye_hori',
+                 'hand_vel1','hand_vel2','rad_acc','ang_acc')
+                 #'lfp_alpha_power',
+                 #'lfp_theta_power','lfp_beta_power')
     try:
         y, X, trial_idx = exp_data.concatenate_inputs(*var_names, t_start=t_start, t_stop=t_stop)
-    except RuntimeError as ex:
+    except Exception as ex:
         print('\n\ncould not open %s'%session)
         print(ex,'\n\n')
         continue
-
-    res = {'data_concat':{},'var_names':var_names}
+    
+    var_Xt = []
+    for var in var_names:
+        if 'lfp' in var or var == 'phase':
+            continue
+        var_Xt += [var]
+    
+    res = {'data_concat':{},'var_names':var_Xt}
     res['data_concat']['Yt'] = y.T
-    res['data_concat']['Xt'] = np.zeros((X[var_names[0]].shape[0],len(var_names)-3))
+    res['data_concat']['Xt'] = np.zeros((X[var_names[0]].shape[0],len(var_Xt)))
     res['data_concat']['lfp_beta'] = X['lfp_beta'].T
     res['data_concat']['lfp_alpha'] = X['lfp_alpha'].T
     res['data_concat']['lfp_theta'] = X['lfp_theta'].T
     res['data_concat']['trial_idx'] = trial_idx
-    res['lfp_alpha_power'] = X['lfp_alpha_power'].T
-    res['lfp_theta_power'] = X['lfp_theta_power'].T
-    res['lfp_beta_power'] = X['lfp_beta_power'].T
+    # res['lfp_alpha_power'] = X['lfp_alpha_power'].T
+    # res['lfp_theta_power'] = X['lfp_theta_power'].T
+    # res['lfp_beta_power'] = X['lfp_beta_power'].T
     res['info_trial'] = exp_data.info
     res['pre_trial_dur'] = pre_trial_dur
     res['post_trial_dur'] = post_trial_dur
@@ -171,11 +202,13 @@ for session in concat_list:
 
     print('num units',exp_data.spikes.unit_type.shape)
     cc = 0
-    for var in var_names[:-3]:
-        if var in ['phase','lfp_beta','lfp_alpha','lfp_theta'] or 'lfp' in var:
-            res['data_concat']['Xt'][:, cc] = np.nan
-            cc += 1
-            continue
+    for var in var_Xt:
+        # if 'lfp' in var or var == 'phase':
+        #     continue
+        # if var in ['phase','lfp_beta','lfp_alpha','lfp_theta'] or 'lfp' in var:
+        #     res['data_concat']['Xt'][:, cc] = np.nan
+        #     cc += 1
+        #     continue
         res['data_concat']['Xt'][:,cc] = X[var]
         cc += 1
 
@@ -191,15 +224,15 @@ for session in concat_list:
     
     if save:
         print('saving variables...')
-        sv_folder = base_file#user_paths.get_path('local_concat')
+        # sv_folder = base_file#user_paths.get_path('local_concat')
         if not os.path.exists(sv_folder):
             os.mkdir(sv_folder)
 
         saveCompressed(os.path.join(sv_folder,'%s.npz'%session),unit_info=res['unit_info'],info_trial=res['info_trial'],data_concat=res['data_concat'],
              var_names=np.array(res['var_names']),time_bin=res['time_bin'],post_trial_dur=res['post_trial_dur'],
-             pre_trial_dur=res['pre_trial_dur'],lfp_alpha_power=res['lfp_alpha_power'],
-             lfp_beta_power=res['lfp_beta_power'],lfp_theta_power=res['lfp_theta_power'],
-             force_zip64=True)
+             pre_trial_dur=res['pre_trial_dur'], force_zip64=True)#,lfp_alpha_power=res['lfp_alpha_power'],
+             #lfp_beta_power=res['lfp_beta_power'],lfp_theta_power=res['lfp_theta_power'],
+             #force_zip64=True)
 
     if send:
         try:

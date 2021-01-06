@@ -715,7 +715,7 @@ class general_additive_model(object):
         else:
             beta_hist = None
         while not converged:
-
+            print('smooth_pen iter %d'%iteration,smooth_pen)
             z,w = f_weights_and_data.get_params(mu)
             self.sm_handler.set_smooth_penalties(smooth_pen,var_list)
             pen_matrix = self.sm_handler.get_penalty_agumented(var_list)
@@ -1070,7 +1070,7 @@ class general_additive_model(object):
                                      use_dgcv=True,smooth_pen=None,initial_smooths_guess=True,fit_initial_beta=False,
                                      pseudoR2_per_variable=False,filter_trials=None,k_fold = False,fold_num=5,
                                         trial_num_vec=None,compute_MI=True, k_fold_reducedOnly=True,bounds_rho=None,
-                             reducedAdaptive=True, ord_AD=3, ad_knots=6,saveBetaHist=False):
+                             reducedAdaptive=True, ord_AD=3, ad_knots=6,saveBetaHist=False,perform_PQL=True):
         if smooth_pen is None:
             smooth_pen = []
             for var in var_list:
@@ -1083,7 +1083,7 @@ class general_additive_model(object):
         if (not k_fold) or k_fold_reducedOnly:
             full_model = self.optim_gam(var_list, max_iter=max_iter, tol=tol,
                                         conv_criteria=conv_criteria,
-                                        perform_PQL=True, initial_smooths_guess=initial_smooths_guess, method=method,
+                                        perform_PQL=perform_PQL, initial_smooths_guess=initial_smooths_guess, method=method,
                                         compute_AIC=False,gcv_sel_tol=gcv_sel_tol,random_init=random_init,
                                         use_dgcv=use_dgcv,smooth_pen=smooth_pen,fit_initial_beta=fit_initial_beta,
                                         filter_trials=filter_trials,compute_MI=compute_MI,bounds_rho=bounds_rho,
@@ -1092,7 +1092,7 @@ class general_additive_model(object):
         else:
             full_model,test_bool = self.k_fold_crossval(fold_num,trial_num_vec,var_list, max_iter=max_iter, tol=tol,
                                         conv_criteria=conv_criteria,
-                                        perform_PQL=True, initial_smooths_guess=initial_smooths_guess, method=method,
+                                        perform_PQL=perform_PQL, initial_smooths_guess=initial_smooths_guess, method=method,
                                         compute_AIC=False, gcv_sel_tol=gcv_sel_tol, random_init=random_init,
                                         use_dgcv=use_dgcv, smooth_pen=smooth_pen, fit_initial_beta=fit_initial_beta,compute_MI=compute_MI,
                                         bounds_rho=bounds_rho,saveBetaHist=saveBetaHist)
@@ -1156,7 +1156,7 @@ class general_additive_model(object):
             if not k_fold:
                 reduced_model = self.optim_gam(sub_list, max_iter=max_iter, tol=tol,
                                     conv_criteria=conv_criteria,
-                                    perform_PQL=True, initial_smooths_guess=initial_smooths_guess, method=method,
+                                    perform_PQL=perform_PQL, initial_smooths_guess=initial_smooths_guess, method=method,
                                     compute_AIC=False, gcv_sel_tol=gcv_sel_tol, random_init=random_init,
                                     use_dgcv=use_dgcv,smooth_pen=smooth_pen,fit_initial_beta=fit_initial_beta,
                                                filter_trials=filter_trials,compute_MI=compute_MI,bounds_rho=bounds_rho,
@@ -1165,7 +1165,7 @@ class general_additive_model(object):
             else:
                 reduced_model,test_bool = self.k_fold_crossval(fold_num, trial_num_vec, sub_list, max_iter=max_iter, tol=tol,
                                                   conv_criteria=conv_criteria,
-                                                  perform_PQL=True, initial_smooths_guess=initial_smooths_guess,
+                                                  perform_PQL=perform_PQL, initial_smooths_guess=initial_smooths_guess,
                                                   method=method,
                                                   compute_AIC=False, gcv_sel_tol=gcv_sel_tol, random_init=random_init,
                                                   use_dgcv=use_dgcv, smooth_pen=smooth_pen,

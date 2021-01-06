@@ -739,7 +739,8 @@ class covarate_smooth(object):
     def __init__(self, x_cov, ord=4, knots=None, knots_num=15, perc_out_range=0.0, is_cyclic=None, lam=None, is_temporal_kernel=False,
                  kernel_direction=0, kernel_length=21,knots_percentiles=(0,100),penalty_type='EqSpaced',der=None,
                  trial_idx=None,time_bin=None,pre_trial_dur=None,post_trial_dur=None,penalty_measure=None, event_input=True,
-                 ord_AD=3,ad_knots=4,domain_fun=lambda x:np.ones(x.shape,dtype=bool),prercomp_SandB=None):
+                 ord_AD=3,ad_knots=4,domain_fun=lambda x:np.ones(x.shape,dtype=bool),prercomp_SandB=None,
+                 repeat_extreme_knots=True):
         """
             x_cov: n-dim sampled points in which to evaluate the basis function
             ord: number of coefficient of the spline (spline degree + 1)
@@ -800,7 +801,11 @@ class covarate_smooth(object):
 
         else:
             # set knots
-            self._set_knots_spatial(knots, knots_num=knots_num, perc_out_range=perc_out_range,percentiles=knots_percentiles)
+            self._set_knots_spatial(knots, knots_num=knots_num, 
+                                    perc_out_range=perc_out_range,
+                                    percentiles=knots_percentiles,
+                                    is_cyclic=is_cyclic,
+                                    repeat_extreme_knots=repeat_extreme_knots)
 
             self.eval_basis = self._eval_basis_spatial
             self.set_knots = self._set_knots_spatial
@@ -852,7 +857,8 @@ class covarate_smooth(object):
             cc += 1
         return is_equal
 
-    def _set_knots_spatial(self, knots, knots_num=None, perc_out_range=None, percentiles=(2,98)):
+    def _set_knots_spatial(self, knots, knots_num=None, perc_out_range=None, 
+                           is_cyclic=[False], percentiles=(2,98),repeat_extreme_knots=False):
         """
             Set new knots
         """
@@ -863,10 +869,11 @@ class covarate_smooth(object):
                 raise ValueError('need a knot for every dimention of the covariate smooth')
             self.knots = np.zeros(self.dim, dtype=object)
             for i in range(self.dim):
-                if any(knots[i][:self._ord] != knots[i][0]):
-                    knots[i] = np.hstack(([knots[i][0]]*(self._ord-1), knots[i]))
-                if any(knots[i][-self._ord:] != knots[i][-1]):
-                    knots[i] = np.hstack((knots[i],[knots[i][-1]]*(self._ord-1)))
+                if (not is_cyclic[i]) and repeat_extreme_knots:
+                    if any(knots[i][:self._ord] != knots[i][0]):
+                        knots[i] = np.hstack(([knots[i][0]]*(self._ord-1), knots[i]))
+                    if any(knots[i][-self._ord:] != knots[i][-1]):
+                        knots[i] = np.hstack((knots[i],[knots[i][-1]]*(self._ord-1)))
                 self.knots[i] = np.array(knots[i])
         self.time_pt_for_kernel = None
 
@@ -1113,7 +1120,8 @@ class smooths_handler(object):
     def add_smooth(self, name, x_cov, ord=4, lam=None, knots=None, knots_num=15, perc_out_range=0.1, is_cyclic=None,
                    is_temporal_kernel=False, kernel_direction=0, kernel_length=21,penalty_type='EqSpaced',der=None,
                    knots_percentiles=(2,98),trial_idx=None,time_bin=None,pre_trial_dur=None,post_trial_dur=None,
-                   penalty_measure=None,event_input=True,ord_AD=None,ad_knots=None,domain_fun=lambda x:np.zeros(x.shape,dtype=bool),prercomp_SandB=None):
+                   penalty_measure=None,event_input=True,ord_AD=None,ad_knots=None,domain_fun=lambda x:np.zeros(x.shape,dtype=bool),
+                   prercomp_SandB=None,repeat_extreme_knots=True):
         """
         :param name: string, name of the variable
         :param x_cov: list containing the input variable (the list will contain 1 vector per dimension of the variable)
@@ -1149,7 +1157,8 @@ class smooths_handler(object):
                                                   penalty_measure=penalty_measure,
                                                   event_input=event_input,ord_AD=ord_AD,
                                                   ad_knots=ad_knots,domain_fun=domain_fun,
-                                                  prercomp_SandB=prercomp_SandB)
+                                                  prercomp_SandB=prercomp_SandB,
+                                                  repeat_extreme_knots=repeat_extreme_knots)
         return True
 
     def __getitem__(self, name):

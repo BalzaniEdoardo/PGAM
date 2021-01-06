@@ -176,7 +176,14 @@ class behavior_experiment(object):
         self.continuous.ang_target = creat_dict_from_beahv_stat(behav_stat, 'pos_rel', 'theta_targ')
 
 
-
+        try:
+            self.continuous.rad_acc = creat_dict_from_beahv_stat(behav_stat,'accel','radial')
+            self.continuous.ang_acc = creat_dict_from_beahv_stat(behav_stat,'accel','angular')
+        
+        except:
+            self.continuous.rad_acc = None
+            self.continuous.ang_acc = None
+        
         # integrate radial and angular path
         self.continuous.rad_path = self.itegrate_path(self.continuous.rad_vel)
         self.continuous.ang_path = self.itegrate_path(self.continuous.ang_vel)
