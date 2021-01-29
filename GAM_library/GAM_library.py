@@ -27,7 +27,7 @@ from copy import deepcopy
 tryCuda = False
 try:
     if not tryCuda:
-        raise ModuleNotFoundError('User imposed not to use CUDA')
+        raise ModuleNotFoundError('Module pycuda not found! Use CPU')
     import pycuda.autoinit
     import pycuda.gpuarray as gpuarray
     import skcuda.linalg as cuda_linalg
