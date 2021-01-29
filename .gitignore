@@ -1,4 +1,5 @@
 select_variables/
+.idea
 TMP/
 *.jpg
 *.dill

@@ -537,11 +537,18 @@ class GAM_result(object):
         r = np.clip([2 * diagF[idx].sum() - diagFF[idx].sum()], 0, beta.shape[0])[0]
         if (r - np.floor(r) > 0.99) and (r - np.floor(r) < 1):
             k = int(np.ceil(r))
+            nu = 0#+ 1
         else:
             k = int(np.floor(r))  # consider also the constant term that has been removed forcing the identifiability constraint
-        nu = r - k #+ 1
+            nu = r - k #+ 1
+        # k = int(np.floor(r))
+        
         rho = np.sqrt((1 - nu) * nu * 0.5)
         nu1 = (nu + 1 + (1 - nu ** 2) ** (0.5)) * 0.5
+        # if nu1 <= 1:
+        #     nu1 = 0
+        #     nu2 = 0
+        # else:
         nu2 = nu + 1 - nu1
         Vb = self.cov_beta[idx, :]
         Vb = Vb[:, idx]

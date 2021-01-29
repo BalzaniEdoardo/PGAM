@@ -26,8 +26,7 @@ FIRST = True
 
 for fh in os.listdir('/Volumes/WD_Edo/firefly_analysis/LFP_band/concatenation_with_accel'):
     session = fh.split('.npz')[0]
-    # print(session)
-    # if session !='m53s42':
+    # if session !='m53s41':
     #     continue
     # if session != 'm44s174':
     #     continue
@@ -61,12 +60,12 @@ for fh in os.listdir('/Volumes/WD_Edo/firefly_analysis/LFP_band/concatenation_wi
     #cond_dict = {'all':[True]}
     #cond_dict = {'all':[True], 'ptb':[0, 1]}
     #cond_dict = {'all':[True], 'controlgain':[1, 1.5, 2]}
-    cond_dict = {'all':[True],'density':[0.0001, 0.005],
-                  'replay':[0,1],'controlgain':[2,1.5],'reward':[0,1],'replay':[0,1],
-                  'ptb':[0,1]} #'density':[0.0001, 0.005]}
-    cond_dict = {'controlgain':[1]}
+    # cond_dict = {'all':[True],'density':[0.0001, 0.005],
+    #               'replay':[0,1],'controlgain':[2,1.5],'reward':[0,1],'replay':[0,1]
+    #               } #'density':[0.0001, 0.005]}
     
-    # cond_dict = {'controlgain':[2,1.5]}
+    
+    cond_dict = {'controlgain':[2,1.5],'ptb':[0,1]}
     dict_type = {'names':('neuron', 'condition', 'value'),'formats':(int,'U30',float)}
     
     cond_list = np.zeros(0,dtype=dict_type)
@@ -137,11 +136,11 @@ for fh in os.listdir('/Volumes/WD_Edo/firefly_analysis/LFP_band/concatenation_wi
         
         cond_list = cond_list2
     
+    if len(cond_list) == 0:
+        continue
     
-    if 'ptb' in cond_list['condition'] or 'controlgain' in cond_list['condition']:
-        np.save(os.path.join(save_fld, 'condition_list_%s.npy'%session),cond_list)
-
-        print('sbatch --array=1-%d gam_fit_%s.sh'%(len(cond_list),session))
+    np.save(os.path.join(save_fld, 'condition_list_%s.npy'%session),cond_list)
+    print('sbatch --array=1-%d:5 gam_fit_%s.sh'%(len(cond_list),session))
 
     # print('\n',session,'unit num',len(tmp_cond_list),'\n')
     

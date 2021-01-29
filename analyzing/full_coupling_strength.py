@@ -42,16 +42,16 @@ electrode_map_dict = {
 
 user_paths = get_paths_class()
 
-fit_dir = '/Volumes/WD_Edo/firefly_analysis/LFP_band/cubic_gam_fit_with_coupling/'
+fit_dir = '/Volumes/WD_Edo/firefly_analysis/LFP_band/GAM_fit_with_acc/'
 
-dtype_dict = {'names':('monkey','session','unit A','unit B','cluster id A','cluster id B','electrode id A','electrode id B','brain area A','brain area B','unit type A','unit type B',
-                       'beta 0','beta 1','beta 2','coupling strength','electrode distance','is significant'),
-              'formats':('U20','U20',int,int,int,int,int,int,'U10','U10','U20','U20',float,float,float,float,float,bool)}
+dtype_dict = {'names':('monkey','session','unit receiver','unit sender','cluster id receiver','cluster id sender','electrode id receiver','electrode id sender','brain area receiver','brain area sender','unit type receiver','unit type sender',
+                       'beta','coupling strength','electrode distance','is significant'),
+              'formats':('U20','U20',int,int,int,int,int,int,'U10','U10','U20','U20',object,float,float,bool)}
 
 
-skipUntil = 'm44s'
+# skipUntil = 'm44s'
 found = False
-pattern = '^gam_fit_m\d+s\d+_c\d+_all_1.0000.dill$'
+pattern = '^fit_results_m\d+s\d+_c\d+_all_1.0000.dill$'
 all_coupling = np.zeros(0,dtype=dtype_dict)
 for root, dirs, files in os.walk(fit_dir, topdown=False):
     for fhName in files:
@@ -69,8 +69,8 @@ for root, dirs, files in os.walk(fit_dir, topdown=False):
         # if not found:
         #     continue
         
-        if monkey == 'Ody' or monkey == 'Quigley':
-            continue
+        # if monkey == 'Ody' or monkey == 'Quigley':
+        #     continue
         
         
         path_npz = user_paths.search_npz( session)
@@ -123,19 +123,20 @@ for root, dirs, files in os.walk(fit_dir, topdown=False):
                 unitB = int(var.split('_')[1])
                 idx_params = full.index_dict[var]
                 betas = full.beta[idx_params]
-                neu_coupl['unit A'][cc] = unitA
-                neu_coupl['unit B'][cc] = unitB
-                neu_coupl['cluster id A'][cc] = cluster_id[unitA - 1]
-                neu_coupl['cluster id B'][cc] = cluster_id[unitB - 1]
-                neu_coupl['electrode id A'][cc] = electrode_id[unitA - 1]
-                neu_coupl['electrode id B'][cc] = electrode_id[unitB - 1]
-                neu_coupl['unit type A'][cc] = unit_type[unitA - 1]
-                neu_coupl['unit type B'][cc] = unit_type[unitB - 1]
-                neu_coupl['brain area A'][cc] = brain_area[unitA - 1]
-                neu_coupl['brain area B'][cc] = brain_area[unitB - 1]
-                neu_coupl['beta 0'][cc] = betas[0]
-                neu_coupl['beta 1'][cc] = betas[1]
-                neu_coupl['beta 2'][cc] = betas[2]
+                neu_coupl['unit receiver'][cc] = unitA
+                neu_coupl['unit sender'][cc] = unitB
+                neu_coupl['cluster id receiver'][cc] = cluster_id[unitA - 1]
+                neu_coupl['cluster id sender'][cc] = cluster_id[unitB - 1]
+                neu_coupl['electrode id receiver'][cc] = electrode_id[unitA - 1]
+                neu_coupl['electrode id sender'][cc] = electrode_id[unitB - 1]
+                neu_coupl['unit type receiver'][cc] = unit_type[unitA - 1]
+                neu_coupl['unit type sender'][cc] = unit_type[unitB - 1]
+                neu_coupl['brain area receiver'][cc] = brain_area[unitA - 1]
+                neu_coupl['brain area sender'][cc] = brain_area[unitB - 1]
+                neu_coupl['beta'][cc] = betas
+                # neu_coupl['beta 1'][cc] = betas[1]
+                # neu_coupl['beta 2'][cc] = betas[2]
+                # neu_coupl['beta 3'][cc] = betas[3]
                 neu_coupl['coupling strength'][cc] = np.linalg.norm(betas)
                 neu_coupl['is significant'][cc] = is_sign
                 

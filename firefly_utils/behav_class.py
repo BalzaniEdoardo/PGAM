@@ -192,6 +192,9 @@ class behavior_experiment(object):
         except:
             print('no eyetracking...')
 
+        # time of perturbation
+        self.events.t_ptb = create_dict_beahv(trials_behv, 'events', 't_ptb')
+        
         # time of movement start
         self.events.t_move = create_dict_beahv(trials_behv, 'events', 't_move')
 

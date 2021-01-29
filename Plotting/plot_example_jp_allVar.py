@@ -28,7 +28,7 @@ from time import perf_counter
 from scipy.io import savemat
 
 
-session = 'm53s105'
+session = 'm53s91'
 dat = np.load('/Users/edoardo/Work/Code/GAM_code/analyzing/extract_tuning/eval_matrix_and_info.npz')
 info = dat['info']
 sele = info['session'] == session
@@ -36,14 +36,12 @@ info = info[sele]
 
 info_selectivity = np.load('/Users/edoardo/Work/Code/GAM_code/analyzing/extract_tuning/response_strength_info.npy')
 keep = ((info_selectivity['session'] == session) * 
-    (info_selectivity['manipulation type']=='density')*
-    ((info_selectivity['manipulation value'] == 0.005)|
-    (info_selectivity['manipulation value'] == 0.0001))
+    (info_selectivity['manipulation type']=='odd')*
+    ((info_selectivity['manipulation value'] == 0)|
+    (info_selectivity['manipulation value'] == 1))
 )
-
-variable = 't_stop'
 info_selectivity = info_selectivity[keep]
-info_selectivity = info_selectivity[info_selectivity[variable]]
+info_selectivity = info_selectivity[info_selectivity['rad_vel']]
 
 
 unit_list = np.sort(np.unique(info_selectivity['unit']))
@@ -64,10 +62,10 @@ if plot_boolean:
             continue
         try:
             # unit = int(dill_name.split('_controlgain_')[0].split('c')[-1])
-            with open('/Volumes/WD_Edo/firefly_analysis/LFP_band/GAM_fit_with_acc/gam_%s/fit_results_%s_c%d_density_0.0050.dill'%(session,session,unit),'rb') as fh:
+            with open('/Volumes/WD_Edo/firefly_analysis/LFP_band/GAM_fit_with_acc/gam_%s/fit_results_%s_c%d_odd_1.0000.dill'%(session,session,unit),'rb') as fh:
                 result_dict = dill.load(fh)
             
-            with open('/Volumes/WD_Edo/firefly_analysis/LFP_band/GAM_fit_with_acc/gam_%s/fit_results_%s_c%d_density_0.0001.dill'%(session,session,unit),'rb') as fh:
+            with open('/Volumes/WD_Edo/firefly_analysis/LFP_band/GAM_fit_with_acc/gam_%s/fit_results_%s_c%d_odd_0.0000.dill'%(session,session,unit),'rb') as fh:
                 result_dict2 = dill.load(fh)
         except:
             continue
@@ -133,73 +131,73 @@ if plot_boolean:
             
             
             
-        # plt.figure(figsize=(12,10))
-        # plt.suptitle(session + ' unit %d'%unit )
+        plt.figure(figsize=(12,10))
+        plt.suptitle(session + ' unit %d'%unit )
 
-        # ax_dict = {}
+        ax_dict = {}
         
-        # k = 1
-        # for var in fit_slow.var_list:#['rad_vel']:
-        #     if var.startswith('neu'):
-        #         continue
-        #     ax_dict[var] = plt.subplot(5,4,k)
-        #     ax = ax_dict[var]
-        #     ax.set_title(var)
+        k = 1
+        for var in fit_slow.var_list:#['rad_vel']:
+            if var.startswith('neu'):
+                continue
+            ax_dict[var] = plt.subplot(5,4,k)
+            ax = ax_dict[var]
+            ax.set_title(var)
             
-        #     fX,fX_p,fX_m = fit_slow.smooth_compute([xxdict[var]],var,0.99)
-        #     if (not var.startswith('t_')) or var == 'spike_hist':
-        #         fX[xxdict[var] <= xxdict_slow[var][0]] = np.nan
-        #         fX[xxdict[var] >= xxdict_slow[var][-1]] = np.nan
-        #         fX_p[xxdict[var] <= xxdict_slow[var][0]] = np.nan
-        #         fX_p[xxdict[var] >= xxdict_slow[var][-1]] = np.nan
-        #         fX_m[xxdict[var] <= xxdict_slow[var][0]] = np.nan
-        #         fX_m[xxdict[var] >= xxdict_slow[var][-1]] = np.nan
-        #     # X = sm_handler_gam[var].X.toarray()
-        #     # X = X[:,:-1] - np.mean(X[:,:-1],axis=0)
-        #     # X = np.hstack((np.ones((X.shape[0],1)),X))
+            fX,fX_p,fX_m = fit_slow.smooth_compute([xxdict[var]],var,0.99)
+            if (not var.startswith('t_')) or var == 'spike_hist':
+                fX[xxdict[var] <= xxdict_slow[var][0]] = np.nan
+                fX[xxdict[var] >= xxdict_slow[var][-1]] = np.nan
+                fX_p[xxdict[var] <= xxdict_slow[var][0]] = np.nan
+                fX_p[xxdict[var] >= xxdict_slow[var][-1]] = np.nan
+                fX_m[xxdict[var] <= xxdict_slow[var][0]] = np.nan
+                fX_m[xxdict[var] >= xxdict_slow[var][-1]] = np.nan
+            # X = sm_handler_gam[var].X.toarray()
+            # X = X[:,:-1] - np.mean(X[:,:-1],axis=0)
+            # X = np.hstack((np.ones((X.shape[0],1)),X))
         
-        #     # pred = np.dot(X[:,1:],fit_fast.beta[fit_fast.index_dict[var]])
-        #     xx = np.arange(xxdict_slow[var].shape[0])
-        #     # if not var in fit_fast.var_list:
-        #     idx = np.where(fit_slow.covariate_significance['covariate'] == var)[0]
+            # pred = np.dot(X[:,1:],fit_fast.beta[fit_fast.index_dict[var]])
+            xx = np.arange(xxdict_slow[var].shape[0])
+            # if not var in fit_fast.var_list:
+            idx = np.where(fit_slow.covariate_significance['covariate'] == var)[0]
 
-        #     if fit_slow.covariate_significance['p-val'][idx]<0.001:
-        #         color='g'
-        #     else:
-        #         color='y'
-        #     ax.plot(xx,fX,color=color,label=lab_ful)
+            if fit_slow.covariate_significance['p-val'][idx]<0.001:
+                color='g'
+            else:
+                color='y'
+            ax.plot(xx,fX,color=color,label=lab_ful)
 
-        #     ax.fill_between(xx,fX_m,fX_p,color=color,alpha=0.3)
-        #     if var == 'spike_hist':
-        #         ax.legend()
-        #     ax.set_xticks([])
+            ax.fill_between(xx,fX_m,fX_p,color=color,alpha=0.3)
+            if var == 'spike_hist':
+                ax.legend()
+            ax.set_xticks([])
             
             
-        #     k += 1
+            k += 1
             
-        # k = 1
-        # for var in fit_fast.var_list:#['rad_vel']:
-        #     if var.startswith('neu'):
-        #         continue
+        k = 1
+        for var in fit_fast.var_list:#['rad_vel']:
+            if var.startswith('neu'):
+                continue
             
-        #     ax = ax_dict[var]
-        #     fX,fX_p,fX_m = fit_fast.smooth_compute([xxdict[var]],var,0.99)
+            ax = ax_dict[var]
+            fX,fX_p,fX_m = fit_fast.smooth_compute([xxdict[var]],var,0.99)
             
-        #     xx = np.arange(fX.shape[0])
-        #     idx = np.where(fit_fast.covariate_significance['covariate'] == var)[0]
-        #     if fit_fast.covariate_significance['p-val'][idx]<0.001:
-        #         color='r'
-        #     else:
-        #         color='k'
-        #     ax.plot(xx,fX,color=color,label=lab_red)
+            xx = np.arange(fX.shape[0])
+            idx = np.where(fit_fast.covariate_significance['covariate'] == var)[0]
+            if fit_fast.covariate_significance['p-val'][idx]<0.001:
+                color='r'
+            else:
+                color='k'
+            ax.plot(xx,fX,color=color,label=lab_red)
             
-        #     ax.fill_between(xx,fX_m,fX_p,color=color,alpha=0.3)
+            ax.fill_between(xx,fX_m,fX_p,color=color,alpha=0.3)
             
-        #     k += 1
+            k += 1
             
         
             
-        # plt.tight_layout(rect=[0, 0.03, 1, 0.95])
+        plt.tight_layout(rect=[0, 0.03, 1, 0.95])
         
         
         # plt.legend()
@@ -208,36 +206,26 @@ if plot_boolean:
         # break
         # break
 
-        var = variable
-        if var == 'rad_vel':
-            xx_400 = np.linspace(0,390,100)
-            xx_200 = np.linspace(0,180,100)
-            fX_400, fX_p_ci_400, fX_m_ci_400 = fit_fast.smooth_compute([xx_400], variable, perc=0.99)
-            fX_200, fX_p_ci_200, fX_m_ci_200 = fit_slow.smooth_compute([xx_200], variable, perc=0.99)
-        
-            
-        else:
-            
-            fX_200, fX_p_ci_200, fX_m_ci_200 = fit_fast.smooth_compute([xxdict[var]], variable, perc=0.99)
-            fX_400, fX_p_ci_400, fX_m_ci_400 = fit_fast.smooth_compute([xxdict[var]], variable, perc=0.99)
-            xx_400= np.arange(fX_400.shape[0])
-            xx_200=xx_400
-        fX_200, fX_p_ci_200, fX_m_ci_200 = fit_slow.smooth_compute([xxdict[var]], variable, perc=0.99)
+        # var = 'rad_vel'
+        # xx_400 = np.linspace(0,390,100)
+        # xx_200 = np.linspace(0,180,100)
+        # fX_400, fX_p_ci_400, fX_m_ci_400 = fit_fast.smooth_compute([xx_400], 'rad_vel', perc=0.99)
+        # fX_200, fX_p_ci_200, fX_m_ci_200 = fit_slow.smooth_compute([xx_200], 'rad_vel', perc=0.99)
         
         
-        plt.figure()
-        p, = plt.plot(xx_200,fX_200,label='controlgain=1')
-        plt.fill_between(xx_200, fX_m_ci_200, fX_p_ci_200, color=p.get_color(), alpha=0.4)
+        # plt.figure()
+        # p, = plt.plot(xx_200,fX_200,label='controlgain=1')
+        # plt.fill_between(xx_200, fX_m_ci_200, fX_p_ci_200, color=p.get_color(), alpha=0.4)
         
         
-        p,=plt.plot(xx_400,fX_400,label='controlgain=2')
-        plt.fill_between(xx_400, fX_m_ci_400, fX_p_ci_400, color=p.get_color(), alpha=0.4)
+        # p,=plt.plot(xx_400,fX_400,label='controlgain=2')
+        # plt.fill_between(xx_400, fX_m_ci_400, fX_p_ci_400, color=p.get_color(), alpha=0.4)
         
-        plt.legend()
+        # plt.legend()
         
-        plt.tight_layout()
-        plt.savefig('Figs/example_tuning_%s_%d.png'%(session,unit))
-        plt.close('all')
+        # plt.tight_layout()
+        # plt.savefig('Figs/example_tuning_%s_%d.png'%(session,unit))
+        # plt.close('all')
 # plot hist
 # fld_npz = '/Volumes/WD_Edo/firefly_analysis/LFP_band/concatenation_with_accel/'
 # dat_npz = np.load(fld_npz+'%s.npz'%(session),allow_pickle=True)

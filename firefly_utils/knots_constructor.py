@@ -23,7 +23,8 @@ from copy import deepcopy
 # exclude_eye_position = ['m44s213','m53s133','m53s134','m53s105','m53s182']
 
 def knots_cerate(x,var,session, hand_vel_temp=False,hist_filt_dur='short',
-                 exclude_eye_position=['m44s213','m53s133','m53s134','m53s105','m53s182']):
+                 exclude_eye_position=['m44s213','m53s133','m53s134','m53s105','m53s182'],
+                 condition=None):
     """
         this function returns the knots, a transformed version of the data
         and a boolean indicating if the variable should be included in the GAM.
@@ -81,49 +82,50 @@ def knots_cerate(x,var,session, hand_vel_temp=False,hist_filt_dur='short',
         x_trans = x
     
     if var == 'rad_vel':
-        knots = np.hstack((np.linspace(0,150,5)[:-1],np.linspace(150,200,3)))
-        knots = np.hstack((knots[:-1], np.linspace(200,400,5)))
-        
-        # conditioin that holds when there is no gain
-        if (x_trans > 200).sum() / np.sum(~np.isnan(x_trans)) < 0.1:
-            idx_maxVel = np.where(knots == 200)[0][0]
+        if condition != 'controlgain':
+            knots = np.hstack((np.linspace(0,150,5)[:-1],np.linspace(150,200,3)))
             knots = np.hstack((
-                                [knots[0]]*3,
-                                knots[:idx_maxVel+3]
-                               ))
+                [knots[0]] * 3,
+                knots,
+                [knots[-1]] * 3
+            ))
             x_trans[(x_trans > 200) | (x_trans < 0)] = np.nan
-            
-            
         else:
-            knots = np.hstack((
-                                [knots[0]]*3,
-                                knots,
-                                [knots[-1]]*3
-                               ))
-            x_trans[(x_trans > 400) | (x_trans < 0)] = np.nan
-    
+            knots = np.linspace(0, 400, 11)
+            order = 1
+            penalty_type = 'EqSpaced'
+            # conditioin that holds when there is no gain
+            if (x_trans > 200).sum() / np.sum(~np.isnan(x_trans)) < 0.1:
+                idx_maxVel = np.where(knots == 200)[0][0]
+                knots = knots[:idx_maxVel+1]
+                x_trans[(x_trans > 200) | (x_trans < 0)] = np.nan
+            else:
+                x_trans[(x_trans > 400) | (x_trans < 0)] = np.nan
+
     
     elif var == 'ang_vel':
-        knots = np.linspace(-65,65,6)
-        knots = np.hstack((
-            np.linspace(-100,-65,3),knots[1:-1],np.linspace(65,100,3)))
-        
-        # condition for gain == 2
-        if np.nanmax(x_trans) > 120:
-            
+        if condition != 'controlgain':
+            knots = np.linspace(-65,65,6)
             knots = np.hstack((
-                                [knots[0]]*3,
-                                knots,
-                                [knots[-1]]*3
-                               ))
-            x_trans[np.abs(x_trans) > 100] = np.nan
+                [knots[0]] * 3,
+                knots,
+                [knots[-1]] * 3
+            ))
         else:
-             knots = np.hstack((
-                 [knots[0]],
-                 knots,
-                 [knots[-1]]
-                 ))
-             x_trans[np.abs(x_trans) > 65] = np.nan
+            knots = np.linspace(-91, 91, 8)
+            order = 1
+            penalty_type = 'EqSpaced'
+            # knots = np.hstack((
+            #     np.linspace(-100,-65,3),knots[1:-1],np.linspace(65,100,3)))
+        
+            # condition for gain == 2
+            if np.nanmax(x_trans) > 120:
+                x_trans[np.abs(x_trans) > 91] = np.nan
+            else:
+
+                 knots = np.linspace(-65,65,6)
+
+                 x_trans[np.abs(x_trans) > 65] = np.nan
     
     elif var == 'rad_path':
         knots = np.linspace(0,350,6)
@@ -181,7 +183,7 @@ def knots_cerate(x,var,session, hand_vel_temp=False,hist_filt_dur='short',
         #                        ))
         is_cyclic = True
         
-    elif var.startswith('t_') and var != 't_flyOFF':
+    elif var.startswith('t_') and var != 't_flyOFF' and var!='t_ptb':
         kernel_len = 165
         knots = np.linspace(-165,165,10)
         knots = np.hstack(([knots[0]]*3,
@@ -189,6 +191,16 @@ def knots_cerate(x,var,session, hand_vel_temp=False,hist_filt_dur='short',
                                 [knots[-1]]*3
                                ))
         is_temporal_kernel = True
+    
+    elif var =='t_ptb':
+        kernel_len = 401
+        knots = np.linspace(10**-6,200,10)
+        knots = np.hstack(([knots[0]]*3,
+                                knots,
+                                [knots[-1]]*3
+                               ))
+        is_temporal_kernel = True
+        kernel_direction = 1
         
     elif var == 't_flyOFF':
         kernel_len = 322
@@ -202,24 +214,24 @@ def knots_cerate(x,var,session, hand_vel_temp=False,hist_filt_dur='short',
         kernel_direction = 0
     
     elif var == 'ang_acc':
-        knots = np.linspace(-350,350,6)
+        knots = np.linspace(-250,250,6)
         
         knots = np.hstack(([knots[0]]*3,
                                 knots,
                                 [knots[-1]]*3
                                ))
         
-        x_trans[(x_trans > 350) | (x_trans < -350)] = np.nan
+        x_trans[(x_trans > 250) | (x_trans < -250)] = np.nan
         
     elif var == 'rad_acc':
-       knots = np.linspace(-1500,1500,8)
+       knots = np.linspace(-1000,1000,8)
        
        knots = np.hstack(([knots[0]]*3,
                                knots,
                                [knots[-1]]*3
                               ))
        
-       x_trans[(x_trans > 1500) | (x_trans < -1500)] = np.nan
+       x_trans[(x_trans > 1000) | (x_trans < -1000)] = np.nan
       
     elif var == 'hand_vel1':
         if not hand_vel_temp:
@@ -265,7 +277,7 @@ def knots_cerate(x,var,session, hand_vel_temp=False,hist_filt_dur='short',
         if hist_filt_dur == 'short':
             kernel_direction = 1
             kernel_len = 11
-            knots = np.linspace((10)**-6,5,8)
+            knots = np.linspace((10)**-6,5,6)
             penalty_type = 'EqSpaced'
             order = 1
             
@@ -321,17 +333,17 @@ if __name__ == '__main__':
     # hist_matrix = dat['hist']
     # edge_matrix = dat['edge']
     # info = dat['info']
-    use_var = 'rad_vel'
+    use_var = 't_ptb'
     reload = True
-    
-    fhName = '/Volumes/WD_Edo/firefly_analysis/LFP_band/concatenation_with_accel/m53s95.npz'
+    perform_PQL = False
+    fhName = '/Volumes/WD_Edo/firefly_analysis/LFP_band/concatenation_with_accel/m53s51.npz'
     session = os.path.basename(fhName).split('.')[0]
     # dat = np.load(fhName,allow_pickle=True)
-    neuron = 2
+    neuron = 25
     # neuron = 2
-    cond_type = 'all'
+    cond_type = 'ptb'
     cond_value = 1
-    
+    cond_knots = 'ptb'
     par_list = ['Xt', 'Yt', 'lfp_beta', 'lfp_alpha', 'lfp_theta', 'var_names', 'info_trial',
             'trial_idx', 'brain_area', 'pre_trial_dur', 'post_trial_dur', 'time_bin', 'cR', 'presence_rate', 'isiV',
             'unit_type']
@@ -339,9 +351,15 @@ if __name__ == '__main__':
         (Xt, yt, lfp_beta, lfp_alpha, lfp_theta, var_names, trial_type,
          trial_idx, brain_area, pre_trial_dur, pre_trial_dur, time_bin,
          cont_rate_filter, presence_rate_filter, isi_v_filter, unit_type) = unpack_preproc_data(fhName, par_list)
-        
-    idx_subselect = np.where(trial_type[cond_type] == cond_value)[0]
 
+    if cond_type != 'odd':
+        idx_subselect = np.where(trial_type[cond_type] == cond_value)[0]
+    else:
+        idx_subselect = np.where(trial_type['all'])[0]
+        if cond_value == 1:
+            idx_subselect = idx_subselect[1::3]
+        else:
+            idx_subselect = idx_subselect[::3]
     keep = []
     for ii in idx_subselect:
         keep = np.hstack((keep, np.where(trial_idx == ii)[0]))
@@ -350,14 +368,15 @@ if __name__ == '__main__':
 
     keep = np.array(keep, dtype=int)
     trial_idx = trial_idx[keep]
-    
+
     sm_handler = smooths_handler()
 
     for var in np.hstack((var_names, ['lfp_beta','spike_hist'])):
         # for now skip
-        if var != use_var:
+        # if var != use_var:
+        #     continue
+        if 'hand' in var:
             continue
-
         if var in ['lfp_beta', 'lfp_alpha', 'lfp_theta']:
             is_cyclic = True
         else:
@@ -380,30 +399,31 @@ if __name__ == '__main__':
         else:
             cc = np.where(var_names == var)[0][0]
             x = Xt[keep, cc]
-        
-       
+
+
 
         knots, x_trans, include_var, is_cyclic, order,\
             kernel_len,kernel_direction,is_temporal_kernel,penalty_type,der =\
                 knots_cerate(x,var,session,hand_vel_temp=True,hist_filt_dur='short',
-                              exclude_eye_position=['m44s213','m53s133','m53s134','m53s105','m53s182'])
-        
+                              exclude_eye_position=['m44s213','m53s133','m53s134','m53s105','m53s182'],
+                             condition=cond_knots)
+
         if include_var:
             if var in sm_handler.smooths_dict.keys():
                 sm_handler.smooths_dict.pop(var)
                 sm_handler.smooths_var.remove(var)
 
-            sm_handler.add_smooth(var, [x_trans], ord=order, knots=[knots], 
+            sm_handler.add_smooth(var, [x_trans], ord=order, knots=[knots],
                                   knots_num=None, perc_out_range=None,
-                          is_cyclic=[is_cyclic], lam=50., 
+                          is_cyclic=[is_cyclic], lam=50.,
                           penalty_type=penalty_type,
                           der=der,
-                          trial_idx=trial_idx, time_bin=time_bin, 
+                          trial_idx=trial_idx, time_bin=time_bin,
                           is_temporal_kernel=is_temporal_kernel,
                           kernel_length=kernel_len, kernel_direction=kernel_direction,
                           ord_AD=3,ad_knots=8,repeat_extreme_knots=False)
 
-    
+
 
     link = deriv3_link(sm.genmod.families.links.log())
     poissFam = sm.genmod.families.family.Poisson(link=link)
@@ -415,12 +435,13 @@ if __name__ == '__main__':
     t0 = perf_counter()
     full, reduced = gam_model.fit_full_and_reduced(sm_handler.smooths_var, th_pval=0.001, method='L-BFGS-B', tol=1e-8,
                                                     conv_criteria='gcv',
-                                                    max_iter=10000, gcv_sel_tol=10 ** -13, random_init=False,
+                                                    max_iter=100, gcv_sel_tol=10 ** -13, random_init=False,
                                                     use_dgcv=True, initial_smooths_guess=False,
                                                     fit_initial_beta=True, pseudoR2_per_variable=True,
                                                     trial_num_vec=trial_idx, k_fold=False, fold_num=5,
-                                                    reducedAdaptive=False,compute_MI=False)
-    
+                                                    reducedAdaptive=False,compute_MI=False,
+                                                    perform_PQL=perform_PQL)
+
 # # =============================================================================
 # #     PLOT STUFF
 # # =============================================================================
@@ -435,24 +456,26 @@ if __name__ == '__main__':
     dropvar = pvals > 0.001
     drop_names = gam_res.covariate_significance['covariate'][dropvar]
     fig = plt.figure(figsize=(14, 8))
-    plt.suptitle('%s - neuron %d' % (session, neuron))
+    plt.suptitle('%s - neuron %d  - PQL %d - %s %f' % (session, neuron,perform_PQL,cond_type,cond_value))
     cc = 0
     cc_plot = 1
-    for var in np.hstack((var_names, ['lfp_beta',',spike_hist'])):
+    for var in np.hstack((var_names, ['lfp_beta','spike_hist'])):
         if var != use_var:
             continue
-        
+
         if not np.sum(np.array(gam_res.var_list) == var) and var != 'spike_hist':
             cc += 1
             continue
         print('plotting var', var)
 
-        ax = plt.subplot(5, 4, cc_plot)
+        # ax = plt.subplot(5, 4, cc_plot)
         ax = plt.subplot(1, 1, cc_plot)
 
         if var == 'spike_hist':
-            pass
+            continue
         else:
+            cc = np.where(var_names == var)[0][0]
+            x = Xt[keep, cc]
             # max_x, min_x = X[var].max(), X[var].min()
             min_x = gam_res.smooth_info[var]['knots'][0][0]
             max_x = gam_res.smooth_info[var]['knots'][0][-1]
@@ -473,37 +496,49 @@ if __name__ == '__main__':
             xx = 0.006 * np.linspace(-(dim_kern - 1) / 2, (dim_kern - 1) / 2, dim_kern)
             fX, fX_p_ci, fX_m_ci = gam_res.smooth_compute([impulse], var, perc=0.99, trial_idx=None)
             if var != 'spike_hist':
+
                 xx = xx[idx_select][1:-1]
                 fX = fX[idx_select][1:-1]
                 fX_p_ci = fX_p_ci[idx_select][1:-1]
                 fX_m_ci = fX_m_ci[idx_select][1:-1]
             else:
-                xx = xx[:(-ord_ - 1)]
-                fX = fX[:(-ord_ - 1)]
-                fX_p_ci = fX_p_ci[:(-ord_ - 1)]
-                fX_m_ci = fX_m_ci[:(-ord_ - 1)]
+                if xx.shape[0] > 20:
+                    xx = xx[:(-ord_ - 1)]
+                    fX = fX[:(-ord_ - 1)]
+                    fX_p_ci = fX_p_ci[:(-ord_ - 1)]
+                    fX_m_ci = fX_m_ci[:(-ord_ - 1)]
+                else:
+                    xx = xx[:(-ord_ )]
+                    fX = fX[:(-ord_ )]
+                    fX_p_ci = fX_p_ci[:(-ord_ )]
+                    fX_m_ci = fX_m_ci[:(-ord_ )]
+
 
         else:
             knots = gam_res.smooth_info[var]['knots']
             knots_sort = np.unique(knots[0])
             knots_sort.sort()
-            
+
             xx = np.linspace(min_x,max_x,100)#(knots_sort[1:] + knots_sort[:-1]) * 0.5
 
             fX, fX_p_ci, fX_m_ci = gam_res.smooth_compute([xx], var, perc=0.99)
-        if np.sum(drop_names == var):
-            label = var
-        else:
-            label = var
-
+        # if np.sum(drop_names == var):
+        #     label = var
+        # else:
+        #     label = var
+        label = var
         if var == 'spike_hist':
             iend = xx.shape[0] // 2
 
             print('set spike_hist')
-            fX = fX[iend + 1:][::-1]
-            fX_p_ci = fX_p_ci[iend + 1:][::-1]
-            fX_m_ci = fX_m_ci[iend + 1:][::-1]
-            plt.plot(xx[:fX.shape[0]], fX, ls='-', color='k', label=label)
+
+            iidx = np.where(impulse==1)[0][0]
+            if impulse.shape[0] < 20:
+                iidx = iidx
+            fX = fX[iidx + 1:][::-1]
+            fX_p_ci = fX_p_ci[iidx+1:][::-1]
+            fX_m_ci = fX_m_ci[iidx+1:][::-1]
+            plt.plot(xx[:fX.shape[0]], fX, ls='-',marker='o', color='k', label=label)
             plt.fill_between(xx[:fX_m_ci.shape[0]], fX_m_ci, fX_p_ci, color='k', alpha=0.4)
         else:
             plt.plot(xx, fX, ls='-', color='k', label=label)
@@ -515,46 +550,46 @@ if __name__ == '__main__':
 
         cc += 1
         cc_plot += 1
-    plt.figure()
-    full_tmp = deepcopy(gam_res)
-    numbasis = len(full_tmp.beta[full_tmp.index_dict[use_var]])
-    plt.figure()
-    xvar = use_var
-    if use_var in ['lfp_beta', 'lfp_alpha', 'lfp_theta']:
-        is_cyclic = True
-    else:
-        is_cyclic = False
+    # plt.figure()
+    # full_tmp = deepcopy(gam_res)
+    # numbasis = len(full_tmp.beta[full_tmp.index_dict[use_var]])
+    # plt.figure()
+    # xvar = use_var
+    # if use_var in ['lfp_beta', 'lfp_alpha', 'lfp_theta']:
+    #     is_cyclic = True
+    # else:
+    #     is_cyclic = False
 
-    if var == 'lfp_theta':
-        x = lfp_theta[keep, neuron - 1]
+    # if var == 'lfp_theta':
+    #     x = lfp_theta[keep, neuron - 1]
 
-    elif var == 'lfp_beta':
-        x = lfp_beta[keep, neuron - 1]
+    # elif var == 'lfp_beta':
+    #     x = lfp_beta[keep, neuron - 1]
 
-    elif var == 'lfp_alpha':
-        x = lfp_alpha[keep, neuron - 1]
+    # elif var == 'lfp_alpha':
+    #     x = lfp_alpha[keep, neuron - 1]
 
-    elif var == 'spike_hist':
-        tmpy = yt[keep, neuron - 1]
-        x = tmpy
-        # x = np.hstack(([0], tmpy[:-1]))
+    # elif var == 'spike_hist':
+    #     tmpy = yt[keep, neuron - 1]
+    #     x = tmpy
+    #     # x = np.hstack(([0], tmpy[:-1]))
 
-    else:
-        cc = np.where(var_names == use_var)[0][0]
-        x = Xt[keep, cc]
-    
-    x0 = np.nanpercentile(x,1) 
-    x1 = np.nanpercentile(x,99) 
-    
-    
-    x0 = np.max([min_x,x0])
-    max_x = np.min([max_x,x1])
-    x = np.linspace(x0,x1,100)
-    for k in range(numbasis):
-        beta = np.zeros(numbasis)
-        beta[k] = 1
-        # full_tmp.beta[full_tmp.index_dict[var]] = 
-        full_tmp.beta[full_tmp.index_dict[use_var]] = beta
-        
-        fX,_,_ = full_tmp.smooth_compute([x],use_var)
-        plt.plot(x,fX)    
+    # else:
+    #     cc = np.where(var_names == use_var)[0][0]
+    #     x = Xt[keep, cc]
+
+    # x0 = np.nanpercentile(x,1)
+    # x1 = np.nanpercentile(x,99)
+
+
+    # x0 = np.max([min_x,x0])
+    # max_x = np.min([max_x,x1])
+    # x = np.linspace(x0,x1,100)
+    # for k in range(numbasis):
+    #     beta = np.zeros(numbasis)
+    #     beta[k] = 1
+    #     # full_tmp.beta[full_tmp.index_dict[var]] =
+    #     full_tmp.beta[full_tmp.index_dict[use_var]] = beta
+
+    #     fX,_,_ = full_tmp.smooth_compute([x],use_var)
+    #     plt.plot(x,fX)
