@@ -13,7 +13,7 @@ import scipy.signal as signal
 import warnings
 from scipy.integrate import simps,dblquad
 from scipy.spatial import Delaunay
-from numba import jit
+# from numba import jit
 # import quadpy
 
 def splineDesign(knots, x, ord=4, der=0, outer_ok=False):
@@ -207,42 +207,42 @@ def adaptiveSmoother_1D_derBased(knots, xmin, xmax, n_points,ord_AD=3, ad_smooth
         M_list += [M]
     return M_list,Bx
 
-@jit(nopython=True,parallel=False)
-def sumtriangles( xy, z, triangles ):
-    """ integrate scattered data, given a triangulation
-    zsum, areasum = sumtriangles( xy, z, triangles )
-    In:
-        xy: npt, dim data points in 2d, 3d ...
-        z: npt data values at the points, scalars or vectors
-        triangles: ntri, dim+1 indices of triangles or simplexes, as from
-http://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.Delaunay.html
-    Out:
-        zsum: sum over all triangles of (area * z at midpoint).
-            Thus z at a point where 5 triangles meet
-            enters the sum 5 times, each weighted by that triangle's area / 3.
-        areasum: the area or volume of the convex hull of the data points.
-            For points over the unit square, zsum outside the hull is 0,
-            so zsum / areasum would compensate for that.
-            Or, make sure that the corners of the square or cube are in xy.
-    """
-        # z concave or convex => under or overestimates
-    npt, dim = xy.shape
-    ntri, dim1 = triangles.shape
-    # assert npt == len(z), "shape mismatch: xy %s z %s" % (xy.shape, z.shape)
-    # assert dim1 == dim+1, "triangles ? %s" % triangles.shape
-    zsum = 0#np.zeros( z[0].shape )
-    areasum = 0
-    dimfac = np.prod( np.arange( 1, dim+1 ))
-    for tri in triangles:
-        corners = xy[tri]
-        t = corners[1:] - corners[0]
-        if dim == 2:
-            area = np.abs( t[0,0] * t[1,1] - t[0,1] * t[1,0] ) / 2
-        else:
-            area = np.abs( np.linalg.det( t )) / dimfac  # v slow
-        zsum += area * np.mean(z[tri])
-        areasum += area
-    return (zsum, areasum)
+# @jit(nopython=True,parallel=False)
+# def sumtriangles( xy, z, triangles ):
+#     """ integrate scattered data, given a triangulation
+#     zsum, areasum = sumtriangles( xy, z, triangles )
+#     In:
+#         xy: npt, dim data points in 2d, 3d ...
+#         z: npt data values at the points, scalars or vectors
+#         triangles: ntri, dim+1 indices of triangles or simplexes, as from
+# http://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.Delaunay.html
+#     Out:
+#         zsum: sum over all triangles of (area * z at midpoint).
+#             Thus z at a point where 5 triangles meet
+#             enters the sum 5 times, each weighted by that triangle's area / 3.
+#         areasum: the area or volume of the convex hull of the data points.
+#             For points over the unit square, zsum outside the hull is 0,
+#             so zsum / areasum would compensate for that.
+#             Or, make sure that the corners of the square or cube are in xy.
+#     """
+#         # z concave or convex => under or overestimates
+#     npt, dim = xy.shape
+#     ntri, dim1 = triangles.shape
+#     # assert npt == len(z), "shape mismatch: xy %s z %s" % (xy.shape, z.shape)
+#     # assert dim1 == dim+1, "triangles ? %s" % triangles.shape
+#     zsum = 0#np.zeros( z[0].shape )
+#     areasum = 0
+#     dimfac = np.prod( np.arange( 1, dim+1 ))
+#     for tri in triangles:
+#         corners = xy[tri]
+#         t = corners[1:] - corners[0]
+#         if dim == 2:
+#             area = np.abs( t[0,0] * t[1,1] - t[0,1] * t[1,0] ) / 2
+#         else:
+#             area = np.abs( np.linalg.det( t )) / dimfac  # v slow
+#         zsum += area * np.mean(z[tri])
+#         areasum += area
+#     return (zsum, areasum)
         
 def smPenalty_Disk(knot_list, n_points,
                    ord=4, der=1, outer_ok=False, cyclic=[False,False],
