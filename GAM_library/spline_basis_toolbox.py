@@ -3,7 +3,6 @@ import sys
 sys.path.append('/Users/edoardo/Work/Code/Angelaki-Savin/GAM_library')
 from gam_data_handlers import *
 import statsmodels.api as sm
-from basis_set_param_per_session import *
 from knots_util import *
 from copy import  deepcopy
 
@@ -681,6 +680,7 @@ class between_knots_spline_basis_function(object):
 
 
 if __name__ == '__main__':
+    #from basis_set_param_per_session import *
 
     import  matplotlib.pylab as plt
     import os,dill

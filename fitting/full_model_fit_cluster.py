@@ -354,13 +354,15 @@ for neuron in neuron_list:
     spk = yt[keep_test,neuron-1]
     p_r2_coupling = pseudo_r2_compute(spk,family, modelX_test,full_coupling.beta)
     beta = np.zeros(full_coupling.beta.shape[0])
-    beta[0] = reduced_coupling.beta[0]
+    if not reduced_coupling is None:
+        beta[0] = reduced_coupling.beta[0]
     
-    for var in reduced_coupling.var_list:
-        beta[full_coupling.index_dict[var]] = reduced_coupling.beta[reduced_coupling.index_dict[var]]
-        
-    p_r2_coupling_reduced = pseudo_r2_compute(spk,family, modelX_test,beta)
-    
+        for var in reduced_coupling.var_list:
+            beta[full_coupling.index_dict[var]] = reduced_coupling.beta[reduced_coupling.index_dict[var]]
+            
+        p_r2_coupling_reduced = pseudo_r2_compute(spk,family, modelX_test,beta)
+    else:
+        p_r2_coupling_reduced = np.nan
     
     if not os.path.exists('gam_%s'%session):
         os.makedirs('gam_%s'%session)
