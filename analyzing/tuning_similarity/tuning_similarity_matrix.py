@@ -178,7 +178,7 @@ np.savez('pairwise_L2_dist.npz',pairwise_dist=pairwise_dist,info_dict=info_dict,
 if check_tuning_sim:
     session_i = 'm53s98'
     session_j = 'm53s98'
-    variable = 't_move'
+    variable = 't_stop'
     idx = np.where(np.array(var_list) == variable)[0][0]
 
     dist_l2 = pairwise_dist[(session_i, session_j)][:, :, idx]

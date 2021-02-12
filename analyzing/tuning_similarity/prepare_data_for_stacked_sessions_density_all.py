@@ -162,8 +162,8 @@ tuning_func_dict = {}
 dtype_info = {'names':('session','neuron','brain_area','unit_type','cluster_id',
                        'electrode_id','channel_id','is_responding','firing_rate_hz'),'formats':('U20',int,'U3','U50',int,int,int,bool,float)}
 for session in session_list:
-    if session != 'm53s98':
-        continue
+    # if session != 'm53s98':
+    #     continue
     dat = np.load('/Volumes/WD_Edo/firefly_analysis/LFP_band/concatenation_with_accel/%s.npz' % session, allow_pickle=True)
     print('%s: reading concat...'%session)
     
@@ -315,8 +315,8 @@ for i in range(session_list.shape[0]):
         progress.current+=1
         
         session_2 = session_list[j]
-        if session_1 != 'm53s98' and session_2 != 'm53s98':
-            continue
+        # if session_1 != 'm53s98' and session_2 != 'm53s98':
+        #     continue
         fits_2 = os.listdir(base_fld % session_2)
         for fit2 in fits_2:
             if re.match(pattern,fit2):

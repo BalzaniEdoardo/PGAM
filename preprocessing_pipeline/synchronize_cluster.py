@@ -33,7 +33,7 @@ path_fitting_fld = os.path.join(main_dir,'fitting')
 path_ff_utils = os.path.join(main_dir,'firefly_utils')
 path_util_preproc = os.path.join(folder_name,'util_preproc')
 path_jpn5_base = '/scratch/%s/'%send_to#os.path.dirname(os.path.dirname(user_paths.get_path('data_hpc')))
-path_to_fit_fld = '/scratch/%s/fit_with_accel'%send_to#os.path.join(path_jpn5_base,'select_hand_vel')
+path_to_fit_fld = '/scratch/%s/fit_ptb_as_variable'%send_to#os.path.join(path_jpn5_base,'select_hand_vel')
 
 # send gam_fit.py
 print('\nsending:')
@@ -95,7 +95,7 @@ os.system('sshpass -p "%s" scp %s %s@greene.hpc.nyu.edu:%s' % (PP, path_to_scrip
 #             print('sent')
 #             os.remove(os.path.join(main_dir,'gam_fit_%s.sh'%session))
             
-# # print('=================\n')
+# # # print('=================\n')
 
 
 # send basis set 

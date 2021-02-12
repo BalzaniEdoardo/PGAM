@@ -438,7 +438,8 @@ class GAM_result(object):
             mu = self.family.link.inverse(eta)
         return mu
 
-    def mu_sigma_log_space(self,X_list,var_list=None,get_exog=False,trial_idx=None,pre_trial_dur=None,post_trial_dur=None):
+    def mu_sigma_log_space(self,X_list,var_list=None,get_exog=False,
+                           trial_idx=None,pre_trial_dur=None,post_trial_dur=None):
         cc = 0
         if var_list is None:
             var_list = self.var_list
@@ -545,10 +546,7 @@ class GAM_result(object):
         
         rho = np.sqrt((1 - nu) * nu * 0.5)
         nu1 = (nu + 1 + (1 - nu ** 2) ** (0.5)) * 0.5
-        # if nu1 <= 1:
-        #     nu1 = 0
-        #     nu2 = 0
-        # else:
+       
         nu2 = nu + 1 - nu1
         Vb = self.cov_beta[idx, :]
         Vb = Vb[:, idx]

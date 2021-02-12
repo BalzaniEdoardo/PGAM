@@ -64,8 +64,10 @@ for fh in os.listdir('/Volumes/WD_Edo/firefly_analysis/LFP_band/concatenation_wi
     cond_dict = {'all':[True],'density':[0.0001, 0.005],
                   'replay':[0,1],'controlgain':[2,1.5],'reward':[0,1],'replay':[0,1],
                   'ptb':[0,1]} #'density':[0.0001, 0.005]}
-    cond_dict = {'controlgain':[1]}
-    
+    cond_dict = {'all': [True] }
+    sess_keep = ['m53s39','m53s36','m53s51','m53s50','m53s49','m53s48']
+    if  not session in   sess_keep:
+        continue
     # cond_dict = {'controlgain':[2,1.5]}
     dict_type = {'names':('neuron', 'condition', 'value'),'formats':(int,'U30',float)}
     
@@ -137,11 +139,11 @@ for fh in os.listdir('/Volumes/WD_Edo/firefly_analysis/LFP_band/concatenation_wi
         
         cond_list = cond_list2
     
-    
-    if 'ptb' in cond_list['condition'] or 'controlgain' in cond_list['condition']:
-        np.save(os.path.join(save_fld, 'condition_list_%s.npy'%session),cond_list)
+    # 
+    # if 'ptb' in cond_list['condition'] or 'controlgain' in cond_list['condition']:
+    np.save(os.path.join(save_fld, 'condition_list_%s.npy'%session),cond_list)
 
-        print('sbatch --array=1-%d gam_fit_%s.sh'%(len(cond_list),session))
+    print('sbatch --array=1-%d gam_fit_%s.sh'%(len(cond_list),session))
 
     # print('\n',session,'unit num',len(tmp_cond_list),'\n')
     

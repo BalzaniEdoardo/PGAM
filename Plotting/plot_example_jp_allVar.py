@@ -28,7 +28,7 @@ from time import perf_counter
 from scipy.io import savemat
 
 
-session = 'm53s91'
+session = 'm53s128'
 dat = np.load('/Users/edoardo/Work/Code/GAM_code/analyzing/extract_tuning/eval_matrix_and_info.npz')
 info = dat['info']
 sele = info['session'] == session
@@ -89,7 +89,10 @@ if plot_boolean:
                 xmax = 50
             if var == 'rad_vel':
                 xmin = 0
-                xmax = 390
+                xmax = 170#390
+            if var == 'rad_acc':
+                xmin = -800
+                xmax = 800
             if not fit_fast.smooth_info[var]['is_temporal_kernel']:
                 x = np.linspace(xmin,xmax,100)
                 xxdict[var] = x

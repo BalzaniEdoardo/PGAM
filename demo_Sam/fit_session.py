@@ -89,8 +89,8 @@ unit_type = unit_type[combine_filter]
 
 spikes =spikes[:,combine_filter]
 lfp_alpha = lfp_alpha[:,combine_filter]
-lfp_beta = lfp_alpha[:,combine_filter]
-lfp_theta = lfp_alpha[:,combine_filter]
+lfp_beta = lfp_beta[:,combine_filter]
+lfp_theta = lfp_theta[:,combine_filter]
 keep_unit = np.arange(1,1+combine_filter.shape[0])[combine_filter]
 fit_unit = keep_unit[fit_unit]
 

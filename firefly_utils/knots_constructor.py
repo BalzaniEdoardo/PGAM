@@ -460,16 +460,16 @@ if __name__ == '__main__':
     cc = 0
     cc_plot = 1
     for var in np.hstack((var_names, ['lfp_beta','spike_hist'])):
-        if var != use_var:
-            continue
+        # if var != use_var:
+        #     continue
 
         if not np.sum(np.array(gam_res.var_list) == var) and var != 'spike_hist':
             cc += 1
             continue
         print('plotting var', var)
 
-        # ax = plt.subplot(5, 4, cc_plot)
-        ax = plt.subplot(1, 1, cc_plot)
+        ax = plt.subplot(5, 4, cc_plot)
+        # ax = plt.subplot(1, 1, cc_plot)
 
         if var == 'spike_hist':
             continue
