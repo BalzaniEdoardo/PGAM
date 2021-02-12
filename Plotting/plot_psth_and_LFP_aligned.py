@@ -1,6 +1,5 @@
 import sys,os
 sys.path.append('/Users/edoardo/Work/Code/dPCA-master/python/dPCA')
-from dPCA import dPCA_CNoise
 import numpy as np
 import matplotlib.pylab as plt
 import scipy.stats as sts
@@ -11,11 +10,14 @@ from scipy.io import savemat
 use_monkey = 'm53'
 monkey_dict = {'m44':'Quigley','m53':'Schro','m91':'Ody','m51':'Bruno'}
 monkey_fld = {'m44':'PPC+MST','m91':'PPC+PFC','m53':'PPC+PFC+MST','m51':'PPC'}
-file_fld = '/Volumes/WD_Edo/firefly_analysis/LFP_band/DATASET/%s/'%monkey_fld[use_monkey]
+file_fld = 'D:\\Savin-Angelaki\\saved'
 
 # session = 'm53s110'
+fld_aligned = 'D:\\Savin-Angelaki\\post-processed\\aligned_activity'
+fld_save = 'D:\\Savin-Angelaki\\post-processed\\fig_aligned_activity'
+fold_save2 = 'D:\\Savin-Angelaki\\post-processed\\fig_phase_aligned'
 
-list_dir = os.listdir('/Volumes/WD_Edo/firefly_analysis/LFP_band/results/processed_dPCA/')
+list_dir = os.listdir(fld_aligned)
 
 plt_rewarded = True
 
@@ -23,6 +25,11 @@ matrix_rates_all = np.zeros((0,376))
 matrix_beta_all = np.zeros((0,376))
 matrix_alpha_all = np.zeros((0,376))
 matrix_theta_all = np.zeros((0,376))
+
+matrix_beta_all_ph = np.zeros((0,376))
+matrix_alpha_all_ph = np.zeros((0,376))
+matrix_theta_all_ph = np.zeros((0,376))
+
 
 brain_area_all = []
 
@@ -39,13 +46,14 @@ for fh_session in list_dir:
     #     break
     if not fh_session.endswith('_multiresc_trials.npz'):
         continue
-    if fh_session.startswith('flyON'):
+    
+    if not fh_session.startswith('flyON'):
         continue
 
-    session = fh_session.split('_multiresc_trials')[0]
+    session = fh_session.split('_multiresc_trials')[0].split('_')[1]
 
     #print(session)
-    if not session.startswith(use_monkey):
+    if not session.startswith( use_monkey):
         continue
 
     # if 'm51s12' in session:
@@ -56,13 +64,13 @@ for fh_session in list_dir:
     # if session != 'm53s113':
     #     continue
     print(fh_session)
-    dat = np.load(
-        '/Volumes/WD_Edo/firefly_analysis/LFP_band/results/processed_dPCA/flyON_%s_multiresc_trials.npz' % session)
+    dat = np.load(os.path.join(fld_aligned,
+        'flyON_%s_multiresc_trials.npz' % session))
     
     if not 'rescaled_lfp_beta' in list(dat.keys()):
         continue
     
-    dat_info = np.load(os.path.join(file_fld + session + '.npz'), allow_pickle=True)
+    dat_info = np.load(os.path.join(file_fld, session + '.npz'), allow_pickle=True)
     
     unit_info = dat_info['unit_info'].all()
     brain_area = unit_info['brain_area']
@@ -77,6 +85,11 @@ for fh_session in list_dir:
     rescaled_beta = dat['rescaled_lfp_beta']
     rescaled_alpha = dat['rescaled_lfp_alpha']
     rescaled_theta = dat['rescaled_lfp_theta']
+    
+    
+    rescaled_beta_ph = dat['rescaled_lfp_beta_ph']
+    rescaled_alpha_ph = dat['rescaled_lfp_alpha_ph']
+    rescaled_theta_ph = dat['rescaled_lfp_theta_ph']
     
     
     
@@ -94,6 +107,10 @@ for fh_session in list_dir:
     alpha_sess = np.nanmean(rescaled_alpha,axis=1)
     theta_sess = np.nanmean(rescaled_theta,axis=1)
     
+    beta_sess_ph = np.nanmean(rescaled_beta_ph, axis=1)
+    alpha_sess_ph = np.nanmean(rescaled_alpha_ph,axis=1)
+    theta_sess_ph = np.nanmean(rescaled_theta_ph,axis=1)
+    
     if brain_area.shape[0] != rates_sess.shape[0]:
         print(session,'brain area not matched with rates')
         continue
@@ -102,6 +119,10 @@ for fh_session in list_dir:
     matrix_beta_all = np.vstack((matrix_beta_all,beta_sess))
     matrix_alpha_all = np.vstack((matrix_alpha_all,alpha_sess))
     matrix_theta_all = np.vstack((matrix_theta_all,theta_sess))
+    
+    matrix_beta_all_ph = np.vstack((matrix_beta_all_ph,beta_sess_ph))
+    matrix_alpha_all_ph = np.vstack((matrix_alpha_all_ph,alpha_sess_ph))
+    matrix_theta_all_ph = np.vstack((matrix_theta_all_ph,theta_sess_ph))
     
     
     info_tmp = np.zeros(brain_area.shape[0], dtype=dtype_dict)
@@ -187,6 +208,16 @@ lfp_theta_sorted = {'MST': np.zeros((0,matrix_alpha_all.shape[1])),
                'PPC': np.zeros((0,matrix_alpha_all.shape[1])),
                'PFC': np.zeros((0,matrix_alpha_all.shape[1]))}
 
+lfp_alpha_sorted_ph = {'MST': np.zeros((0,matrix_alpha_all.shape[1])),
+               'PPC': np.zeros((0,matrix_alpha_all.shape[1])),
+               'PFC': np.zeros((0,matrix_alpha_all.shape[1]))}
+lfp_beta_sorted_ph = {'MST': np.zeros((0,matrix_alpha_all.shape[1])),
+               'PPC': np.zeros((0,matrix_alpha_all.shape[1])),
+               'PFC': np.zeros((0,matrix_alpha_all.shape[1]))}
+lfp_theta_sorted_ph = {'MST': np.zeros((0,matrix_alpha_all.shape[1])),
+               'PPC': np.zeros((0,matrix_alpha_all.shape[1])),
+               'PFC': np.zeros((0,matrix_alpha_all.shape[1]))}
+
 
 info_new = {'MST':np.zeros(0,dtype=dtype_dict),
             'PFC':np.zeros(0,dtype=dtype_dict),
@@ -201,6 +232,10 @@ for ba in ['MST','PPC','PFC']:
     alpha_area = matrix_alpha_all[sele]
     theta_area = matrix_theta_all[sele]
     
+    beta_area_ph = matrix_beta_all_ph[sele]
+    alpha_area_ph = matrix_alpha_all_ph[sele]
+    theta_area_ph = matrix_theta_all_ph[sele]
+    
     
     for session in np.unique(info_area['session']):
         
@@ -214,6 +249,11 @@ for ba in ['MST','PPC','PFC']:
         beta_sess = beta_area[bool_sele]
         alpha_sess = alpha_area[bool_sele]
         theta_sess = theta_area[bool_sele]
+        
+        beta_sess_ph = beta_area_ph[bool_sele]
+        alpha_sess_ph = alpha_area_ph[bool_sele]
+        theta_sess_ph = theta_area_ph[bool_sele]
+        
         info_sess = info_area[bool_sele]
         
         zba_rate = sts.zscore(rate_sess,axis=1)
@@ -223,6 +263,15 @@ for ba in ['MST','PPC','PFC']:
         zba_rate = zba_rate[keep,:]
         idx = np.argmax(zba_rate,axis=1)
         sort_idx = np.argsort(idx)
+        
+        
+        # filter and keep stuff
+        zba_beta_ph = beta_sess_ph[keep,:]
+        
+        zba_alpha_ph = alpha_sess_ph[keep,:]
+        
+        zba_theta_ph = theta_sess_ph[keep,:]
+        
         
         
         # filter and keep stuff
@@ -243,6 +292,11 @@ for ba in ['MST','PPC','PFC']:
         zba_alpha = zba_alpha[sort_idx]
         zba_theta = zba_theta[sort_idx]
         
+        zba_beta_ph = zba_beta_ph[sort_idx]
+        zba_alpha_ph = zba_alpha_ph[sort_idx]
+        zba_theta_ph = zba_theta_ph[sort_idx]
+        
+        
         info_tmp = info_tmp[sort_idx]
         
         
@@ -253,6 +307,11 @@ for ba in ['MST','PPC','PFC']:
         lfp_beta_sorted[ba] = np.vstack((lfp_beta_sorted[ba], zba_beta))
         lfp_theta_sorted[ba] = np.vstack((lfp_theta_sorted[ba], zba_theta))
         
+        
+        lfp_alpha_sorted_ph[ba] = np.vstack((lfp_alpha_sorted_ph[ba], zba_alpha_ph))
+        lfp_beta_sorted_ph[ba] = np.vstack((lfp_beta_sorted_ph[ba], zba_beta_ph))
+        lfp_theta_sorted_ph[ba] = np.vstack((lfp_theta_sorted_ph[ba], zba_theta_ph))
+        
         info_new[ba] = np.hstack((info_new[ba],info_tmp))
 
 
@@ -261,6 +320,9 @@ savemat('%s_peak_location_isRew_%s.mat'%(monkey_dict[use_monkey],plt_rewarded),{
                                                                                 'lfp_beta_power':lfp_beta_sorted,
                                                                                 'lfp_alpha_power':lfp_alpha_sorted,
                                                                                 'lfp_theta_power':lfp_theta_sorted,
+                                                                                'lfp_beta_phase':lfp_beta_sorted_ph,
+                                                                                'lfp_alpha_phase':lfp_alpha_sorted_ph,
+                                                                                'lfp_theta_phase':lfp_theta_sorted_ph,
                                                                                 'rate':rate_sorted})
 
 
@@ -322,160 +384,130 @@ for ba in ['PPC','PFC','MST']:
         
         
         plt.tight_layout(rect=[0, 0.03, 1, 0.95])
-        plt.savefig('/Users/edoardo/Work/Code/GAM_code/figures/alignment/%s_%s_s%d_alignment.jpg'%(monkey_dict[use_monkey],ba,session))
+        plt.savefig(os.path.join(fld_save,'%s_%s_s%d_alignment.png'%(monkey_dict[use_monkey],ba,session)))
         plt.close('all')
-# for ba in ['MST','PPC','PFC']:
-#     if not ba in file_fld:
-#         continue
-#     plt.figure()
-#     cc_plot = 0
-#     plt.suptitle('RATE: %s - %s'%(use_monkey,ba))
 
-#     ba_rate = matrix_rates_all[brain_area_all==ba,:]
-#     zba_rate = sts.zscore(ba_rate,axis=1)
-#     keep = np.sum(np.isnan(zba_rate),axis=1) == 0
-#     zba_rate = zba_rate[keep,:]
-#     idx = np.argmax(zba_rate,axis=1)
-#     sort_idx = np.argsort(idx)
-#     heatmap(zba_rate[sort_idx,:],vmin=-3.,vmax=4.5)
-#     idx_vline = []
-#     for k in time_bounds[1:]:
-#         idx_vline += [np.where(time_rescale <= k)[0][-1]]
-#     ylim = plt.ylim()
+for ba in ['PPC','PFC','MST']:
+    
+    
+        
+    for session in np.unique(info_new[ba]['session']):
+        fig = plt.figure(figsize=(12,4))
+        
+        idx_vline = []
+        
+        for k in time_bounds[1:]:
+            idx_vline += [np.where(time_rescale <= k)[0][-1]]
+        
+        xaxis = np.hstack(([0],idx_vline))
+        
+        
+        plt.suptitle(ba+' '+'session: %d'%session, fontsize=20)
+    
+        ax = plt.subplot(1,4,1)
+        plt.title('RATE',fontsize=15)
+        heatmap(rate_sorted[ba][info_new[ba]['session']==session],cbar=False)
+        ylim = plt.ylim()
+    
+        plt.vlines(idx_vline,ylim[0],ylim[1])
+        plt.ylim(ylim)
+        plt.xticks(xaxis,['targ ON','targ OFF','stop','reward'],rotation=90)
+        
+        ax = plt.subplot(1,4,2)
+        plt.title('ALPHA PHASE',fontsize=15)
+        heatmap(lfp_alpha_sorted_ph[ba][info_new[ba]['session']==session],cbar=False)
+        ylim = plt.ylim()
+    
+        plt.vlines(idx_vline,ylim[0],ylim[1])
+        plt.ylim(ylim)
+        plt.xticks(xaxis,['targ ON','targ OFF','stop','reward'],rotation=90)
+        
+        ax = plt.subplot(1,4,3)
+        plt.title('BETA PHASE',fontsize=15)
+        heatmap(lfp_beta_sorted_ph[ba][info_new[ba]['session']==session],cbar=False)
+        ylim = plt.ylim()
+    
+        plt.vlines(idx_vline,ylim[0],ylim[1])
+        plt.ylim(ylim)
+        plt.xticks(xaxis,['targ ON','targ OFF','stop','reward'],rotation=90)
+        
+        ax = plt.subplot(1,4,4)
+        plt.title('THETA PHASE',fontsize=15)
 
-#     plt.vlines(idx_vline,ylim[0],ylim[1])
-#     plt.ylim(ylim)
-#     plt.yticks([])
-#     plt.ylabel('unit')
-#     xaxis = np.hstack(([0],idx_vline))
-#     plt.xticks(xaxis,['targ ON','targ OFF','stop','reward'],rotation=90)
-#     plt.tight_layout(rect=[0, 0.03, 1, 0.95])
-#     plt.savefig('%s_rescaled_rate_multialign_%s_isRew_%s.png'%(ba,use_monkey,plt_rewarded))
+        heatmap(lfp_theta_sorted_ph[ba][info_new[ba]['session']==session])
+        ylim = plt.ylim()
+    
+        plt.vlines(idx_vline,ylim[0],ylim[1])
+        plt.ylim(ylim)
+        plt.xticks(xaxis,['targ ON','targ OFF','stop','reward'],rotation=90)
+        
+        
+        
+        
+        plt.tight_layout(rect=[0, 0.03, 1, 0.95])
+        plt.savefig(os.path.join(fld_save,'phase_%s_%s_s%d_alignment.png'%(monkey_dict[use_monkey],ba,session)))
+        plt.close('all')
 
-    
-# for ba in ['MST','PPC','PFC']:
-#     if not ba in file_fld:
-#         continue
-#     plt.figure()
-#     cc_plot = 0
-#     plt.suptitle('BETA POWER: %s - %s'%(use_monkey,ba))
-    
-#     # sort based on the rate
-#     ba_rate = matrix_rates_all[brain_area_all==ba,:]
-#     zba_rate = sts.zscore(ba_rate,axis=1)
-#     keep = np.sum(np.isnan(zba_rate),axis=1) == 0
-#     zba_rate = zba_rate[keep,:]
-#     idx = np.argmax(zba_rate,axis=1)
-#     sort_idx = np.argsort(idx)
-    
-#     ba_beta = matrix_beta_all[brain_area_all==ba,:]
-#     zba_beta = sts.zscore(ba_beta,axis=1)
-#     zba_beta = zba_beta[keep,:]
-    
-#     heatmap(zba_beta[sort_idx,:],vmin=-3.,vmax=4.5)
-#     idx_vline = []
-#     for k in time_bounds[1:]:
-#         idx_vline += [np.where(time_rescale <= k)[0][-1]]
-#     ylim = plt.ylim()
+for ba in ['PPC','PFC','MST']:
+    sess_list=np.unique(info_new[ba]['session'])
+    num_sess = sess_list.shape[0]
+    num_cols = 5
+    num_rows = int(np.ceil(num_sess/num_cols))
+    if num_sess > 0:
+        plt.figure(figsize=(12,8))
+        plt.suptitle(ba+' THETA PHASE',fontsize=20)
+    for kk in range(num_sess):
+        plt.subplot(num_cols,num_rows,kk+1)
+        
+        for unit in range(lfp_theta_sorted_ph[ba][info_new[ba]['session']==sess_list[kk]].shape[0]):
+            plt.plot(lfp_theta_sorted_ph[ba][info_new[ba]['session']==sess_list[kk]][unit,:])
+        ylim = plt.ylim()
+        plt.vlines(idx_vline,ylim[0],ylim[1],'k',lw=2)
+        plt.yticks([])
+        plt.xticks([])
+    if num_sess>0:
+        plt.tight_layout(rect=[0, 0.03, 1, 0.95])
+        plt.savefig(os.path.join(fold_save2,'%s_%s_phase_theta.jpg'%(monkey_dict[use_monkey],ba)))
 
-#     plt.vlines(idx_vline,ylim[0],ylim[1])
-#     plt.ylim(ylim)
-#     plt.yticks([])
-#     plt.ylabel('unit')
-#     xaxis = np.hstack(([0],idx_vline))
-#     plt.xticks(xaxis,['targ ON','targ OFF','stop','reward'],rotation=90)
-#     plt.tight_layout(rect=[0, 0.03, 1, 0.95])
-#     plt.savefig('%s_rescaled_BETA_multialign_%s_isRew_%s.png'%(ba,use_monkey,plt_rewarded))
-    
-    
-# for ba in ['MST','PPC','PFC']:
-#     if not ba in file_fld:
-#         continue
-#     plt.figure()
-#     cc_plot = 0
-#     plt.suptitle('THETA POWER: %s - %s'%(use_monkey,ba))
-    
-#     # sort based on the rate
-#     ba_rate = matrix_rates_all[brain_area_all==ba,:]
-#     zba_rate = sts.zscore(ba_rate,axis=1)
-#     keep = np.sum(np.isnan(zba_rate),axis=1) == 0
-#     zba_rate = zba_rate[keep,:]
-#     idx = np.argmax(zba_rate,axis=1)
-#     sort_idx = np.argsort(idx)
-    
-#     ba_beta = matrix_theta_all[brain_area_all==ba,:]
-#     zba_beta = sts.zscore(ba_beta,axis=1)
-#     zba_beta = zba_beta[keep,:]
-    
-#     heatmap(zba_beta[sort_idx,:],vmin=-3.,vmax=4.5)
-#     idx_vline = []
-#     for k in time_bounds[1:]:
-#         idx_vline += [np.where(time_rescale <= k)[0][-1]]
-#     ylim = plt.ylim()
+        
+for ba in ['PPC','PFC','MST']:
+    sess_list=np.unique(info_new[ba]['session'])
+    num_sess = sess_list.shape[0]
+    num_cols = 5
+    num_rows = int(np.ceil(num_sess/num_cols))
+    if num_sess > 0:
+        plt.figure(figsize=(12,8))
+        plt.suptitle(ba+' ALPHA PHASE',fontsize=20)
+    for kk in range(num_sess):
+        plt.subplot(num_cols,num_rows,kk+1)
+        
+        for unit in range(lfp_alpha_sorted_ph[ba][info_new[ba]['session']==sess_list[kk]].shape[0]):
+            plt.plot(lfp_alpha_sorted_ph[ba][info_new[ba]['session']==sess_list[kk]][unit,:])
+        ylim = plt.ylim()
+        plt.vlines(idx_vline,ylim[0],ylim[1],'k',lw=2)
+        plt.yticks([])
+        plt.xticks([])
+    if num_sess>0:
+        plt.tight_layout(rect=[0, 0.03, 1, 0.95])
+        plt.savefig(os.path.join(fold_save2,'%s_%s_phase_alpha.jpg'%(monkey_dict[use_monkey],ba)))
 
-#     plt.vlines(idx_vline,ylim[0],ylim[1])
-#     plt.ylim(ylim)
-#     plt.yticks([])
-#     plt.ylabel('unit')
-#     xaxis = np.hstack(([0],idx_vline))
-#     plt.xticks(xaxis,['targ ON','targ OFF','stop','reward'],rotation=90)
-#     plt.tight_layout(rect=[0, 0.03, 1, 0.95])
-#     plt.savefig('%s_rescaled_THETA_multialign_%s_isRew_%s.png'%(ba,use_monkey,plt_rewarded))
-    
-
-# for ba in ['MST','PPC','PFC']:
-#     if not ba in file_fld:
-#         continue
-#     plt.figure()
-#     cc_plot = 0
-#     plt.suptitle('ALPHA POWER: %s - %s'%(use_monkey,ba))
-    
-#     # sort based on the rate
-#     ba_rate = matrix_rates_all[brain_area_all==ba,:]
-#     zba_rate = sts.zscore(ba_rate,axis=1)
-#     keep = np.sum(np.isnan(zba_rate),axis=1) == 0
-#     zba_rate = zba_rate[keep,:]
-#     idx = np.argmax(zba_rate,axis=1)
-#     sort_idx = np.argsort(idx)
-    
-#     ba_beta = matrix_alpha_all[brain_area_all==ba,:]
-#     zba_beta = sts.zscore(ba_beta,axis=1)
-#     zba_beta = zba_beta[keep,:]
-    
-#     heatmap(zba_beta[sort_idx,:],vmin=-3.,vmax=4.5)
-#     idx_vline = []
-#     for k in time_bounds[1:]:
-#         idx_vline += [np.where(time_rescale <= k)[0][-1]]
-#     ylim = plt.ylim()
-
-#     plt.vlines(idx_vline,ylim[0],ylim[1])
-#     plt.ylim(ylim)
-#     plt.yticks([])
-#     plt.ylabel('unit')
-#     xaxis = np.hstack(([0],idx_vline))
-#     plt.xticks(xaxis,['targ ON','targ OFF','stop','reward'],rotation=90)
-#     plt.tight_layout(rect=[0, 0.03, 1, 0.95])
-#     plt.savefig('%s_rescaled_ALPHA_multialign_%s_isRew_%s.png'%(ba,use_monkey,plt_rewarded))
-    
-    # neu_list = np.arange(rescaled_rate.shape[0])
-    # sele = np.where(brain_area == ba)[0]
-    # neu_list = np.array(neu_list[sele],dtype=int)
-    # for neu in neu_list:
-    #     if cc_plot == 16:
-    #         cc_plot = 0
-    #
-    #         plt.figure(figsize=[11,8])
-    #         plt.suptitle(ba)
-    #     plt.subplot(4,4,cc_plot+1)
-    #
-    #     mn = np.nanmean(rescaled_rate[neu,is_reward,:],axis=0)
-    #     plt.plot(time_rescale,mn)
-    #     cc_plot+=1
-    #     plt.vlines(time_bounds,mn.min(),mn.max(),colors='k')
-
-#
-# iei_start_stop = []
-# sess_id = np.sort(np.unique(info_all['session']))
-# for session in sess_id:
-#     info_sess = info_all[info_all['session']==session][0]
-#     iei_start_stop += [info_sess['median IEI off/stop']]
+for ba in ['PPC','PFC','MST']:
+    sess_list=np.unique(info_new[ba]['session'])
+    num_sess = sess_list.shape[0]
+    num_cols = 5
+    num_rows = int(np.ceil(num_sess/num_cols))
+    if num_sess > 0:
+        plt.figure(figsize=(12,8))
+        plt.suptitle(ba+' BETA PHASE',fontsize=20)
+    for kk in range(num_sess):
+        plt.subplot(num_cols,num_rows,kk+1)
+        
+        for unit in range(lfp_beta_sorted_ph[ba][info_new[ba]['session']==sess_list[kk]].shape[0]):
+            plt.plot(lfp_beta_sorted_ph[ba][info_new[ba]['session']==sess_list[kk]][unit,:])
+        ylim = plt.ylim()
+        plt.vlines(idx_vline,ylim[0],ylim[1],'k',lw=2)
+        plt.yticks([])
+        plt.xticks([])
+    if num_sess>0:
+        plt.tight_layout(rect=[0, 0.03, 1, 0.95])
+        plt.savefig(os.path.join(fold_save2,'%s_%s_phase_beta.jpg'%(monkey_dict[use_monkey],ba)))

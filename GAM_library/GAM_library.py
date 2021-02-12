@@ -27,7 +27,7 @@ from copy import deepcopy
 tryCuda = False
 try:
     if not tryCuda:
-        raise ModuleNotFoundError('User imposed not to use CUDA')
+        raise ModuleNotFoundError('Module pycuda not found! Use CPU')
     import pycuda.autoinit
     import pycuda.gpuarray as gpuarray
     import skcuda.linalg as cuda_linalg
@@ -73,6 +73,10 @@ class GAM_result(object):
         self.pre_trial_dur = pre_trial_dur
         self.post_trial_dur = post_trial_dur
         self.time_bin = time_bin
+        self.domain_fun = {}
+        for var in sm_handler.smooths_var:
+            self.domain_fun[var] = sm_handler[var].domain_fun
+            
         if not beta_hist is None:
             self.beta_hist = beta_hist
 
@@ -319,7 +323,7 @@ class GAM_result(object):
 
 
     def eval_basis(self,X,var_name,sparseX=True,trial_idx=-1,pre_trial_dur=None,
-                   post_trial_dur=None):
+                   post_trial_dur=None,domain_fun=lambda x:np.ones(x,dtype=bool)):
 
         """
         Description: for temporal kernel, if None is passed, then use the ild version
@@ -350,7 +354,7 @@ class GAM_result(object):
 
         if not is_temporal:
             fX = basisAndPenalty(X, knots, is_cyclic=is_cyclic, ord=ord_spline,
-                                             penalty_type=penalty_type, xmin=xmin, xmax=xmax, der=der)[0]
+                                             penalty_type=penalty_type, xmin=xmin, xmax=xmax, der=der,compute_pen=False,domain_fun=self.domain_fun[var_name])[0]
         else:
             if type(basis_kernel) is sparse.csr.csr_matrix or type(basis_kernel) is sparse.csr.csr_matrix:
                 basis_kernel = basis_kernel.toarray()
@@ -415,7 +419,7 @@ class GAM_result(object):
             var_name = var_list[cc]
             # smooth = self.smooth_info[var_name]
             fX = self.eval_basis(X,var_name,sparseX=False,post_trial_dur=post_trial_dur,
-                                 pre_trial_dur=pre_trial_dur,trial_idx=trial_idx)
+                                 pre_trial_dur=pre_trial_dur,trial_idx=trial_idx,domain_fun=self.domain_fun[var_name])
             if type(fX) in [sparse.csr.csr_matrix,sparse.coo.coo_matrix
                             ]:
                 fX = fX.toarray()
@@ -434,7 +438,8 @@ class GAM_result(object):
             mu = self.family.link.inverse(eta)
         return mu
 
-    def mu_sigma_log_space(self,X_list,var_list=None,get_exog=False,trial_idx=None,pre_trial_dur=None,post_trial_dur=None):
+    def mu_sigma_log_space(self,X_list,var_list=None,get_exog=False,
+                           trial_idx=None,pre_trial_dur=None,post_trial_dur=None):
         cc = 0
         if var_list is None:
             var_list = self.var_list
@@ -448,7 +453,7 @@ class GAM_result(object):
             nan_filter = np.array(np.sum(np.isnan(np.array(X)), axis=0), dtype=bool)
             var_name = var_list[cc]
             fX = self.eval_basis(X,var_name,sparseX=False,post_trial_dur=post_trial_dur,
-                                 pre_trial_dur=pre_trial_dur,trial_idx=trial_idx)
+                                 pre_trial_dur=pre_trial_dur,trial_idx=trial_idx,domain_fun=self.domain_fun[var_name])
             if type(fX) in [sparse.csr.csr_matrix,sparse.coo.coo_matrix]:
                 fX = fX.toarray()
 
@@ -485,7 +490,7 @@ class GAM_result(object):
         if pre_trial_dur is None:
             pre_trial_dur = self.pre_trial_dur
         fX = self.eval_basis(X,var_name,post_trial_dur=post_trial_dur,
-                                 pre_trial_dur=pre_trial_dur,trial_idx=trial_idx)
+                                 pre_trial_dur=pre_trial_dur,trial_idx=trial_idx,domain_fun=self.domain_fun[var_name])
         nan_filter = np.array(np.sum(np.isnan(np.array(X)), axis=0), dtype=bool)
         # mean center and remove col if more than 1 smooth in the AM
         if len(self.var_list) > 0:
@@ -531,10 +536,17 @@ class GAM_result(object):
         # compute p-vals following chap 6.12.1 of GAM book (Wood 2017)
         # take the edf corrected for the smoothing bias
         r = np.clip([2 * diagF[idx].sum() - diagFF[idx].sum()], 0, beta.shape[0])[0]
-        k = int(np.floor(r))  # consider also the constant term that has been removed forcing the identifiability constraint
-        nu = r - k #+ 1
+        if (r - np.floor(r) > 0.99) and (r - np.floor(r) < 1):
+            k = int(np.ceil(r))
+            nu = 0#+ 1
+        else:
+            k = int(np.floor(r))  # consider also the constant term that has been removed forcing the identifiability constraint
+            nu = r - k #+ 1
+        # k = int(np.floor(r))
+        
         rho = np.sqrt((1 - nu) * nu * 0.5)
         nu1 = (nu + 1 + (1 - nu ** 2) ** (0.5)) * 0.5
+       
         nu2 = nu + 1 - nu1
         Vb = self.cov_beta[idx, :]
         Vb = Vb[:, idx]
@@ -708,7 +720,7 @@ class general_additive_model(object):
         else:
             beta_hist = None
         while not converged:
-
+            print('smooth_pen iter %d'%iteration,smooth_pen)
             z,w = f_weights_and_data.get_params(mu)
             self.sm_handler.set_smooth_penalties(smooth_pen,var_list)
             pen_matrix = self.sm_handler.get_penalty_agumented(var_list)
@@ -1063,7 +1075,7 @@ class general_additive_model(object):
                                      use_dgcv=True,smooth_pen=None,initial_smooths_guess=True,fit_initial_beta=False,
                                      pseudoR2_per_variable=False,filter_trials=None,k_fold = False,fold_num=5,
                                         trial_num_vec=None,compute_MI=True, k_fold_reducedOnly=True,bounds_rho=None,
-                             reducedAdaptive=True, ord_AD=3, ad_knots=6,saveBetaHist=False):
+                             reducedAdaptive=True, ord_AD=3, ad_knots=6,saveBetaHist=False,perform_PQL=True):
         if smooth_pen is None:
             smooth_pen = []
             for var in var_list:
@@ -1076,7 +1088,7 @@ class general_additive_model(object):
         if (not k_fold) or k_fold_reducedOnly:
             full_model = self.optim_gam(var_list, max_iter=max_iter, tol=tol,
                                         conv_criteria=conv_criteria,
-                                        perform_PQL=True, initial_smooths_guess=initial_smooths_guess, method=method,
+                                        perform_PQL=perform_PQL, initial_smooths_guess=initial_smooths_guess, method=method,
                                         compute_AIC=False,gcv_sel_tol=gcv_sel_tol,random_init=random_init,
                                         use_dgcv=use_dgcv,smooth_pen=smooth_pen,fit_initial_beta=fit_initial_beta,
                                         filter_trials=filter_trials,compute_MI=compute_MI,bounds_rho=bounds_rho,
@@ -1085,7 +1097,7 @@ class general_additive_model(object):
         else:
             full_model,test_bool = self.k_fold_crossval(fold_num,trial_num_vec,var_list, max_iter=max_iter, tol=tol,
                                         conv_criteria=conv_criteria,
-                                        perform_PQL=True, initial_smooths_guess=initial_smooths_guess, method=method,
+                                        perform_PQL=perform_PQL, initial_smooths_guess=initial_smooths_guess, method=method,
                                         compute_AIC=False, gcv_sel_tol=gcv_sel_tol, random_init=random_init,
                                         use_dgcv=use_dgcv, smooth_pen=smooth_pen, fit_initial_beta=fit_initial_beta,compute_MI=compute_MI,
                                         bounds_rho=bounds_rho,saveBetaHist=saveBetaHist)
@@ -1149,7 +1161,7 @@ class general_additive_model(object):
             if not k_fold:
                 reduced_model = self.optim_gam(sub_list, max_iter=max_iter, tol=tol,
                                     conv_criteria=conv_criteria,
-                                    perform_PQL=True, initial_smooths_guess=initial_smooths_guess, method=method,
+                                    perform_PQL=perform_PQL, initial_smooths_guess=initial_smooths_guess, method=method,
                                     compute_AIC=False, gcv_sel_tol=gcv_sel_tol, random_init=random_init,
                                     use_dgcv=use_dgcv,smooth_pen=smooth_pen,fit_initial_beta=fit_initial_beta,
                                                filter_trials=filter_trials,compute_MI=compute_MI,bounds_rho=bounds_rho,
@@ -1158,7 +1170,7 @@ class general_additive_model(object):
             else:
                 reduced_model,test_bool = self.k_fold_crossval(fold_num, trial_num_vec, sub_list, max_iter=max_iter, tol=tol,
                                                   conv_criteria=conv_criteria,
-                                                  perform_PQL=True, initial_smooths_guess=initial_smooths_guess,
+                                                  perform_PQL=perform_PQL, initial_smooths_guess=initial_smooths_guess,
                                                   method=method,
                                                   compute_AIC=False, gcv_sel_tol=gcv_sel_tol, random_init=random_init,
                                                   use_dgcv=use_dgcv, smooth_pen=smooth_pen,

@@ -90,7 +90,7 @@ def compute_median_IEI(X,varnames,event_list,trial_idx,dt=0.006,flyON_dur=50):
         median_iei[k] = np.median(iei)
     return median_iei,tr_without_event
 
-def compute_aligned_rate(spk_mat, dat, X, varnames, h, trial_idx, event_align,dt=0.006,flyON_dur=50,num_tp_x_bin=None,
+def compute_aligned_rate(spk_mat, dat, X, concat, varnames, h, trial_idx, event_align,dt=0.006,flyON_dur=50,num_tp_x_bin=None,
                          post_tr_tp=50):
     # this code implies that reward is the last event
     assert(event_align[-1] == 't_reward')
@@ -118,6 +118,10 @@ def compute_aligned_rate(spk_mat, dat, X, varnames, h, trial_idx, event_align,dt
     alpha_pow_all = dat['lfp_alpha_power']
     beta_pow_all = dat['lfp_beta_power']
     theta_pow_all = dat['lfp_theta_power']
+    
+    alpha_ph_all = concat['lfp_alpha']
+    beta_ph_all = concat['lfp_beta']
+    theta_ph_all = concat['lfp_theta']
 
 
     # extract firing rate estimate
@@ -135,6 +139,11 @@ def compute_aligned_rate(spk_mat, dat, X, varnames, h, trial_idx, event_align,dt
     rescaled_lfp_alpha = np.zeros((spk_mat.shape[1],unq_trials.shape[0], num_tp)) * np.nan
     rescaled_lfp_beta = np.zeros((spk_mat.shape[1],unq_trials.shape[0], num_tp)) * np.nan
     rescaled_lfp_theta = np.zeros((spk_mat.shape[1],unq_trials.shape[0], num_tp)) * np.nan
+    
+    rescaled_lfp_alpha_ph = np.zeros((spk_mat.shape[1],unq_trials.shape[0], num_tp)) * np.nan
+    rescaled_lfp_beta_ph = np.zeros((spk_mat.shape[1],unq_trials.shape[0], num_tp)) * np.nan
+    rescaled_lfp_theta_ph = np.zeros((spk_mat.shape[1],unq_trials.shape[0], num_tp)) * np.nan
+
 
 
 
@@ -160,6 +169,11 @@ def compute_aligned_rate(spk_mat, dat, X, varnames, h, trial_idx, event_align,dt
         alpha_pow = alpha_pow_all[trial_idx == tr,:]
         beta_pow = beta_pow_all[trial_idx == tr,:]
         theta_pow = theta_pow_all[trial_idx == tr,:]
+        
+        
+        alpha_ph = alpha_ph_all[trial_idx == tr,:]
+        beta_ph = beta_ph_all[trial_idx == tr,:]
+        theta_ph = theta_ph_all[trial_idx == tr,:]
 
         try:
             rad_targ_vec[cnt_tr] = rad_targ[~np.isnan(rad_targ)][0]
@@ -201,6 +215,10 @@ def compute_aligned_rate(spk_mat, dat, X, varnames, h, trial_idx, event_align,dt
                 rescaled_lfp_alpha[:, cnt_tr, cc:cc + time_points - 1] = np.nan
                 rescaled_lfp_beta[:, cnt_tr, cc:cc + time_points - 1] = np.nan
                 rescaled_lfp_theta[:, cnt_tr, cc:cc + time_points - 1] = np.nan
+                
+                rescaled_lfp_alpha_ph[:, cnt_tr, cc:cc + time_points - 1] = np.nan
+                rescaled_lfp_beta_ph[:, cnt_tr, cc:cc + time_points - 1] = np.nan
+                rescaled_lfp_theta_ph[:, cnt_tr, cc:cc + time_points - 1] = np.nan
 
                 cc += (time_points - 1)
                 continue
@@ -237,6 +255,9 @@ def compute_aligned_rate(spk_mat, dat, X, varnames, h, trial_idx, event_align,dt
             beta_pow_tmp = beta_pow[tp_0:tp_1,:]
             theta_pow_tmp = theta_pow[tp_0:tp_1,:]
 
+            alpha_ph_tmp = alpha_ph[tp_0:tp_1,:]
+            beta_ph_tmp = beta_ph[tp_0:tp_1,:]
+            theta_ph_tmp = theta_ph[tp_0:tp_1,:]
 
 
             time_tr = np.linspace(time_rescale[0], time_rescale[-1], rates.shape[0])
@@ -267,12 +288,21 @@ def compute_aligned_rate(spk_mat, dat, X, varnames, h, trial_idx, event_align,dt
                 interp_alpha = interp1d(time_tr, alpha_pow_tmp[:,neu], kind='linear')
                 interp_beta = interp1d(time_tr, beta_pow_tmp[:,neu], kind='linear')
                 interp_theta = interp1d(time_tr, theta_pow_tmp[:,neu], kind='linear')
+                
+                interp_alpha_ph = interp1d(time_tr, alpha_ph_tmp[:,neu], kind='linear')
+                interp_beta_ph = interp1d(time_tr, beta_ph_tmp[:,neu], kind='linear')
+                interp_theta_ph = interp1d(time_tr, theta_ph_tmp[:,neu], kind='linear')
 
 
                 trial_rescaled_rate[neu, cnt_tr, cc:cc+time_points-1] = interp(time_rescale)
                 rescaled_lfp_alpha[neu,cnt_tr, cc: cc + time_points - 1] = interp_alpha(time_rescale)
                 rescaled_lfp_beta[neu,cnt_tr, cc: cc + time_points - 1] = interp_beta(time_rescale)
                 rescaled_lfp_theta[neu,cnt_tr, cc: cc + time_points - 1] = interp_theta(time_rescale)
+                
+                rescaled_lfp_alpha_ph[neu,cnt_tr, cc: cc + time_points - 1] = interp_alpha_ph(time_rescale)
+                rescaled_lfp_beta_ph[neu,cnt_tr, cc: cc + time_points - 1] = interp_beta_ph(time_rescale)
+                rescaled_lfp_theta_ph[neu,cnt_tr, cc: cc + time_points - 1] = interp_theta_ph(time_rescale)
+                
 
             cc += (time_points-1)
 
@@ -290,6 +320,10 @@ def compute_aligned_rate(spk_mat, dat, X, varnames, h, trial_idx, event_align,dt
         alpha_pow_tmp = alpha_pow[tp_1:tp_1 + post_tr_tp]
         beta_pow_tmp = beta_pow[tp_1:tp_1 + post_tr_tp]
         theta_pow_tmp = theta_pow[tp_1:tp_1 + post_tr_tp]
+        
+        alpha_ph_tmp = alpha_ph[tp_1:tp_1 + post_tr_tp]
+        beta_ph_tmp = beta_ph[tp_1:tp_1 + post_tr_tp]
+        theta_ph_tmp = theta_ph[tp_1:tp_1 + post_tr_tp]
 
 
         rates = firing_rate_est[trial_idx == tr, :]
@@ -341,12 +375,20 @@ def compute_aligned_rate(spk_mat, dat, X, varnames, h, trial_idx, event_align,dt
             interp_alpha = interp1d(time_tr, alpha_pow_tmp[:,neu], kind='linear')
             interp_beta = interp1d(time_tr, beta_pow_tmp[:,neu], kind='linear')
             interp_theta = interp1d(time_tr, theta_pow_tmp[:,neu], kind='linear')
+            
+            interp_alpha_ph = interp1d(time_tr, alpha_ph_tmp[:,neu], kind='linear')
+            interp_beta_ph = interp1d(time_tr, beta_ph_tmp[:,neu], kind='linear')
+            interp_theta_ph = interp1d(time_tr, theta_ph_tmp[:,neu], kind='linear')
 
             trial_rescaled_rate[neu, cnt_tr, cc:cc+true_size] = interp(time_rescale)
 
             rescaled_lfp_alpha[neu,cnt_tr, cc: cc + true_size] = interp_alpha(time_rescale)
             rescaled_lfp_beta[neu,cnt_tr, cc: cc + true_size] = interp_beta(time_rescale)
             rescaled_lfp_theta[neu,cnt_tr, cc: cc + true_size] = interp_theta(time_rescale)
+            
+            rescaled_lfp_alpha_ph[neu,cnt_tr, cc: cc + true_size] = interp_alpha_ph(time_rescale)
+            rescaled_lfp_beta_ph[neu,cnt_tr, cc: cc + true_size] = interp_beta_ph(time_rescale)
+            rescaled_lfp_theta_ph[neu,cnt_tr, cc: cc + true_size] = interp_theta_ph(time_rescale)
 
         timeOFF[cnt_tr] = np.where(X[trial_idx == tr, np.where(varnames == 't_flyOFF')[0][0]] == 1)[0][0] * dt
         timeSTART[cnt_tr] = np.where(X[trial_idx == tr, np.where(varnames == 't_move')[0][0]] == 1)[0][0] * dt
@@ -356,7 +398,8 @@ def compute_aligned_rate(spk_mat, dat, X, varnames, h, trial_idx, event_align,dt
 
     return (np.array(time_rescale_all), time_bounds, trial_rescaled_rate,num_tp_x_bin,
             np.array(trial_list),rad_targ_vec,rescaled_vel,timeOFF,timeSTART,timeSTOP,isREW,rescaled_ang,rescaled_ev,rescaled_eh,rescaled_ad,rescaled_rd,
-            rescaled_lfp_alpha,rescaled_lfp_beta,rescaled_lfp_theta)
+            rescaled_lfp_alpha,rescaled_lfp_beta,rescaled_lfp_theta,
+            rescaled_lfp_alpha_ph,rescaled_lfp_beta_ph,rescaled_lfp_theta_ph)
 
 
 if align_to == 't_flyON':
@@ -382,8 +425,8 @@ for root, dirs, files in os.walk(user_path.base_data_fld, topdown=False):
     if 'not used' in root:
         continue
     for fhName in files:
-        if  ( 'm44' in fhName or 'm51' in fhName or 'm91' in fhName):
-            continue
+        # if  ( 'm44' in fhName or 'm51' in fhName or 'm91' in fhName):
+        #     continue
         if re.match(pattern_fh,fhName):
 
             session_list += [os.path.join(root,fhName)]
@@ -432,12 +475,14 @@ for fhName in session_list:
     if flag_first:
         (time_rescale_all,time_bounds, trial_rescaled_rate,num_timept_x_bin,trial_list,
          rad_targ_vec,rescaled_vel,timeOFF,timeSTART,timeSTOP,isREW,rescaled_ang,rescaled_ev,rescaled_eh,rescaled_ad,rescaled_rd,
-         rescaled_lfp_alpha, rescaled_lfp_beta, rescaled_lfp_theta) = compute_aligned_rate(yt, dat, X, var_names, h, trial_idx, event_align,dt=0.006,flyON_dur=50,num_tp_x_bin=num_timept_x_bin)
+         rescaled_lfp_alpha, rescaled_lfp_beta, rescaled_lfp_theta,
+         rescaled_lfp_alpha_ph,rescaled_lfp_beta_ph,rescaled_lfp_theta_ph) = compute_aligned_rate(yt, dat, X, concat, var_names, h, trial_idx, event_align,dt=0.006,flyON_dur=50,num_tp_x_bin=num_timept_x_bin)
         flag_first = False
     else:
         (time_rescale_all,time_bounds, trial_rescaled_rate,tmp,trial_list,
          rad_targ_vec,rescaled_vel,timeOFF,timeSTART,timeSTOP,isREW,rescaled_ang,rescaled_ev,rescaled_eh,rescaled_ad,rescaled_rd,
-         rescaled_lfp_alpha,rescaled_lfp_beta,rescaled_lfp_theta) = compute_aligned_rate(yt,dat, X, var_names, h, trial_idx, event_align,dt=0.006,flyON_dur=50,num_tp_x_bin=num_timept_x_bin)
+         rescaled_lfp_alpha,rescaled_lfp_beta,rescaled_lfp_theta,
+         rescaled_lfp_alpha_ph,rescaled_lfp_beta_ph,rescaled_lfp_theta_ph) = compute_aligned_rate(yt,dat, X, concat, var_names, h, trial_idx, event_align,dt=0.006,flyON_dur=50,num_tp_x_bin=num_timept_x_bin)
 
     if event_align[0] != 't_flyON':
         np.savez(os.path.join(save_folder,'%s_multiresc_trials.npz'%session),event_align=event_align,
@@ -445,7 +490,8 @@ for fhName in session_list:
             structure='neuron x trial x time point',trial_rad_targ=rad_targ_vec,rescaled_vel=rescaled_vel,
                  timeSTART=timeSTART, timeOFF=timeOFF, timeSTOP=timeSTOP,isREW=isREW,resc_ang_vel=rescaled_ang,
                  resc_eye_vert=rescaled_ev,resc_eye_hori=rescaled_eh,resc_ang_targ=rescaled_ad,resc_rad_targ=rescaled_rd,
-                 rescaled_lfp_alpha=rescaled_lfp_alpha, rescaled_lfp_beta=rescaled_lfp_beta, rescaled_lfp_theta=rescaled_lfp_theta)
+                 rescaled_lfp_alpha=rescaled_lfp_alpha, rescaled_lfp_beta=rescaled_lfp_beta, rescaled_lfp_theta=rescaled_lfp_theta,
+                 rescaled_lfp_alpha_ph=rescaled_lfp_alpha_ph, rescaled_lfp_beta_ph=rescaled_lfp_beta_ph, rescaled_lfp_theta_ph=rescaled_lfp_theta_ph)
     else:
         np.savez(
             os.path.join(save_folder,'flyON_%s_multiresc_trials.npz' % session),
@@ -456,5 +502,5 @@ for fhName in session_list:
             timeMOVE=timeSTART,timeOFF=timeOFF,timeSTOP=timeSTOP,isREW=isREW,resc_ang_vel=rescaled_ang,
                  resc_eye_vert=rescaled_ev,resc_eye_hori=rescaled_eh,resc_ang_targ=rescaled_ad,resc_rad_targ=rescaled_rd,
             rescaled_lfp_alpha=rescaled_lfp_alpha, rescaled_lfp_beta=rescaled_lfp_beta,
-            rescaled_lfp_theta=rescaled_lfp_theta)
+            rescaled_lfp_theta=rescaled_lfp_theta,rescaled_lfp_alpha_ph=rescaled_lfp_alpha_ph, rescaled_lfp_beta_ph=rescaled_lfp_beta_ph, rescaled_lfp_theta_ph=rescaled_lfp_theta_ph)
 

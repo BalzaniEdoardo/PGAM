@@ -8,7 +8,7 @@ from time import perf_counter
 useCuda = False
 try:
     if not useCuda:
-        raise ModuleNotFoundError('user not uses cuda')
+        raise ModuleNotFoundError
     import pycuda.autoinit
     import pycuda.gpuarray as gpuarray
     import skcuda.linalg as cuda_linalg

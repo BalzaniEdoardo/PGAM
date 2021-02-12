@@ -67,7 +67,7 @@ def compute_integral_mean(gam_res,var,discr=1000):
 session = 'm91s24'
 unit = 15
 # load file
-with open('/Volumes/WD Edo/firefly_analysis/LFP_band/cubic_gam_fit_with_coupling/gam_%s/gam_fit_%s_c%d_all_1.0000.dill'%(session,session,unit),'rb') as fh:
+with open('/Volumes/WD_Edo/firefly_analysis/LFP_band/cubic_gam_fit_with_coupling/gam_%s/gam_fit_%s_c%d_all_1.0000.dill'%(session,session,unit),'rb') as fh:
     result_dict = dill.load(fh)
     
 full = result_dict['full']
@@ -193,18 +193,18 @@ dict_type = {
 table_report = np.zeros(0,dtype=dict_type)
 
 
-for gam_sess in os.listdir('/Volumes/WD Edo/firefly_analysis/LFP_band/cubic_gam_fit_with_coupling/'):
+for gam_sess in os.listdir('/Volumes/WD_Edo/firefly_analysis/LFP_band/cubic_gam_fit_with_coupling/'):
     if not gam_sess.startswith('gam'):
         continue
     session = gam_sess.split('_')[1]
     # if session != 'm91s24':
     #     continue
-    for dill_name in os.listdir(os.path.join('/Volumes/WD Edo/firefly_analysis/LFP_band/cubic_gam_fit_with_coupling/',gam_sess)):
+    for dill_name in os.listdir(os.path.join('/Volumes/WD_Edo/firefly_analysis/LFP_band/cubic_gam_fit_with_coupling/',gam_sess)):
         print(dill_name)
         if not 'all' in dill_name:
             continue
         try:
-            with open(os.path.join('/Volumes/WD Edo/firefly_analysis/LFP_band/cubic_gam_fit_with_coupling/',gam_sess,dill_name),'rb') as fh:
+            with open(os.path.join('/Volumes/WD_Edo/firefly_analysis/LFP_band/cubic_gam_fit_with_coupling/',gam_sess,dill_name),'rb') as fh:
                 result_dict = dill.load(fh)
 
             table_report_tmp = np.zeros(1,dtype=dict_type)
@@ -220,7 +220,7 @@ for gam_sess in os.listdir('/Volumes/WD Edo/firefly_analysis/LFP_band/cubic_gam_
                     table_report_tmp['%s_resp_magn_reduced' % var] = 0
 
             unit = int(dill_name.split('_c')[1].split('_')[0])
-            npz_file = get_npz_filepath('/Volumes/WD Edo/firefly_analysis/LFP_band/DATASET/', session)
+            npz_file = get_npz_filepath('/Volumes/WD_Edo/firefly_analysis/LFP_band/DATASET/', session)
             dat = np.load(npz_file,allow_pickle=True)
             unit_info = dat['unit_info'].all()
             cluster_id = unit_info['cluster_id']
@@ -255,7 +255,7 @@ for gam_sess in os.listdir('/Volumes/WD Edo/firefly_analysis/LFP_band/cubic_gam_
                 if var.startswith('neu'):
                     continue
                 idx = np.where(reduced.covariate_significance['covariate'] == var)[0]
-                if reduced.covariate_significance['p-val'][idx]>0.001:
+                if reduced.covariate_significance['p-val'][idx]<0.001:
                     table_report_tmp[var][0] = True
                     
             # if you want to stack another neuron you can do this
@@ -273,4 +273,5 @@ for gam_sess in os.listdir('/Volumes/WD Edo/firefly_analysis/LFP_band/cubic_gam_
         
             
     
-savemat('table_report.mat',{'table_report':table_report})            
+savemat('table_report.mat',{'table_report':table_report})     
+np.save('table_report.npy',table_report)       

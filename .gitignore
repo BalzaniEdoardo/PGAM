@@ -1,3 +1,6 @@
+select_variables/
+.idea
+TMP/
 *.jpg
 *.dill
 gam_m*
