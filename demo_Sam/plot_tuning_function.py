@@ -136,7 +136,7 @@ plt.fill_between(x, mean_kernel-ci_kernel, mean_kernel+ci_kernel, color='b',alph
 var = 't_stop'
 
 # length fof the kernel
-kern_len = full.smooth_info['t_stop']['time_pt_for_kernel'].shape[0]
+kern_len = full.smooth_info['t_stop']['time_pt_for_kernel'].shape[0]-1
 x = np.zeros((kern_len,))
 x[kern_len//2] = 1
 
