@@ -86,7 +86,7 @@ def model_matrix(X, var_name, smooth_info, trial_idx, pre_trial_dur=0,post_trial
     
 
 session = 'm53s113'
-unit = 11
+unit = 22
 
 with open('/Volumes/WD_Edo/firefly_analysis/LFP_band/GAM_fit_with_acc/gam_%s/fit_results_%s_c%d_all_1.0000.dill'%(session,session,unit),'rb') as fh:
     res_dict = dill.load(fh)
@@ -136,7 +136,7 @@ plt.fill_between(x, mean_kernel-ci_kernel, mean_kernel+ci_kernel, color='b',alph
 var = 't_stop'
 
 # length fof the kernel
-kern_len = full.smooth_info['t_stop']['time_pt_for_kernel'].shape[0]+1
+kern_len = full.smooth_info['t_stop']['time_pt_for_kernel'].shape[0]
 x = np.zeros((kern_len,))
 x[kern_len//2] = 1
 
