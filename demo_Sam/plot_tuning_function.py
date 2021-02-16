@@ -134,24 +134,34 @@ plt.fill_between(x, mean_kernel-ci_kernel, mean_kernel+ci_kernel, color='b',alph
 # for variables that we want to convolve we need to pass an inpulse
 # and the model matrix will be basis convolved with the impulse
 var = 't_stop'
-x = np.zeros((201,))
-x[100] = 1
+
+# length fof the kernel
+kern_len = full.smooth_info['t_stop']['time_pt_for_kernel'].shape[0]+1
+x = np.zeros((kern_len,))
+x[kern_len//2] = 1
 
 fX = model_matrix([x], var, full.smooth_info, trial_idx=None, pre_trial_dur=0,post_trial_dur=0,
                       time_bin=0.006)
 
 plt.subplot(323)
 # the true x axis is time
-time = np.arange(201)*0.006
-time = time - time[100]
+time = np.arange(kern_len)*0.006
+time = time - time[kern_len//2]
 plt.plot(time, fX)
+
+
+indices = index_dict[var]
+mean_kernel = np.dot(fX, beta[indices])
+sd_kernel = np.sqrt(np.sum(np.dot(fX, cov_beta[indices, :][:, indices]) * fX, axis=1))
+ci_kernel = sd_kernel * norm.ppf(1-(1-perc)*0.5)
 
 
 plt.subplot(324)
 # the true x axis is time
-time = np.arange(201)*0.006
-time = time - time[100]
-plt.plot(time, fX)
+time = np.arange(kern_len)*0.006
+time = time - time[kern_len//2]
+plt.plot(time,  mean_kernel)
+plt.fill_between(time, mean_kernel-ci_kernel, mean_kernel+ci_kernel, color='b',alpha=0.5)
 
 
 
