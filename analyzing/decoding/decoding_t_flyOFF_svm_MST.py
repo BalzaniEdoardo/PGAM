@@ -25,31 +25,31 @@ def pop_spike_convolve(spike_mat,trials_idx,filter):
         sm_spk[:,neu] = spike_smooth(spike_mat[:,neu],trials_idx,filter)
     return sm_spk
 
-def hist_equating_selection(ppc_rates,pfc_rates):
+def hist_equating_selection(ppc_rates,mst_rates):
     
-    min_rate = np.min(np.hstack((ppc_rates,pfc_rates)))
-    max_rate = np.max(np.hstack((ppc_rates,pfc_rates)))
+    min_rate = np.min(np.hstack((ppc_rates,mst_rates)))
+    max_rate = np.max(np.hstack((ppc_rates,mst_rates)))
     # set a threshold for 30hz
     max_rate = min(max_rate, 30)
     
     range_bin = np.linspace(min_rate,max_rate,10)
     sele_ppc = []
-    sele_pfc = []
+    sele_mst = []
     for k in range(range_bin.shape[0]-1):
         idx_ppc = np.where((ppc_rates >= range_bin[k]) * (ppc_rates < range_bin[k+1]))[0]
-        idx_pfc = np.where((pfc_rates >= range_bin[k]) * (pfc_rates < range_bin[k+1]))[0]
+        idx_mst = np.where((mst_rates >= range_bin[k]) * (mst_rates < range_bin[k+1]))[0]
         
-        num_sele = min(idx_pfc.shape[0],idx_ppc.shape[0])
+        num_sele = min(idx_mst.shape[0],idx_ppc.shape[0])
         
         if num_sele==0:
             continue
         
         sele_ppc = np.hstack((sele_ppc,np.random.choice(idx_ppc,size=num_sele,replace=False)))
-        sele_pfc = np.hstack((sele_pfc,np.random.choice(idx_pfc,size=num_sele,replace=False)))
+        sele_mst = np.hstack((sele_mst,np.random.choice(idx_mst,size=num_sele,replace=False)))
 
-    sele_pfc = np.array(sele_pfc,dtype=int)
+    sele_mst = np.array(sele_mst,dtype=int)
     sele_ppc = np.array(sele_ppc,dtype=int)
-    return sele_ppc,sele_pfc
+    return sele_ppc,sele_mst
 
 filtwidth = 10
 
@@ -80,8 +80,8 @@ for fh in os.listdir(npz_folder):
     
 
 session = 'm53s31'
-thresh = num_unit_x_area  > 45
-select = thresh[:,1] & thresh[:,2] 
+thresh = num_unit_x_area  > 20
+select = thresh[:,1] & thresh[:,0] 
 resampling = 40
 score_session = {}
 
@@ -124,10 +124,10 @@ for session in sess_list[select]:
         else:
             bool_train[trial_ind==tr] = True
     
-    idx_ppc,idx_pfc = hist_equating_selection(firing_rates[session]['PPC'], firing_rates[session]['PFC'])
+    idx_ppc,idx_mst = hist_equating_selection(firing_rates[session]['PPC'], firing_rates[session]['MST'])
 
     num_ppc = ( unit_info['brain_area']  == 'PPC').sum()
-    num_pfc = ( unit_info['brain_area']  == 'PFC').sum()
+    num_mst = ( unit_info['brain_area']  == 'MST').sum()
     
    
     
@@ -138,19 +138,19 @@ for session in sess_list[select]:
     for kk in range(resampling):
         print(kk,resampling)
         sm_spk_ppc = sm_spikes[:, unit_info['brain_area'] == 'PPC']
-        sm_spk_pfc = sm_spikes[:, unit_info['brain_area'] == 'PFC']
-        if num_ppc > num_pfc:
-           # sub_sel = np.random.choice(np.arange(num_ppc), size=num_pfc, replace=False)
+        sm_spk_mst = sm_spikes[:, unit_info['brain_area'] == 'MST']
+        if num_ppc > num_mst:
+           # sub_sel = np.random.choice(np.arange(num_ppc), size=num_mst, replace=False)
            # sm_spk_ppc = sm_spk_ppc[:, sub_sel]
            sm_spk_ppc = sm_spk_ppc[:, idx_ppc]
-           sm_spk_pfc = sm_spk_pfc[:, idx_pfc]
+           sm_spk_mst = sm_spk_mst[:, idx_mst]
            refit_ppc = True
         
         else:
-           # sub_sel = np.random.choice(np.arange(num_pfc),size=num_ppc,replace=False)
-           # sm_spk_pfc = sm_spk_pfc[:, sub_sel]
+           # sub_sel = np.random.choice(np.arange(num_mst),size=num_ppc,replace=False)
+           # sm_spk_mst = sm_spk_mst[:, sub_sel]
            sm_spk_ppc = sm_spk_ppc[:, idx_ppc]
-           sm_spk_pfc = sm_spk_pfc[:, idx_pfc]
+           sm_spk_mst = sm_spk_mst[:, idx_mst]
            refit_ppc = False
         
         
@@ -161,13 +161,13 @@ for session in sess_list[select]:
        
         if kk == 0:
             score_session[session]['PPC'] = []
-            score_session[session]['PFC'] = []
+            score_session[session]['MST'] = []
             if refit_ppc:
-                train_spk = sm_spk_pfc[bool_train]
-                test_spk = sm_spk_pfc[bool_test]
+                train_spk = sm_spk_mst[bool_train]
+                test_spk = sm_spk_mst[bool_test]
                 clf.fit(train_spk,endog[bool_train])
                 scr = balanced_accuracy_score(endog[bool_test],clf.predict(test_spk))
-                score_session[session]['PFC'] = np.hstack((score_session[session]['PFC'],[scr]))
+                score_session[session]['MST'] = np.hstack((score_session[session]['MST'],[scr]))
             else:
                 train_spk = sm_spk_ppc[bool_train]
                 test_spk = sm_spk_ppc[bool_test]
@@ -183,20 +183,20 @@ for session in sess_list[select]:
             score_session[session]['PPC'] = np.hstack((score_session[session]['PPC'],[scr]))
         
         else:    
-            train_spk = sm_spk_pfc[bool_train]
-            test_spk = sm_spk_pfc[bool_test]
+            train_spk = sm_spk_mst[bool_train]
+            test_spk = sm_spk_mst[bool_test]
             clf.fit(train_spk,endog[bool_train])
             scr = balanced_accuracy_score(endog[bool_test],clf.predict(test_spk))
-            score_session[session]['PFC'] = np.hstack((score_session[session]['PFC'],[scr]))
+            score_session[session]['MST'] = np.hstack((score_session[session]['MST'],[scr]))
            
-    print(session, 'PPC:',num_ppc, 'PFC:',num_pfc)
+    print(session, 'PPC:',num_ppc, 'MST:',num_mst)
     print(score_session[session])
            # if kk == 0:
            #     model = lasso(alpha=alpha)
-           #     res = model.fit(sm_spk_pfc[bool_train], eye_pos[bool_train])
-           #     scr = res.score(sm_spk_pfc[bool_test], eye_pos[bool_test])
+           #     res = model.fit(sm_spk_mst[bool_train], eye_pos[bool_train])
+           #     scr = res.score(sm_spk_mst[bool_test], eye_pos[bool_test])
            #     score_session[session]['PFC'] = scr
            #     score_session[session]['PPC'] = []
 
 
-np.save('decoding_linSVM_%s.npy'%var,score_session)
+np.save('MST_decoding_linSVM_%s.npy'%var,score_session)

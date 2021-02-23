@@ -387,30 +387,33 @@ def extract_presecnce_rate(occupancy_bin_sec,occupancy_rate_th,unit_info,session
             split_sortlfd = sorted_fold.split(os.path.sep)
             iidxx = np.where(np.array(split_sortlfd)=='Utah Array')[0][0]
             sorted_fold = os.path.sep.join(split_sortlfd[:iidxx+1]+['Feb 05 2018/neural data/Sorted/Sorted/'])
-        spike_times, spike_clusters, spike_templates, amplitudes, templates, channel_map, clusterIDs, cluster_quality = \
-            load_kilosort_data(sorted_fold, \
-                               linearprobe_sampling_fq, \
-                               use_master_clock=False,
-                               include_pcs=False)
-        # tot time in sec
-        max_time = np.max(spike_times)
-        min_time = np.min(spike_times)
-        num_bins_occ = int(np.floor((max_time - min_time) / occupancy_bin_sec))
-        print('dur recording probe: %f' % (max_time - min_time))
-        # index of the liear probe in the stacked files
-        select_array = (unit_info['brain_area'] != 'PPC') * (unit_info['brain_area'] != 'PFC')
-
-        for unit in np.unique(unit_info['cluster_id'][select_array]):
-            # extract the index of the unit in the stacked file
-            idx_un = np.where(select_array * (unit_info['cluster_id'] == unit))[0]
-            if idx_un.shape[0] != 1:
-                raise ValueError
-
-            idx_un = idx_un[0]
-
-            unit_bool = spike_clusters==unit
-
-            h, b = np.histogram(spike_times[unit_bool], np.linspace(min_time, max_time, num_bins_occ))
-            occupancy = np.sum(h>occupancy_rate_th*occupancy_bin_sec)/num_bins_occ
-            unit_info['presence_rate'][idx_un] = occupancy
+        try:
+            spike_times, spike_clusters, spike_templates, amplitudes, templates, channel_map, clusterIDs, cluster_quality = \
+                load_kilosort_data(sorted_fold, \
+                                   linearprobe_sampling_fq, \
+                                   use_master_clock=False,
+                                   include_pcs=False)
+            # tot time in sec
+            max_time = np.max(spike_times)
+            min_time = np.min(spike_times)
+            num_bins_occ = int(np.floor((max_time - min_time) / occupancy_bin_sec))
+            print('dur recording probe: %f' % (max_time - min_time))
+            # index of the liear probe in the stacked files
+            select_array = (unit_info['brain_area'] != 'PPC') * (unit_info['brain_area'] != 'PFC')
+    
+            for unit in np.unique(unit_info['cluster_id'][select_array]):
+                # extract the index of the unit in the stacked file
+                idx_un = np.where(select_array * (unit_info['cluster_id'] == unit))[0]
+                if idx_un.shape[0] != 1:
+                    raise ValueError
+    
+                idx_un = idx_un[0]
+    
+                unit_bool = spike_clusters==unit
+    
+                h, b = np.histogram(spike_times[unit_bool], np.linspace(min_time, max_time, num_bins_occ))
+                occupancy = np.sum(h>occupancy_rate_th*occupancy_bin_sec)/num_bins_occ
+                unit_info['presence_rate'][idx_un] = occupancy
+        except:
+            print('No array data...')
     return unit_info

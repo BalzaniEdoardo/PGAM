@@ -64,8 +64,9 @@ for fh in os.listdir('/Volumes/WD_Edo/firefly_analysis/LFP_band/concatenation_wi
     cond_dict = {'all':[True],'density':[0.0001, 0.005],
                   'replay':[0,1],'controlgain':[2,1.5],'reward':[0,1],'replay':[0,1],
                   'ptb':[0,1]} #'density':[0.0001, 0.005]}
-    cond_dict = {'all': [True] }
-    sess_keep = ['m53s39','m53s36','m53s51','m53s50','m53s49','m53s48']
+    # cond_dict = {'all': [True] }
+    # cond_dict.pop('all')
+    sess_keep = ['m72s1','m72s2']
     if  not session in   sess_keep:
         continue
     # cond_dict = {'controlgain':[2,1.5]}
@@ -99,19 +100,19 @@ for fh in os.listdir('/Volumes/WD_Edo/firefly_analysis/LFP_band/concatenation_wi
                 
             else:
                 print('trial of type %s %s not present'%(condition,value))
-    # for condition in ['odd']:
+    for condition in ['odd']:
        
-    #     for value in [0,1]:
+        for value in [0,1]:
             
-    #         if True:
-    #             tmp_cond_list = np.zeros(neuron_use.shape[0],dtype=dict_type)
-    #             tmp_cond_list['neuron'] = neuron_use
-    #             tmp_cond_list['condition'] = condition
-    #             tmp_cond_list['value'] = value
-    #             cond_list = np.hstack((cond_list,tmp_cond_list))
+            if True:
+                tmp_cond_list = np.zeros(neuron_use.shape[0],dtype=dict_type)
+                tmp_cond_list['neuron'] = neuron_use
+                tmp_cond_list['condition'] = condition
+                tmp_cond_list['value'] = value
+                cond_list = np.hstack((cond_list,tmp_cond_list))
                 
-    #         else:
-    #             print('trial of type %s %s not present'%(condition,value))
+            else:
+                print('trial of type %s %s not present'%(condition,value))
                 
     # print(pd.DataFrame(tmp_cond_list)[:10])
     shape = cond_list.shape[0]
@@ -120,6 +121,7 @@ for fh in os.listdir('/Volumes/WD_Edo/firefly_analysis/LFP_band/concatenation_wi
     quotient = shape//all_num
     one_every = min(quotient,5)
     # print(one_every)
+    # if cond_list['condition']
     if one_every > 0:
         cond_list2 = deepcopy(cond_list)
         cond_list2['neuron'] = -1

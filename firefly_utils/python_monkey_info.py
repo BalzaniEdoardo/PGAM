@@ -75,6 +75,13 @@ class monkey_info_class(object):
     def get_date(self,session_str):
         idx = self.get_monkey_num(session_str)
         return self.monkey_info[idx]['date']
+    
+    def get_session(self,date):
+        for num in self.monkey_info.keys():
+            if self.monkey_info[num]['date'] == date:
+                return 'm%ds%d'%(self.monkey_info[num]['monk_id'],self.monkey_info[num]['session_id'])
+            
+        
 
 
 

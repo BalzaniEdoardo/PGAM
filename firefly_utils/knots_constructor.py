@@ -212,6 +212,17 @@ def knots_cerate(x,var,session, hand_vel_temp=False,hist_filt_dur='short',
         
         is_temporal_kernel = True
         kernel_direction = 0
+        
+    elif var == 'T_ang_move_init':
+        kernel_len = 160 # about half a second 80*6ms
+        knots = np.linspace(0,kernel_len,6)
+        knots = np.hstack(([knots[0]]*3,
+                                knots,
+                                [knots[-1]]*3
+                               ))
+        
+        is_temporal_kernel = True
+        kernel_direction = 1
     
     elif var == 'ang_acc':
         knots = np.linspace(-250,250,6)
@@ -328,6 +339,7 @@ def knots_cerate(x,var,session, hand_vel_temp=False,hist_filt_dur='short',
 
 
 if __name__ == '__main__':
+# if False:
     from utils_loading import unpack_preproc_data, add_smooth
     # dat = np.load('input_hist.npz')
     # hist_matrix = dat['hist']

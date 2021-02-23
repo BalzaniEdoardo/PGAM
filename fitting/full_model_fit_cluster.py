@@ -74,7 +74,7 @@ except:
     print('EXCEPTION RAISED')
     folder_name = ''
     sv_folder_base = ''
-    fhName = os.path.join('/Volumes/WD_Edo/firefly_analysis/LFP_band/concatenation_with_accel/','m53s39.npz')
+    fhName = os.path.join('/Volumes/WD_Edo/firefly_analysis/LFP_band/concatenation_with_accel/','m72s2.npz')
     # fhName = '/Users/edoardo/Downloads/PPC+PFC+MST/m53s109.npz'
     if fhName.endswith('.mat'):
         dat = loadmat(fhName)
@@ -119,7 +119,7 @@ try:  # IF CLUSTER JOB IS RUNNING
     pop_size_max = yt.shape[1]
 except Exception as ex:
 
-    JOB = 0
+    JOB = 2
     list_condition = np.load(os.path.join(os.path.join(main_dir,'preprocessing_pipeline', 'util_preproc'),
 
         'condition_list_%s.npy' % session))
@@ -221,6 +221,7 @@ for neuron in neuron_list:
             x = Xt[keep, cc]
             
             x_test = Xt[keep_test, cc]
+        
     
        
         
@@ -251,6 +252,9 @@ for neuron in neuron_list:
                 
         # print(np.nanmax(np.abs(x_trans)),np.nanmax(np.abs(x_test)))
         if include_var:
+            if var == 't_ptb':
+                if x_trans.sum() == 0:
+                    continue
             if var in sm_handler.smooths_dict.keys():
                 sm_handler.smooths_dict.pop(var)
                 sm_handler.smooths_var.remove(var)
@@ -348,7 +352,7 @@ for neuron in neuron_list:
                                                         use_dgcv=True, initial_smooths_guess=False,
                                                         fit_initial_beta=True, pseudoR2_per_variable=True,
                                                         trial_num_vec=trial_idx_train, k_fold=use_k_fold, fold_num=num_folds,
-                                                        reducedAdaptive=False,compute_MI=False,perform_PQL=True)
+                                                        reducedAdaptive=False,compute_MI=True,perform_PQL=True)
     
     modelX_test, idx_dict_test = sm_handler_test.get_exog_mat(full_coupling.var_list)
     spk = yt[keep_test,neuron-1]

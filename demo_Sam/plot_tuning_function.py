@@ -86,7 +86,7 @@ def model_matrix(X, var_name, smooth_info, trial_idx, pre_trial_dur=0,post_trial
     
 
 session = 'm53s113'
-unit = 22
+unit = 13
 
 with open('/Volumes/WD_Edo/firefly_analysis/LFP_band/GAM_fit_with_acc/gam_%s/fit_results_%s_c%d_all_1.0000.dill'%(session,session,unit),'rb') as fh:
     res_dict = dill.load(fh)

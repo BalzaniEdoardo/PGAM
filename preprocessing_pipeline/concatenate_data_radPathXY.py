@@ -38,7 +38,7 @@ print('The code assumes that the lfp_session.mat  files are in the same folder a
 # concat_list = concat_list[ii+1:]
 # fld_list = fld_list[ii+1:]
 
-concat_list=[ 'm53s127','m53s130','m53s131']
+concat_list=[ 'm53s113']
 
 sv_folder = '/Volumes/WD_Edo/firefly_analysis/LFP_band/concatenation_with_accel'
 
@@ -150,7 +150,7 @@ for session in concat_list:
         exp_data = data_handler(dat, behav_dat_key, spike_key, lfp_key, behav_stat_key, pre_trial_dur=pre_trial_dur,
                             post_trial_dur=post_trial_dur,
                             lfp_beta=lfp_beta['lfp_beta'], lfp_alpha=lfp_alpha['lfp_alpha'],lfp_theta=lfp_theta['lfp_theta'], extract_lfp_phase=(not is_phase),
-                            use_eye=use_eye)
+                            use_eye=use_eye,extract_fly_and_monkey_xy=True)
     except Exception as e:
         print('unable to open', session,'\n',e)
         continue
@@ -171,7 +171,7 @@ for session in concat_list:
 
     var_names = ('rad_vel','ang_vel','rad_path','ang_path','rad_target','ang_target',
                  'lfp_beta','lfp_alpha','lfp_theta','t_move','t_flyOFF','t_stop','t_reward','eye_vert','eye_hori',
-                 'hand_vel1','hand_vel2','rad_acc','ang_acc','t_ptb')
+                 'hand_vel1','hand_vel2','rad_acc','ang_acc','t_ptb','rad_path_from_xy')
                  #'lfp_alpha_power',
                  #'lfp_theta_power','lfp_beta_power')
     try:

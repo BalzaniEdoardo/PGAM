@@ -28,11 +28,11 @@ from time import perf_counter
 from scipy.io import savemat
 
 
-session = 'm53s128'
-dat = np.load('/Users/edoardo/Work/Code/GAM_code/analyzing/extract_tuning/eval_matrix_and_info.npz')
-info = dat['info']
-sele = info['session'] == session
-info = info[sele]
+session = 'm53s50'
+# dat = np.load('/Users/edoardo/Work/Code/GAM_code/analyzing/extract_tuning/eval_matrix_and_info.npz')
+# info = dat['info']
+# sele = info['session'] == session
+# info = info[sele]
 
 info_selectivity = np.load('/Users/edoardo/Work/Code/GAM_code/analyzing/extract_tuning/response_strength_info.npy')
 keep = ((info_selectivity['session'] == session) * 
@@ -45,7 +45,7 @@ info_selectivity = info_selectivity[info_selectivity['rad_vel']]
 
 
 unit_list = np.sort(np.unique(info_selectivity['unit']))
-
+# unit_list = [105]
 plot_boolean = 1
 skip_first = 0
 if plot_boolean:
@@ -89,7 +89,10 @@ if plot_boolean:
                 xmax = 50
             if var == 'rad_vel':
                 xmin = 0
-                xmax = 170#390
+                if any(fit_fast.smooth_info[var]['knots'][0]>300):
+                    xmax = 400
+                else:
+                    xmax = 180
             if var == 'rad_acc':
                 xmin = -800
                 xmax = 800
@@ -118,7 +121,10 @@ if plot_boolean:
                 xmax = 50
             if var == 'rad_vel':
                 xmin = 0
-                xmax = 190
+                if any(fit_slow.smooth_info[var]['knots'][0]>300):
+                    xmax = 400
+                else:
+                    xmax = 180
             if not fit_slow.smooth_info[var]['is_temporal_kernel']:
                 x = np.linspace(xmin,xmax,100)
                 xxdict_slow[var] = x
@@ -201,8 +207,8 @@ if plot_boolean:
         
             
         plt.tight_layout(rect=[0, 0.03, 1, 0.95])
-        
-        
+        plt.savefig('%s_c%d.png'%(session,unit))
+        plt.close('all')
         # plt.legend()
         # plt.savefig('Figs/example_tuning_%s_%d.png'%(session,unit))
         # plt.close('all')

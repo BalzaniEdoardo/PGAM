@@ -93,7 +93,7 @@ alpha = 0.001
 kk = 0
 decoding_results_x_var = {}
 # var_list = ['rad_path','ang_path','rad_vel','ang_vel','rad_target','ang_target']
-var_list = ['rad_path']#,'eye_vert']
+var_list = ['rad_target']#,'eye_vert']
 for var in var_list:
     decoding_results_x_var[var] = {'PFC':{},'PPC':{},'MST':{}}
 for session in sess_list[sel]:
@@ -220,7 +220,7 @@ for session in sess_list[sel]:
 for var in decoding_results_x_var.keys():
     np.save('predict_density_%s.npy'%var,decoding_results_x_var[var])
     
-var = 'rad_path'
+var = 'rad_target'
 for ba in ['PPC','PFC']:
     plt.suptitle(ba + ' rad path: predicted')
 
@@ -253,12 +253,12 @@ for ba in ['PPC','PFC']:
         cc+=1
     plt.tight_layout(rect=[0, 0.03, 1, 0.95])
 
-    plt.savefig('%s_rad_path_decoding_comp.pdf'%ba)
+    plt.savefig('%s_%s_decoding_comp.pdf'%(ba,var))
 
 
 
     
-var = 'rad_path'
+var = 'rad_target'
 for ba in ['PPC','PFC']:
     plt.figure(figsize=(12,6))
     plt.suptitle(ba + ' rad path: predicted - true')
@@ -292,9 +292,9 @@ for ba in ['PPC','PFC']:
         cc+=1
     plt.tight_layout(rect=[0, 0.03, 1, 0.95])
 
-    plt.savefig('%s_delta_rad_path_decoding_comp.pdf'%ba)
+    plt.savefig('%s_delta_%s_decoding_comp.pdf'%(ba,var))
     
-var = 'rad_path'
+var = 'rad_target'
 for ba in ['PPC','PFC']:
     plt.figure(figsize=(12,6))
     plt.suptitle(ba + ' rad path:  - true')
@@ -328,7 +328,7 @@ for ba in ['PPC','PFC']:
     # plt.savefig('%s_delta_rad_path_decoding_comp.pdf'%ba)
     
 
-var = 'rad_path'
+var = 'rad_target'
 # plt.figure(figsize=(12,6))
    # plt.suptitle()
 means_dict_hdhd = {}

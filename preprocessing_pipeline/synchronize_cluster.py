@@ -33,7 +33,7 @@ path_fitting_fld = os.path.join(main_dir,'fitting')
 path_ff_utils = os.path.join(main_dir,'firefly_utils')
 path_util_preproc = os.path.join(folder_name,'util_preproc')
 path_jpn5_base = '/scratch/%s/'%send_to#os.path.dirname(os.path.dirname(user_paths.get_path('data_hpc')))
-path_to_fit_fld = '/scratch/%s/fit_ptb_as_variable'%send_to#os.path.join(path_jpn5_base,'select_hand_vel')
+path_to_fit_fld = os.path.join(path_jpn5_base,'fit_with_accel')#'/scratch/%s/fit_ptb_as_variable'%send_to
 
 # send gam_fit.py
 print('\nsending:')
@@ -58,42 +58,42 @@ dest_fld = os.path.join(path_jpn5_base,'GAM_Repo','firefly_utils')
 os.system('sshpass -p "%s" scp %s %s@greene.hpc.nyu.edu:%s' % (PP, path_to_script, send_to,dest_fld))
 
 
-# # send any condition_list file
-# print('sending cond list:\n=================')
-# for root, dirs, files in os.walk(main_dir):
-#     if '/.' in root or '__pycache__' in root:
-#         continue
-#     for fhname in files:
-#         if 'condition_list_' in fhname:
-#             # if not 'm53s51' in fhname:
-#             #     continue
-#             fh_path = os.path.join(root,fhname)
-#             print('sending: \n',fh_path)
-#             os.system('sshpass -p "%s" scp %s %s@greene.hpc.nyu.edu:%s' % (PP, fh_path, send_to, path_to_fit_fld))
-#             print('sent')
-#             session = fhname.split('.')[0].split('condition_list_')[1]
-#             with open(os.path.join(main_dir,'sh_template.sh'),'r') as fh:
-#                 sh_text = fh.read()
-#                 fh.close()
+# send any condition_list file
+print('sending cond list:\n=================')
+for root, dirs, files in os.walk(main_dir):
+    if '/.' in root or '__pycache__' in root:
+        continue
+    for fhname in files:
+        if 'condition_list_' in fhname:
+            # if not 'm53s51' in fhname:
+            #     continue
+            fh_path = os.path.join(root,fhname)
+            print('sending: \n',fh_path)
+            os.system('sshpass -p "%s" scp %s %s@greene.hpc.nyu.edu:%s' % (PP, fh_path, send_to, path_to_fit_fld))
+            print('sent')
+            session = fhname.split('.')[0].split('condition_list_')[1]
+            with open(os.path.join(main_dir,'sh_template.sh'),'r') as fh:
+                sh_text = fh.read()
+                fh.close()
             
             
-#             sh_text = sh_text.replace('template',session)
-#             sh_text=sh_text.replace('gam_fit.py','full_model_fit_cluster.py')
-#             sh_text=sh_text.replace('jp_final_gam_fit_coupling','fit_with_accel')
-#             sh_text=sh_text.replace('jpn5@nyu.edu','eb162@nyu.edu')
-#             if send_to == 'eb162':
-#                 old_activate = 'source /scratch/jpn5/select_hand_vel/venv/bin/activate'
-#                 new_activate = 'source /scratch/eb162/venv/bin/activate'
-#                 sh_text = sh_text.replace(old_activate, new_activate)
+            sh_text = sh_text.replace('template',session)
+            sh_text=sh_text.replace('gam_fit.py','full_model_fit_cluster.py')
+            sh_text=sh_text.replace('jp_final_gam_fit_coupling','fit_with_accel')
+            sh_text=sh_text.replace('jpn5@nyu.edu','eb162@nyu.edu')
+            if send_to == 'eb162':
+                old_activate = 'source /scratch/jpn5/select_hand_vel/venv/bin/activate'
+                new_activate = 'source /scratch/eb162/venv/bin/activate'
+                sh_text = sh_text.replace(old_activate, new_activate)
                 
                 
-#             with open(os.path.join(main_dir,'gam_fit_%s.sh'%session),'w') as fh:
-#                 fh.write(sh_text)
-#                 fh.close()
-#             print('sending: \n',os.path.join(main_dir,'gam_fit_%s.sh'%session))
-#             os.system('sshpass -p "%s" scp %s %s@greene.hpc.nyu.edu:%s' % (PP, os.path.join(main_dir,'gam_fit_%s.sh'%session),send_to, path_to_fit_fld))
-#             print('sent')
-#             os.remove(os.path.join(main_dir,'gam_fit_%s.sh'%session))
+            with open(os.path.join(main_dir,'gam_fit_%s.sh'%session),'w') as fh:
+                fh.write(sh_text)
+                fh.close()
+            print('sending: \n',os.path.join(main_dir,'gam_fit_%s.sh'%session))
+            os.system('sshpass -p "%s" scp %s %s@greene.hpc.nyu.edu:%s' % (PP, os.path.join(main_dir,'gam_fit_%s.sh'%session),send_to, path_to_fit_fld))
+            print('sent')
+            os.remove(os.path.join(main_dir,'gam_fit_%s.sh'%session))
             
 # # # print('=================\n')
 

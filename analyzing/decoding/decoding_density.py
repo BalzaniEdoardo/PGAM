@@ -92,7 +92,7 @@ alpha = 0.001
 kk = 0
 decoding_results_x_var = {}
 # var_list = ['rad_path','ang_path','rad_vel','ang_vel','rad_target','ang_target']
-var_list = ['eye_vert']#,'eye_vert']
+var_list = ['rad_target']#,'eye_vert']
 for var in var_list:
     decoding_results_x_var[var] = {'PFC':{},'PPC':{},'MST':{}}
 for session in sess_list[sel]:

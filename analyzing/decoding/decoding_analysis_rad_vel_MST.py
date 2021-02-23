@@ -25,7 +25,7 @@ def pop_spike_convolve(spike_mat,trials_idx,filter):
     return sm_spk
 
 
-
+var = 'rad_target'
 filtwidth = 10
 
 t = np.linspace(-2 * filtwidth, 2 * filtwidth, 4 * filtwidth + 1)
@@ -65,13 +65,22 @@ for session in sess_list[select]:
     concat = dat['data_concat'].all()
     var_names = dat['var_names']
     X = concat['Xt']
-    rad_vel = X[:,var_names=='rad_vel']
+    rad_vel = X[:,var_names==var]
     trial_ind = concat['trial_idx']
     unit_info = dat['unit_info'].all()
     brain_area = unit_info['brain_area']
+    
+    
+    
     # rad_vel[trial_ind==5]
     
     spikes = concat['Yt']
+    
+    sel = ~np.isnan(rad_vel.flatten())
+    X = X[sel]
+    spikes = spikes[sel]
+    trial_ind = trial_ind[sel]
+    rad_vel = rad_vel[sel]
     
     sm_spikes = pop_spike_convolve(spikes, trial_ind, h)
 
@@ -149,5 +158,5 @@ for session in sess_list[select]:
             scr = res.score(sm_spk_mst[bool_test], rad_vel[bool_test])
             score_session[session]['MST'] = scr
 
-np.save('MST_decoding_rad_vel_with_subsamp.npy', score_session)
+np.save('MST_decoding_%s_with_subsamp.npy'%var, score_session)
 

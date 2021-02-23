@@ -49,7 +49,7 @@ def unpack_name(name):
     man_val = float(re.findall('\d+.\d\d\d\d',name)[0])
     return session,unitID,man_type,man_val
 
-monkey_dict = {'m44':'Quigley','m53':'Schro','m91':'Ody','m51':'Bruno'}
+monkey_dict = {'m44':'Quigley','m53':'Schro','m91':'Ody','m51':'Bruno','m72':'Marco'}
 
 
     
@@ -164,14 +164,15 @@ if os.path.exists('eval_matrix_and_info.npz'):
     info_matrix = res['info']
     eval_matrix = res['eval_matrix']
     index_list = res['index_list']
-    orig_done = deepcopy(info_matrix)
+orig_done = deepcopy(info_matrix)
+
 
 up_until = False
 for (root,dirs,files) in os.walk(path_to_gam):
     
     for name in files:
-        if not 'controlgain' in name:
-            continue
+        # if not 'controlgain' in name:
+        #     continue
         if not re.match(pattern, name):
             continue
         session,unitID,man_type,man_val = unpack_name(name)
@@ -208,7 +209,7 @@ for (root,dirs,files) in os.walk(path_to_gam):
         if session != session_prev:
             np.savez('eval_matrix_and_info.npz',eval_matrix=eval_matrix,info=info_matrix,index_list=index_list)
 
-            print('sessoin',session)
+            print('session',session)
             session_prev = session
             
 
@@ -241,7 +242,7 @@ for (root,dirs,files) in os.walk(path_to_gam):
         eval_tmp = np.zeros((1,index_list.shape[0]))*np.nan
         cnt_vars = 0
         for var in full.var_list:
-            if var == 'spike_hist' or var.startswith('neu'):
+            if var == 'spike_hist' or var.startswith('neu') or (var == 't_ptb'):
                 continue
             
             

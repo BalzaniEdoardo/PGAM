@@ -1,4 +1,5 @@
 import numpy as np
+import statsmodels.api as sm
 
 def create_dict_beahv(trialVec,var_type,field):
     """
@@ -215,6 +216,7 @@ class behavior_experiment(object):
             self.continuous.x_monk = creat_dict_from_beahv_stat(behav_stat, 'pos_abs', 'x_monk')
             self.continuous.y_monk = creat_dict_from_beahv_stat(behav_stat, 'pos_abs', 'y_monk')
             self.get_fly_pos(trials_behv)
+            self.continuous.rad_path_from_xy = self.radial_distance_from_position()
 
         if extract_cartesian_eye_and_firefly:
             height = dat['prs']['height'][0][0][0][0]
@@ -375,6 +377,45 @@ class behavior_experiment(object):
         dictFuct = lambda ts,vel: {key : zeropad_and_cumulative(ts[key],vel[key]) for key in vel.keys()}
 
         integr_path = dictFuct(self.time_stamps,velocity)
+
+        return integr_path
+    
+    def radial_distance_from_position(self):
+        """
+        Description
+        ===========
+            This function compute the trajectory in time given a time course of velocities.
+        """
+        path = {}
+        for tr in range(self.n_trials):
+            print('path smoothing: %d/%d'%(tr+1,self.n_trials))
+            sele = (self.time_stamps[tr] > 0) & ( self.time_stamps[tr] < self.events.t_end[tr])
+            x_monk = self.continuous.x_monk[tr][sele]
+            y_monk = self.continuous.y_monk[tr][sele]
+            
+            non_nan_idx = np.where(~np.isnan(x_monk))[0]
+            # if np.isnan(x_monk[0]):
+            #     sele[np.where(sele)[0][0] + 1] = False
+            #     x_monk = x_monk[1:]
+            #     y_monk = y_monk[1:]
+            # sele[sele][np.isnan(x_monk)] = False
+            raw_path = np.sqrt((x_monk)**2 + (y_monk + 32)**2)
+            fr = 20. / sele.sum()
+            rsm = sm.nonparametric.lowess(raw_path, self.time_stamps[tr][sele],fr)
+            sm_path = np.zeros(x_monk.shape)*np.nan
+            sm_path[non_nan_idx] = rsm[:,1]
+            path[tr] = np.zeros(sele.shape)
+            # the origin is (0cm,-32cm) 
+            path[tr][sele] = sm_path
+            
+        return path
+            
+        # # set a function that cumulates the distance trabelled and zero pad negative times (before stim presentation)
+        # zeropad_and_cumulative = lambda ts,vel: np.hstack((np.zeros(np.sum(ts <= 0)), np.cumsum(vel[ts > 0]*self.dt)))
+        # # this function cicles on dictionaries and combines the results_radTarg into a dicitonary
+        # dictFuct = lambda ts,vel: {key : zeropad_and_cumulative(ts[key],vel[key]) for key in vel.keys()}
+
+        # integr_path = dictFuct(self.time_stamps,velocity)
 
         return integr_path
 

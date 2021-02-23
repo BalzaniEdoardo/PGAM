@@ -72,7 +72,7 @@ def unpack_name(name):
     man_val = float(re.findall('\d+.\d\d\d\d',name)[0])
     return session,unitID,man_type,man_val
 
-monkey_dict = {'m44':'Quigley','m53':'Schro','m91':'Ody','m51':'Bruno'}
+monkey_dict = {'m44':'Quigley','m53':'Schro','m91':'Ody','m51':'Bruno','m72':'Marco'}
 
 
     
@@ -197,7 +197,7 @@ dtype_dict = {
 info_matrix = np.zeros(0,dtype=dtype_dict)
 
 
-# check done already
+# # check done already
 if os.path.exists('response_strength_info.npy'):
     info_matrix = np.load('response_strength_info.npy',allow_pickle=True)
 orig_done = deepcopy(info_matrix)
@@ -207,10 +207,10 @@ orig_done = deepcopy(info_matrix)
 done_id = []
 for k in range(orig_done.shape[0]):
     done_id += ['%s_%d_%s_%s'%(orig_done['session'][k],
-                               orig_done['unit'][k],
-                               orig_done['manipulation type'][k],
-                               orig_done['manipulation value'][k]
-                               )]
+                                orig_done['unit'][k],
+                                orig_done['manipulation type'][k],
+                                orig_done['manipulation value'][k]
+                                )]
 done_id = np.sort(np.array(done_id))
 
 
@@ -317,13 +317,14 @@ for (root,dirs,files) in os.walk(path_to_gam):
         
         info_neu['manipulation type'] = man_type
         info_neu['manipulation value'] = man_val
-        
-        for var in reduced.var_list:
-                if var.startswith('neu'):
-                    continue
-                idx = np.where(reduced.covariate_significance['covariate'] == var)[0]
-                if reduced.covariate_significance['p-val'][idx]<0.001:
-                    info_neu[var] = True
+        if not reduced is None:
+            for var in reduced.var_list:
+                    if var.startswith('neu') or var.startswith('t_ptb') :
+                        continue
+                    idx = np.where(reduced.covariate_significance['covariate'] == var)[0]
+                    if reduced.covariate_significance['p-val'][idx]<0.001:
+                        info_neu[var] = True
+                        
         info_matrix = np.hstack((info_matrix,info_neu))
 
         

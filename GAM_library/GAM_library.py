@@ -207,11 +207,12 @@ class GAM_result(object):
                     continue
                 if self.smooth_info[var]['is_temporal_kernel'] and self.smooth_info[var]['is_event_input']:
 
-
+                    
                     reward = np.squeeze(sm_handler[var]._x)[filter_trials]
                     # set everything to -1
                     time_kernel = np.ones(reward.shape[0]) * np.inf
                     rew_idx = np.where(reward == 1)[0]
+                    
 
                     # temp kernel where 161 timepoints long
                     size_kern = self.smooth_info[var]['time_pt_for_kernel'].shape[0]

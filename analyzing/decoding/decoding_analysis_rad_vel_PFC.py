@@ -90,7 +90,7 @@ for session in sess_list[select]:
 
 
     num_ppc = (brain_area == 'PPC').sum()
-    num_mst = (brain_area == 'MST').sum()
+    num_pfc = (brain_area == 'PFC').sum()
     
    
     
@@ -101,17 +101,17 @@ for session in sess_list[select]:
     for kk in range(resampling):
         print(kk,resampling)
         sm_spk_ppc = sm_spikes[:, brain_area == 'PPC']
-        sm_spk_mst = sm_spikes[:, brain_area == 'MST']
+        sm_spk_pfc = sm_spikes[:, brain_area == 'PFC']
         
-        if num_ppc > num_mst:
-            sub_sel = np.random.choice(np.arange(num_ppc), size=num_mst, replace=False)
+        if num_ppc > num_pfc:
+            sub_sel = np.random.choice(np.arange(num_ppc), size=num_pfc, replace=False)
             sm_spk_ppc = sm_spk_ppc[:, sub_sel]
            
             if kk == 0:
                 model = lasso(alpha=alpha)
-                res = model.fit(sm_spk_mst[bool_train], rad_vel[bool_train])
-                scr = res.score(sm_spk_mst[bool_test], rad_vel[bool_test])
-                score_session[session]['MST'] = scr
+                res = model.fit(sm_spk_pfc[bool_train], rad_vel[bool_train])
+                scr = res.score(sm_spk_pfc[bool_test], rad_vel[bool_test])
+                score_session[session]['PFC'] = scr
                 score_session[session]['PPC'] = []
 
                
@@ -121,9 +121,9 @@ for session in sess_list[select]:
             score_session[session]['PPC'] = np.hstack((score_session[session]['PPC'], [scr]))
             
            
-        elif num_ppc < num_mst:
-            sub_sel = np.random.choice(np.arange(num_mst),size=num_ppc,replace=False)
-            sm_spk_mst = sm_spk_mst[:, sub_sel]
+        elif num_ppc < num_pfc:
+            sub_sel = np.random.choice(np.arange(num_pfc),size=num_ppc,replace=False)
+            sm_spk_pfc = sm_spk_pfc[:, sub_sel]
            
            
             if kk == 0:
@@ -131,12 +131,12 @@ for session in sess_list[select]:
                 res = model.fit(sm_spk_ppc[bool_train], rad_vel[bool_train])
                 scr = res.score(sm_spk_ppc[bool_test], rad_vel[bool_test])
                 score_session[session]['PPC'] = scr
-                score_session[session]['MST'] = []
+                score_session[session]['PFC'] = []
                 
             model = lasso(alpha=alpha)
-            res = model.fit(sm_spk_mst[bool_train], rad_vel[bool_train])
-            scr = res.score(sm_spk_mst[bool_test], rad_vel[bool_test])
-            score_session[session]['MST'] = np.hstack((score_session[session]['MST'], [scr]))
+            res = model.fit(sm_spk_pfc[bool_train], rad_vel[bool_train])
+            scr = res.score(sm_spk_pfc[bool_test], rad_vel[bool_test])
+            score_session[session]['PFC'] = np.hstack((score_session[session]['PFC'], [scr]))
             
         else:
             model = lasso(alpha=alpha)
@@ -145,9 +145,9 @@ for session in sess_list[select]:
             scr = res.score(sm_spk_ppc[bool_test], rad_vel[bool_test])
             score_session[session]['PPC'] = scr
             
-            res = model.fit(sm_spk_mst[bool_train], rad_vel[bool_train])
-            scr = res.score(sm_spk_mst[bool_test], rad_vel[bool_test])
-            score_session[session]['MST'] = scr
+            res = model.fit(sm_spk_pfc[bool_train], rad_vel[bool_train])
+            scr = res.score(sm_spk_pfc[bool_test], rad_vel[bool_test])
+            score_session[session]['PFC'] = scr
 
-np.save('MST_decoding_rad_vel_with_subsamp.npy', score_session)
+np.save('PFC_decoding_rad_vel_with_subsamp.npy', score_session)
 
