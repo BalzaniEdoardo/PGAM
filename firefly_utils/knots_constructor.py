@@ -135,6 +135,15 @@ def knots_cerate(x,var,session, hand_vel_temp=False,hist_filt_dur='short',
                                 [knots[-1]]*3
                                ))
         x_trans[(x_trans > 350) | (x_trans < 0)] = np.nan
+        
+    elif var == 'rad_path_from_xy':
+        knots = np.linspace(0,350,6)
+        
+        knots = np.hstack(([knots[0]]*3,
+                                knots,
+                                [knots[-1]]*3
+                               ))
+        x_trans[(x_trans > 350) | (x_trans < 0)] = np.nan
     
     elif var == 'ang_path':
         knots = np.linspace(-60,60,6)
@@ -345,17 +354,18 @@ if __name__ == '__main__':
     # hist_matrix = dat['hist']
     # edge_matrix = dat['edge']
     # info = dat['info']
-    use_var = 't_ptb'
+    # use_var = 'rad_path_from_xy'
+    use_var = 'rad_path'
     reload = True
     perform_PQL = False
-    fhName = '/Volumes/WD_Edo/firefly_analysis/LFP_band/concatenation_with_accel/m53s51.npz'
+    fhName = '/Volumes/WD_Edo/firefly_analysis/LFP_band/concatenation_with_accel/m53s113.npz'
     session = os.path.basename(fhName).split('.')[0]
     # dat = np.load(fhName,allow_pickle=True)
-    neuron = 25
+    neuron = 76
     # neuron = 2
-    cond_type = 'ptb'
+    cond_type = 'all'
     cond_value = 1
-    cond_knots = 'ptb'
+    cond_knots = 'all'
     par_list = ['Xt', 'Yt', 'lfp_beta', 'lfp_alpha', 'lfp_theta', 'var_names', 'info_trial',
             'trial_idx', 'brain_area', 'pre_trial_dur', 'post_trial_dur', 'time_bin', 'cR', 'presence_rate', 'isiV',
             'unit_type']
@@ -385,8 +395,8 @@ if __name__ == '__main__':
 
     for var in np.hstack((var_names, ['lfp_beta','spike_hist'])):
         # for now skip
-        # if var != use_var:
-        #     continue
+        if var != use_var:
+            continue
         if 'hand' in var:
             continue
         if var in ['lfp_beta', 'lfp_alpha', 'lfp_theta']:
@@ -430,7 +440,7 @@ if __name__ == '__main__':
                           is_cyclic=[is_cyclic], lam=50.,
                           penalty_type=penalty_type,
                           der=der,
-                          trial_idx=trial_idx, time_bin=time_bin,
+                          trial_idx=trial_idx, time_bin=0.006,
                           is_temporal_kernel=is_temporal_kernel,
                           kernel_length=kernel_len, kernel_direction=kernel_direction,
                           ord_AD=3,ad_knots=8,repeat_extreme_knots=False)
@@ -451,7 +461,7 @@ if __name__ == '__main__':
                                                     use_dgcv=True, initial_smooths_guess=False,
                                                     fit_initial_beta=True, pseudoR2_per_variable=True,
                                                     trial_num_vec=trial_idx, k_fold=False, fold_num=5,
-                                                    reducedAdaptive=False,compute_MI=False,
+                                                    reducedAdaptive=False,compute_MI=True,
                                                     perform_PQL=perform_PQL)
 
 # # =============================================================================
@@ -562,6 +572,7 @@ if __name__ == '__main__':
 
         cc += 1
         cc_plot += 1
+        
     # plt.figure()
     # full_tmp = deepcopy(gam_res)
     # numbasis = len(full_tmp.beta[full_tmp.index_dict[use_var]])

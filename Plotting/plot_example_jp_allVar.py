@@ -28,7 +28,7 @@ from time import perf_counter
 from scipy.io import savemat
 
 
-session = 'm53s50'
+session = 'm53s113'
 # dat = np.load('/Users/edoardo/Work/Code/GAM_code/analyzing/extract_tuning/eval_matrix_and_info.npz')
 # info = dat['info']
 # sele = info['session'] == session
@@ -45,7 +45,7 @@ info_selectivity = info_selectivity[info_selectivity['rad_vel']]
 
 
 unit_list = np.sort(np.unique(info_selectivity['unit']))
-# unit_list = [105]
+unit_list = [41]
 plot_boolean = 1
 skip_first = 0
 if plot_boolean:
@@ -207,8 +207,8 @@ if plot_boolean:
         
             
         plt.tight_layout(rect=[0, 0.03, 1, 0.95])
-        plt.savefig('%s_c%d.png'%(session,unit))
-        plt.close('all')
+        # plt.savefig('%s_c%d.png'%(session,unit))
+        # plt.close('all')
         # plt.legend()
         # plt.savefig('Figs/example_tuning_%s_%d.png'%(session,unit))
         # plt.close('all')

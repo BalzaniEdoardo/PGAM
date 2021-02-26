@@ -1119,7 +1119,7 @@ class smooths_handler(object):
 
     def add_smooth(self, name, x_cov, ord=4, lam=None, knots=None, knots_num=15, perc_out_range=0.1, is_cyclic=None,
                    is_temporal_kernel=False, kernel_direction=0, kernel_length=21,penalty_type='EqSpaced',der=None,
-                   knots_percentiles=(2,98),trial_idx=None,time_bin=None,pre_trial_dur=None,post_trial_dur=None,
+                   knots_percentiles=(2,98),trial_idx=None,time_bin=0.006,pre_trial_dur=None,post_trial_dur=None,
                    penalty_measure=None,event_input=True,ord_AD=None,ad_knots=None,domain_fun=lambda x:np.zeros(x.shape,dtype=bool),
                    prercomp_SandB=None,repeat_extreme_knots=True):
         """
@@ -1309,8 +1309,9 @@ class smooths_handler(object):
         first = True
         index_cov = {}
         count = 1
-
+        t0 = perf_counter()
         for name in name_list:
+            
             sm_cov = self.smooths_dict[name]
 
             if len(name_list) > 0:
@@ -1327,6 +1328,7 @@ class smooths_handler(object):
             if type(X) is sparse.csr.csr_matrix:
                 hstack_X = sparse.hstack
             else:
+                print('full matrix stack')
                 hstack_X = np.hstack
 
             if first:
@@ -1334,10 +1336,13 @@ class smooths_handler(object):
                 fullX = hstack_X((np.ones((X.shape[0], 1)), X.copy()))
             else:
                 fullX = hstack_X((fullX, X))
-
+        t1 = perf_counter()  
+        print('hstack:',t1-t0,'sec')
+        t0 = perf_counter()
         if type(fullX) is sparse.csr.csr_matrix or type(fullX) is sparse.coo.coo_matrix:
             fullX = fullX.toarray()
-
+        t1 = perf_counter()
+        print('tranform to full matrix: ',t1-t0,'sec')
 
         return fullX, index_cov
 

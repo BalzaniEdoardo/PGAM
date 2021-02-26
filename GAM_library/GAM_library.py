@@ -273,6 +273,7 @@ class GAM_result(object):
 
                         sc_based_tuning[cc] = y[idx].mean()
                         tot_s_vec[cc] = np.sum(idx)
+                        # print(var, tuning)
                         try:
                             if tuning[cc] > 10 ** 4:
                                 break
@@ -840,6 +841,7 @@ class general_additive_model(object):
         post_trial_dur = None
         time_bin = None
         for var in var_list:
+            time_bin = self.sm_handler[var].time_bin
             if self.sm_handler[var].is_temporal_kernel:
                 trial_idx = self.sm_handler[var].trial_idx[filter_trials]
                 time_bin = self.sm_handler[var].time_bin

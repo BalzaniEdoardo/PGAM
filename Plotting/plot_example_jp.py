@@ -28,7 +28,7 @@ from time import perf_counter
 from scipy.io import savemat
 
 
-session = 'm53s105'
+session = 'm53s113'
 dat = np.load('/Users/edoardo/Work/Code/GAM_code/analyzing/extract_tuning/eval_matrix_and_info.npz')
 info = dat['info']
 sele = info['session'] == session
@@ -41,7 +41,7 @@ keep = ((info_selectivity['session'] == session) *
     (info_selectivity['manipulation value'] == 0.0001))
 )
 
-variable = 't_stop'
+variable = 'rad_path'
 info_selectivity = info_selectivity[keep]
 info_selectivity = info_selectivity[info_selectivity[variable]]
 
