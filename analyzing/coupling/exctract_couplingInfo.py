@@ -51,7 +51,8 @@ def unpack_name(name):
 
 path_to_gam = '/Volumes/WD_Edo/firefly_analysis/LFP_band/GAM_fit_with_acc/'
 npz_path = '/Volumes/WD_Edo/firefly_analysis/LFP_band/concatenation_with_accel/'
-monkey_dict = {'m44':'Quigley','m53':'Schro','m91':'Ody','m51':'Bruno'}
+monkey_dict = {'m44':'Quigley','m53':'Schro','m91':'Ody','m51':'Bruno',
+               'm72':'Marco'}
 
 
 path_gen = get_paths_class()
@@ -117,9 +118,14 @@ previous_sess  = ''
 impulse = np.zeros(201)
 impulse[100] = 1
 extr_first=False
+skp_unitl = False
 for (root,dirs,files) in os.walk(path_to_gam):
-    
+    if skp_unitl and root != '/Volumes/WD_Edo/firefly_analysis/LFP_band/GAM_fit_with_acc/gam_m72s1':
+        continue
+    else:
+        skp_unitl = False
     for name in files:
+        
         if not re.match(pattern, name):
             continue
         session,receiver_ID,man_type,man_val = unpack_name(name)
@@ -137,17 +143,21 @@ for (root,dirs,files) in os.walk(path_to_gam):
         if len(done_id) == 0:
             pass
         else:
-            if done_id[idxFirst] == item:
-                # rmv_index = np.ones(done_id.shape,dtype=bool)
-                # rmv_index[idxFirst:idxLast] = False
-                # done_id = done_id[rmv_index]
-                print('skip')
-                continue
+            try:
+                if done_id[idxFirst] == item:
+                    # rmv_index = np.ones(done_id.shape,dtype=bool)
+                    # rmv_index[idxFirst:idxLast] = False
+                    # done_id = done_id[rmv_index]
+                    print('skip')
+                    continue
+            except IndexError:
+                pass
         try:
         # open fits
             with open(os.path.join(root, name), 'rb') as fh:
                 gam_res = dill.load(fh)
                 full = gam_res['full']
+                reduced = gam_res['reduced']
                 del gam_res
         except:
             print('BAD dill',session,receiver_ID,man_type,man_val)
@@ -191,9 +201,13 @@ for (root,dirs,files) in os.walk(path_to_gam):
             info_neu['sender cluster id'][cc] = unit_info['cluster_id'][sender_ID-1]
             info_neu['sender channel id'][cc] = unit_info['channel_id'][sender_ID-1]
             info_neu['sender brain area'][cc] = unit_info['brain_area'][sender_ID-1]
-            info_neu['is significant'][cc] = full.covariate_significance[ii]['p-val'] < 0.001
-            info_neu['p-value'][cc] = full.covariate_significance[ii]['p-val']
-            
+            if full.covariate_significance[ii]['p-val'] < 0.001:
+                jj = np.where(reduced.covariate_significance['covariate'] == var)[0]
+                info_neu['is significant'][cc] = reduced.covariate_significance[jj]['p-val'] < 0.001
+                info_neu['p-value'][cc] = reduced.covariate_significance[jj]['p-val']
+            else:
+                info_neu['is significant'][cc] = False
+                info_neu['p-value'][cc] = full.covariate_significance[ii]['p-val']
             
             if info_neu['receiver brain area'][cc] == info_neu['sender brain area'][cc]:
                 impulse = np.zeros(13)

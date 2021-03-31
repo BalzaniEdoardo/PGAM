@@ -62,8 +62,8 @@ for session in info_dict.keys():
 
 np.savez('pairwise_coupling.npz',coupling_dict=coupling_str_dict)
 if check_pair_matrix_rows:
-    session_i = 'm53s91'
-    session_j = 'm53s91'
+    session_i = 'm53s114'
+    session_j = 'm53s114'
     dist_l2 = pairwise_dist[(session_i, session_j)][:, :, 0]
     tmp = np.triu(dist_l2, 1)
     tmp[np.tril_indices(tmp.shape[0])] = 2
@@ -107,8 +107,8 @@ if check_pair_matrix_rows:
         beta_2 = beta_dict[variable][session_j][index_2, :]
 
         # load tuining 1
-        folder = '/Volumes/WD Edo/firefly_analysis/LFP_band/%s_gam_fit_with_coupling/gam_%s/' % ('cubic', session_i)
-        fhName = 'gam_fit_%s_c%d_%s_%.4f.dill' % (session_i, neu_1, 'all', 1)
+        folder = '/Volumes/WD_Edo/firefly_analysis/LFP_band/GAM_fit_with_acc/gam_%s/' % ( session_i)
+        fhName =  'fit_results_%s_c%d_%s_%.4f.dill' % (session_i, neu_1, 'all', 1)
         with open(folder + fhName, "rb") as dill_file:
             gam_res_dict = dill.load(dill_file)
         gam_model = gam_res_dict['reduced']
@@ -124,8 +124,8 @@ if check_pair_matrix_rows:
         tuning_raw_1 = tuning_function(exp_bspline_1, beta_zeropad, subtract_integral_mean=False)
 
         # load tuining 2
-        folder = '/Volumes/WD Edo/firefly_analysis/LFP_band/%s_gam_fit_with_coupling/gam_%s/' % ('cubic', session_j)
-        fhName = 'gam_fit_%s_c%d_%s_%.4f.dill' % (session_j, neu_2, 'all', 1)
+        folder = '/Volumes/WD_Edo/firefly_analysis/LFP_band/GAM_fit_with_acc/gam_%s/' % ( session_j)
+        fhName = 'fit_results_%s_c%d_%s_%.4f.dill' % (session_j, neu_2, 'all', 1)
         with open(folder + fhName, "rb") as dill_file:
             gam_res_dict = dill.load(dill_file)
         gam_model = gam_res_dict['reduced']

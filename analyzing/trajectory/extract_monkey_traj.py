@@ -19,8 +19,7 @@ from path_class import get_paths_class
 gen_path = get_paths_class()
 
 # session = 'm53s91'
-session_list = ['m53s113', 'm53s83', 'm53s114', 'm53s86',
-                'm53s128', 'm53s123', 'm53s124', 'm53s47', 'm53s46', 'm53s31']
+session_list = ['m44s183']
 
 
 # base_file = os.path.join'/Volumes/WD Edo/firefly_analysis/LFP_band/DATASET/%s/%s.mat'
@@ -47,7 +46,11 @@ for session in session_list:
     else:
         use_eye = 'right'
 
-    base_file = os.path.join(gen_path.get_path('mat_preproc', session),'%s.mat'%session)
+    try:
+        base_file = os.path.join(gen_path.get_path('mat_preproc', session),'%s.mat'%session)
+    except:
+        basedir = os.path.join(os.path.dirname(gen_path.get_path('cluster_data', session)),'Pre-processing X E')
+        base_file = os.path.join(basedir, '%s.mat' % session)
     # sv_folder = '/Volumes/WD Edo/firefly_analysis/LFP_band/DATASET/%s/' % excel_file['Area Recorded'][idx_session]
     # if not os.path.exists(sv_folder):
     #     os.mkdir(sv_folder)

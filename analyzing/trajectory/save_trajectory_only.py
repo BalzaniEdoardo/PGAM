@@ -23,7 +23,7 @@ def dict_to_vec(dictionary):
 
 
 # session = 'm53s91'
-session_list = ['m53s113', 'm53s83', 'm53s114', 'm53s86',
+session_list = ['m44s183','m53s113', 'm53s83', 'm53s114', 'm53s86',
                 'm53s128', 'm53s123', 'm53s124', 'm53s47', 'm53s46', 'm53s31']
 
 
@@ -70,7 +70,7 @@ for session in session_list:
     # np.save('spikes/spike_trajectory_%s.npy'%session,exp_data.spikes.binned_spikes)
     for k in range(exp_data.behav.n_trials):
         sele = (exp_data.behav.time_stamps[k] > exp_data.behav.events.t_targ[k]) * (exp_data.behav.time_stamps[k] <= exp_data.behav.events.t_stop[k])
-        print(k,exp_data.behav.continuous.x_monk[k][sele][1],exp_data.behav.continuous.y_monk[k][sele][1])
+        # print(k,exp_data.behav.continuous.x_monk[k][sele][1],exp_data.behav.continuous.y_monk[k][sele][1])
         if np.sum(sele)==0:
             v0 = np.nan
             w0 = np.nan
@@ -113,8 +113,8 @@ for session in session_list:
     trajectory_all_session = np.hstack((trajectory_all_session,trajectories))
 #     break
 
-np.savez('traj_and_info.npz',
-          trajectories=trajectory_all_session,info_all=info_all_session,init_cond=init_cond)
+# np.savez('traj_and_info.npz',
+#           trajectories=trajectory_all_session,info_all=info_all_session,init_cond=init_cond)
 
 
 
@@ -127,7 +127,7 @@ plt.suptitle('REWARDED')
 for k in range(16):
     
     tr = tr_rews[k]
-    session =  tr_rews[k]
+    session = tr_rews[k]
     
     ax=plt.subplot(4,4,k+1)
     xx = trajectory_all_session[tr]['x_monk']

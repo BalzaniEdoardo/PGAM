@@ -16,7 +16,7 @@ class data_handler(object):
     def __init__(self,dat,beh_key,spike_key,lfp_key,behav_stat_key,time_aligned_to_beh=True,dt=0.006,
                  flyON_dur=0.3,pre_trial_dur=0.25,post_trial_dur=0.25,is_lfp_binned=True, extract_lfp_phase=True,
                  lfp_beta=None,lfp_alpha=None,lfp_theta=None,use_eye=None,extract_fly_and_monkey_xy=False,
-                 extract_cartesian_eye_and_firefly=False):
+                 extract_cartesian_eye_and_firefly=False,fhLFP=''):
 
         self.info = load_trial_types(dat[behav_stat_key].flatten(),dat[beh_key].flatten())
         # import all data and trial info
@@ -24,7 +24,10 @@ class data_handler(object):
         if lfp_key is None:
             self.lfp = None
         else:
-            self.lfp = lfp_class(dat,lfp_key, binned=is_lfp_binned,lfp_beta=lfp_beta,lfp_alpha=lfp_alpha,lfp_theta=lfp_theta,compute_phase=extract_lfp_phase)
+            self.lfp = lfp_class(dat,lfp_key, binned=is_lfp_binned,
+                                 lfp_beta=lfp_beta,lfp_alpha=lfp_alpha,
+                                 lfp_theta=lfp_theta,compute_phase=extract_lfp_phase,
+                                 fhLFP=fhLFP)
         self.behav = behavior_experiment(dat,beh_key,behav_stat_key=behav_stat_key,dt=dt,flyON_dur=flyON_dur,
                                          pre_trial_dur=pre_trial_dur,post_trial_dur=post_trial_dur,info=self.info,use_eye=use_eye,
                                          extract_fly_and_monkey_xy=extract_fly_and_monkey_xy,

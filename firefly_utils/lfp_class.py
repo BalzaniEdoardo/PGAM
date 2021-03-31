@@ -1,27 +1,43 @@
 import numpy as np
 from scipy.signal import hilbert
+from scipy.io import loadmat
 
 
 class lfp_class(object):
-    def __init__(self,dat,lfp_key, binned=True,lfp_alpha=None,lfp_beta=None,lfp_theta=None,compute_phase=True):
-        lfps = dat[lfp_key].flatten()
-
-        # extract info about the cell channel and electrode from which the unit has been recorded
-        self.channel_id = self.unpack_struct_N_times_1(lfps,'channel_id')
-        self.channel_id = self.channel_id.flatten()
-
-        self.electrode_id = self.unpack_struct_N_times_1(lfps, 'electrode_id')
-        self.electrode_id = self.electrode_id.flatten()
-        self.brain_area = self.unpack_struct_N_times_1(lfps, 'brain_area')
+    def __init__(self,dat,lfp_key, binned=True,lfp_alpha=None,lfp_beta=None,lfp_theta=None,compute_phase=True,fhLFP=''):
+        
+        try:
+            lfps = dat[lfp_key].flatten()
+            # extract info about the cell channel and electrode from which the unit has been recorded
+            self.channel_id = self.unpack_struct_N_times_1(lfps,'channel_id')
+            self.channel_id = self.channel_id.flatten()
+    
+            self.electrode_id = self.unpack_struct_N_times_1(lfps, 'electrode_id')
+            self.electrode_id = self.electrode_id.flatten()
+            self.brain_area = self.unpack_struct_N_times_1(lfps, 'brain_area')
+            self.n_channels =lfps.shape[0]
+        except:
+              print('could not find the lfps struct')
+              tmp = loadmat(fhLFP)
+              self.channel_id = np.array(np.squeeze(tmp['chId']),dtype=int)
+              self.electrode_id = np.array(np.squeeze(tmp['eleId']),dtype=int)
+              self.brain_area = np.zeros(np.array(np.squeeze(tmp['chId'])).shape,'U30')
+              self.brain_area[:] = tmp['brainArea'][0][:3]
+              self.n_channels = self.channel_id.shape[0]
+        
         self.compute_phase = compute_phase
-        self.n_channels =lfps.shape[0]
+        
 
         if not binned:
             self.lfp = None
             self.n_trials = None
         else:
-            self.extract_lfp(lfps)
-            self.n_trials = self.lfp.shape[1]
+            try:
+                self.extract_lfp(lfps)
+                self.n_trials = self.lfp.shape[1]
+            except:
+                 self.lfp = None
+                 self.n_trials = None
 
         if not lfp_beta is None:
             self.lfp_beta,self.lfp_beta_power = self.extract_lfp_x_band(lfp_beta,'lfp_beta')
@@ -37,6 +53,7 @@ class lfp_class(object):
 
     def extract_lfp_x_band(self,lfp_band,band_label):
         num_trials = lfp_band[0,0]['trials'].shape[1]
+        self.n_trials = num_trials
         lfp_band_all = np.zeros((self.n_channels, num_trials), dtype=object)
         lfp_power_all = np.zeros((self.n_channels, num_trials), dtype=object)
 
@@ -117,7 +134,7 @@ class lfp_class(object):
         return phase
 
     def extract_phase_x_unit(self,phase,filter,channel_id_x_unit,unit_brain_area):
-        if self.lfp is None:
+        if (self.lfp is None) and (phase is None):
             return
 
         num_trials = np.sum(filter)

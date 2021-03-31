@@ -23,7 +23,7 @@ from knots_constructor import knots_cerate
 
 # this object contains spikes from all trials concatenated, the LFP istantaneous
 # phase for several frequencies, and the input variables
-dat = np.load('/Volumes/WD_Edo/firefly_analysis/LFP_band/concatenation_with_accel/m53s113.npz',
+dat = np.load('/Volumes/WD_Edo/firefly_analysis/LFP_band/concatenation_with_accel/m51s38.npz',
               allow_pickle=True)
 
 fit_unit = 1
@@ -127,7 +127,8 @@ for var in np.hstack((var_names,['lfp_beta','spike_hist'])):
         # hand vel not tracked
         continue
     
-    
+    if var !='lfp_beta':
+        continue
 
     if var == 'lfp_theta':
         x = lfp_theta[keep, fit_unit]

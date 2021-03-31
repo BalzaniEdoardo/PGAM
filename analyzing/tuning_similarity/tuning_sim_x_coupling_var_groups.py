@@ -14,7 +14,18 @@ from scipy.cluster.hierarchy import linkage,dendrogram
 import scipy.stats as sts
 import statsmodels.api as sm
 
-filter_area = 'MST'
+monkey_dict = {'m44':'Quigley','m53':'Schro','m91':'Ody','m51':'Bruno','m72':'Marco','m73':'Jimmy'}
+monkey = 'Schro'
+
+for key in monkey_dict.keys():
+    if monkey_dict[key] == monkey:
+        monkey_id = key
+        break
+    else:
+        monkey_id='all'
+
+monkey_dict = {}
+filter_area = 'PFC'
 check_pair_matrix_rows = True
 filter_nonzero_coup = True
 
@@ -31,19 +42,29 @@ coupling_dict = np.load('/Users/edoardo/Work/Code/GAM_code/analyzing/coupling/pa
 
 filter_nonzero_coup = False
 
-sensory = ['ang_vel','rad_vel','t_flyOFF']
+# sensory = ['ang_vel','rad_vel','t_flyOFF']
+# # internal = ['rad_target','ang_target','ang_path','rad_path']
+# # reward = ['t_reward']
+# # motor = ['t_stop','t_move']
+# # lfp = ['lfp_beta']
+# # label = ['sensory variables','internal variables','motor variables','reward','lfp']
+# #
+# # color_list = [(158/255.,42/255.,155/255.),(244/255.,90/255.,42/255.),
+# #               (3/255.,181/255.,149/255.),(125/255.,)*3,(125/255.,)*3]
+
+sensory = ['ang_vel','rad_vel','t_flyOFF','t_stop','t_move','rad_acc','ang_acc']
 internal = ['rad_target','ang_target','ang_path','rad_path']
 reward = ['t_reward']
-motor = ['t_stop','t_move']
 lfp = ['lfp_beta']
-label = ['sensory variables','internal variables','motor variables','reward','lfp']
+label = ['sensory variables','internal variables','reward','lfp']
 
 color_list = [(158/255.,42/255.,155/255.),(244/255.,90/255.,42/255.),
-              (3/255.,181/255.,149/255.),(125/255.,)*3,(125/255.,)*3]
+              (125/255.,)*3,(125/255.,)*3]
+
 
 plt.figure(figsize=(10,8))
 cnt_var = 0
-for var_list_this in [sensory,internal,motor,reward,lfp]:
+for var_list_this in [sensory,internal,reward,lfp]:
 
     idx_var = np.zeros(var_list.shape[0],dtype=bool)
     for var in var_list_this:
@@ -52,6 +73,8 @@ for var_list_this in [sensory,internal,motor,reward,lfp]:
     pair_dist = []
     coupling = []
     for key in coupling_dict.keys():
+        if (not  monkey_id in key[0]) and (not monkey_id == 'all'):
+            continue
         if filter_area == 'all':
             filt_bool = np.ones(info_dict[key[0]]['brain_area'].shape[0], dtype=bool)
         else:
@@ -91,7 +114,7 @@ for var_list_this in [sensory,internal,motor,reward,lfp]:
     plt.ylabel('coupling probability')
     plt.xlabel('tuning similarity')
     ax.set_xlim(-0.25, 1)
-    ax.set_ylim(0,0.6)
+    ax.set_ylim(0,0.8)
 
     cnt_var += 1
 
@@ -99,10 +122,10 @@ plt.tight_layout(rect=[0, 0.03, 1, 0.95])
 
 
 if filter_area == 'all':
-    plt.savefig('coupling_prob_grouped.pdf')
+    plt.savefig('monk_%s_coupling_prob_grouped.pdf'%monkey)
 
 else:
-    plt.savefig('coupling_prob_grouped_%s.pdf'%filter_area)
+    plt.savefig('monk_%s_coupling_prob_grouped_%s.pdf'%(monkey,filter_area))
 
 
 ## Extract pairwise firing rate

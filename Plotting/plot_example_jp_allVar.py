@@ -28,7 +28,7 @@ from time import perf_counter
 from scipy.io import savemat
 
 
-session = 'm53s113'
+session = 'm73s1'
 # dat = np.load('/Users/edoardo/Work/Code/GAM_code/analyzing/extract_tuning/eval_matrix_and_info.npz')
 # info = dat['info']
 # sele = info['session'] == session
@@ -44,8 +44,8 @@ info_selectivity = info_selectivity[keep]
 info_selectivity = info_selectivity[info_selectivity['rad_vel']]
 
 
-unit_list = np.sort(np.unique(info_selectivity['unit']))
-unit_list = [41]
+unit_list = [1,4,5,6,7,8,9,10]#np.sort(np.unique(info_selectivity['unit']))
+# unit_list = [41]
 plot_boolean = 1
 skip_first = 0
 if plot_boolean:
@@ -62,7 +62,7 @@ if plot_boolean:
             continue
         try:
             # unit = int(dill_name.split('_controlgain_')[0].split('c')[-1])
-            with open('/Volumes/WD_Edo/firefly_analysis/LFP_band/GAM_fit_with_acc/gam_%s/fit_results_%s_c%d_odd_1.0000.dill'%(session,session,unit),'rb') as fh:
+            with open('/Volumes/WD_Edo/firefly_analysis/LFP_band/GAM_fit_with_acc/gam_%s/fit_results_%s_c%d_all_1.0000.dill'%(session,session,unit),'rb') as fh:
                 result_dict = dill.load(fh)
             
             with open('/Volumes/WD_Edo/firefly_analysis/LFP_band/GAM_fit_with_acc/gam_%s/fit_results_%s_c%d_odd_0.0000.dill'%(session,session,unit),'rb') as fh:
@@ -74,7 +74,7 @@ if plot_boolean:
         lab_red = 'gain 2'
         fit_slow = result_dict['full']
         lab_ful = 'gain 1'
-        
+        pr2 = result_dict['p_r2_coupling_full']
         
         # sm_handler_gam = smooths_handler()
         if fit_fast is None:
@@ -141,7 +141,7 @@ if plot_boolean:
             
             
         plt.figure(figsize=(12,10))
-        plt.suptitle(session + ' unit %d'%unit )
+        plt.suptitle(session + ' unit %d - pseudo-R^2 %f'%(unit, pr2) )
 
         ax_dict = {}
         
@@ -207,7 +207,7 @@ if plot_boolean:
         
             
         plt.tight_layout(rect=[0, 0.03, 1, 0.95])
-        # plt.savefig('%s_c%d.png'%(session,unit))
+        plt.savefig('%s_c%d.png'%(session,unit))
         # plt.close('all')
         # plt.legend()
         # plt.savefig('Figs/example_tuning_%s_%d.png'%(session,unit))

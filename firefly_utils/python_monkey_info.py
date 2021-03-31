@@ -33,10 +33,13 @@ class monkey_info_class(object):
                     if len(date) != 1:
                         print( date)
                         xx = 0
-                    assert (len(date) == 1)
-                    date = date[0]
-                    mon, day, year = date.split(' ')
-                    mon = mon[0] + mon[1:3].lower()
+                    assert (len(date) <= 1)
+                    if len(date) == 0:
+                        mon, day, year = 'DEC','25','0001'
+                    else:
+                        date = date[0]
+                        mon, day, year = date.split(' ')
+                        mon = mon[0] + mon[1:3].lower()
                     if len(day) == 1:
                         day = '0' + day
                     date_reform = mon + ' ' + day + ' ' + year

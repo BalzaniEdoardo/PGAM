@@ -18,27 +18,34 @@ user_paths = get_paths_class()
 # mat file with the correct name it will list it as a file to be concatenated
 #
 # =============================================================================
-DIRECT = user_paths.local_concat
+DIRECT = '/Volumes/WD_Edo/firefly_analysis/LFP_band/DATASET_accel/'
 
 print('The code assumes that the lfp_session.mat  files are in the same folder as the session.mat file!')
 # list of session to be concatenated
 
 
-# concat_list = []
-# fld_list = []
-# pattern_fh = '^m\d+s\d+.mat$'
-# for root, dirs, files in os.walk(DIRECT, topdown=False):
-#     for name in files:
-#         if re.match(pattern_fh,name):
-#             concat_list += [name.split('.mat')[0]]
-#             fld_list += [root]
+concat_list = []
+fld_list = []
+pattern_fh = '^m\d+s\d+.mat$'
+minSess = 12
+for root, dirs, files in os.walk(DIRECT, topdown=False):
+    for name in files:
+        if re.match(pattern_fh,name):
+            if not 'm72'  in name:
+                continue
+            sess_num = int(name.split('s')[1].split('.')[0])
+            if sess_num < minSess:
+                continue
+            concat_list += [name.split('.mat')[0]]
+            fld_list += [root]
 
            
 # ii = np.where(np.array(concat_list)=='m53s96')[0][0]
 # concat_list = concat_list[ii+1:]
 # fld_list = fld_list[ii+1:]
 
-concat_list=[ 'm53s127','m53s130','m53s131']
+concat_list=[ 'm73s1']
+# concat_list = ['m72s2']
 
 sv_folder = '/Volumes/WD_Edo/firefly_analysis/LFP_band/concatenation_with_accel'
 
@@ -108,12 +115,17 @@ cnt_concat = 0
 
 for session in concat_list:
     
-
+    # if not session in ['m72s3', 'm72s4', 'm72s6', 'm72s8']:
+    #     continue
     if session in use_left_eye:
         use_eye = 'left'
     else:
         use_eye = 'right'
 
+    if session in ['m51s43','m51s38','m51s41','m51s42','m51s40']:
+        fhLFP = '/Volumes/WD_Edo/firefly_analysis/LFP_band/DATASET_accel/lfps_%s.mat'%session
+    else:
+        fhLFP = ''
     base_file = fld_list[cnt_concat]
     cnt_concat += 1
 
@@ -146,14 +158,14 @@ for session in concat_list:
     if is_phase:
         phase_precomputed += [session]
         continue
-    try:
-        exp_data = data_handler(dat, behav_dat_key, spike_key, lfp_key, behav_stat_key, pre_trial_dur=pre_trial_dur,
-                            post_trial_dur=post_trial_dur,
-                            lfp_beta=lfp_beta['lfp_beta'], lfp_alpha=lfp_alpha['lfp_alpha'],lfp_theta=lfp_theta['lfp_theta'], extract_lfp_phase=(not is_phase),
-                            use_eye=use_eye)
-    except Exception as e:
-        print('unable to open', session,'\n',e)
-        continue
+    # try:
+    exp_data = data_handler(dat, behav_dat_key, spike_key, lfp_key, behav_stat_key, pre_trial_dur=pre_trial_dur,
+                        post_trial_dur=post_trial_dur,
+                        lfp_beta=lfp_beta['lfp_beta'], lfp_alpha=lfp_alpha['lfp_alpha'],lfp_theta=lfp_theta['lfp_theta'], extract_lfp_phase=(not is_phase),
+                        use_eye=use_eye,fhLFP=fhLFP)
+    # except Exception as e:
+    #     print('unable to open', session,'\n',e)
+    #     continue
     
 
     exp_data.set_filters('all', True)
@@ -176,7 +188,7 @@ for session in concat_list:
                  #'lfp_theta_power','lfp_beta_power')
     try:
         y, X, trial_idx = exp_data.concatenate_inputs(*var_names, t_start=t_start, t_stop=t_stop)
-    except Exception as ex:
+    except MemoryError as ex:
         print('\n\ncould not open %s'%session)
         print(ex,'\n\n')
         continue
@@ -229,7 +241,11 @@ for session in concat_list:
 
     # compute additional quality metrics
     try:
-        res['unit_info'] = extract_presecnce_rate(occupancy_bin_sec,occupancy_rate_th,res['unit_info'],session,
+        if ('m72' in session) or ('m73' in session):
+            res['unit_info'] = extract_presecnce_rate_Uprobe(occupancy_bin_sec,occupancy_rate_th,res['unit_info'],session,
+                                                             user_paths,linearprobe_sampling_fq)
+        else:
+            res['unit_info'] = extract_presecnce_rate(occupancy_bin_sec,occupancy_rate_th,res['unit_info'],session,
                            user_paths,utah_array_sampling_fq,linearprobe_sampling_fq)
     except Exception as e:
         print(e)

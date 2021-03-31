@@ -23,7 +23,7 @@ save_figures = False
 
 fold_files = ''
 # extract the what is needed to compute L2 norms
-with open(fold_files+'preprocesed_session_density_all.dill','rb') as fh:
+with open(fold_files+'preprocesed_session.dill','rb') as fh:
     preprocesed_session = dill.load(fh)
 # preprocesed_session = np.load('preprocesed_session.npz',allow_pickle=True)
 if normalized_dist:
@@ -42,8 +42,8 @@ knots_dict = preprocesed_session['knots_dict']
 # tuning_func_dict = preprocesed_session['tuning_func_dict']
 # num variables
 var_list = list(range_dict.keys())
-var_list.remove('eye_hori')
-var_list.remove('eye_vert')
+# var_list.remove('eye_hori')
+# var_list.remove('eye_vert')
 var_list.remove('lfp_alpha')
 var_list.remove('lfp_theta')
 # var_list.remove('lfp_beta')
@@ -76,8 +76,14 @@ for i in range(len(session_list)):
             integr_i = int_tuning[var][session_i]
             Mii = int_matrix[var][(session_i, session_i)]
 
+            if Mii is None:
+                pairwise_dist[(session_i, session_j)][:,:, cnt_var] = np.nan
+                cnt_var += 1
+                continue
+
             beta_matrix_j = beta_dict[var][session_j]
             integr_j = int_tuning[var][session_j]
+
             Mjj = int_matrix[var][(session_j, session_j)]
 
             Mij = int_matrix[var][(session_i, session_j)]
@@ -176,8 +182,8 @@ np.savez('pairwise_L2_dist.npz',pairwise_dist=pairwise_dist,info_dict=info_dict,
          beta_dict=beta_dict,var_list=var_list)
 
 if check_tuning_sim:
-    session_i = 'm53s98'
-    session_j = 'm53s98'
+    session_i = 'm53s114'
+    session_j = 'm53s114'
     variable = 't_stop'
     idx = np.where(np.array(var_list) == variable)[0][0]
 

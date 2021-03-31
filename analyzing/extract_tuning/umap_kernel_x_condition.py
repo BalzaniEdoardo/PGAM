@@ -36,7 +36,7 @@ index_list = dat['index_list']
 sel_variable = 'rad_vel'
 
 
-keep = (info['manipulation type'] == 'odd') * (info['monkey']!='Ody')
+keep = (info['manipulation type'] == 'all') * (info['monkey']!='Ody') * (info['monkey']!='Bruno')
 data = eval_matrix[keep]
 data = data[:, index_list == sel_variable]
 

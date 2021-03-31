@@ -72,7 +72,7 @@ def unpack_name(name):
     man_val = float(re.findall('\d+.\d\d\d\d',name)[0])
     return session,unitID,man_type,man_val
 
-monkey_dict = {'m44':'Quigley','m53':'Schro','m91':'Ody','m51':'Bruno','m72':'Marco'}
+monkey_dict = {'m44':'Quigley','m53':'Schro','m91':'Ody','m51':'Bruno','m72':'Marco','m73':'Jimmy'}
 
 
     
@@ -329,7 +329,7 @@ for (root,dirs,files) in os.walk(path_to_gam):
 
         
 
-np.save('response_strength_info.npy',info_matrix)
+np.save('/Users/edoardo/Work/Code/GAM_code/analyzing/extract_tuning/response_strength_info.npy',info_matrix)
 
 
             

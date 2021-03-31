@@ -64,7 +64,11 @@ lst_done = os.listdir('/Volumes/WD_Edo/firefly_analysis/LFP_band/GAM_fit_with_ac
 
 cnt_done = 0
 session_list = []
-for session in basis_info.keys():
+for session_fh in os.listdir(os.path.dirname(base_fld)):
+    if re.match('^gam_m\d+s\d+$',session_fh):
+        session = session_fh.split('_')[1]
+    else:
+        continue
     if not 'gam_%s' % session in lst_done:
         continue
     # if not session in ['m53s83','m53s91']:
@@ -157,7 +161,8 @@ knots_dict = {}
 tuning_func_dict = {}
 
 dtype_info = {'names':('session','neuron','brain_area','unit_type','cluster_id',
-                       'electrode_id','channel_id','is_responding','firing_rate_hz'),'formats':('U20',int,'U3','U50',int,int,int,bool,float)}
+                       'electrode_id','channel_id','is_responding','firing_rate_hz','pseudo-r2'),
+              'formats':('U20',int,'U3','U50',int,int,int,bool,float,float)}
 for session in session_list:
 
     dat = np.load('/Volumes/WD_Edo/firefly_analysis/LFP_band/concatenation_with_accel/%s.npz' % session, allow_pickle=True)
@@ -176,14 +181,19 @@ for session in session_list:
     unit_info = dat['unit_info'].all()
     fits = os.listdir(base_fld % session)
 
+    fit_list = []
+    for name in fits:
+        if '_all_' in name:
+            fit_list += [name]
+    fits = fit_list
     first = True
     count_fit = 0
-    info_dict[session] = np.zeros(len(fits),dtype=dtype_info)
-    progress = ProgressBar(len(fits))
+    info_dict[session] = np.zeros(len(fit_list),dtype=dtype_info)
+    progress = ProgressBar(len(fit_list))
 
     print(session, 'computing beta and integral x neuron...')
-    remove_bool = np.ones(len(fits),dtype=bool)
-    for fname in fits:
+    remove_bool = np.ones(len(fit_list),dtype=bool)
+    for fname in fit_list:
         # if not fname.endswith('.dill'):
         #     continue
         if not re.match(pattern,fit):
@@ -203,7 +213,11 @@ for session in session_list:
         with open(os.path.join(base_fld % session, fname), 'rb') as dill_fh:
             gam_dict = dill.load(dill_fh)
 
+        info_dict[session]['pseudo-r2'][count_fit] = gam_dict['p_r2_coupling_full']
         gam_res = gam_dict['reduced']
+        # if gam_dict['p_r2_coupling_full'] < 0.005: # remove crappy fits
+        #     gam_res = None
+
 
         full = gam_dict['full']
         info_dict[session]['is_responding'][count_fit] = not (gam_res is None)
@@ -212,7 +226,12 @@ for session in session_list:
         if first:
             first = False
             for var in np.hstack((spatial_list, extra_var)):
-                beta_len = len(full.index_dict[var])
+                if not var in full.index_dict.keys():
+                    beta_len = 0
+
+                else:
+
+                    beta_len = len(full.index_dict[var])
                 if not var in beta_dict.keys():
                     beta_dict[var] = {session: np.zeros((len(fits), beta_len))}
                     int_tuning_dict[var] = {session: np.zeros(len(fits))}
@@ -230,35 +249,41 @@ for session in session_list:
 
         # extract all betas
         for var in np.hstack((spatial_list,extra_var)):
-            beta_len = len(full.index_dict[var])
-
-            knots = full.smooth_info[var]['knots'][0]
-            if gam_res is None:
-                beta = np.zeros(beta_len)*np.nan
-                integral_over_domain = np.nan
-                remove_bool[count_fit] = False
-                lam_tun_func = lambda x: np.nan,np.nan
-            elif var in gam_res.var_list:
-                beta = gam_res.beta[gam_res.index_dict[var]]
-
-
-                order = basis_info[session][var]['order']
-
-                exp_bspline = spline_basis(knots, order, is_cyclic=basis_info[session][var]['is_cyclic'])
-                tuning = tuning_function(exp_bspline, np.hstack((beta,[0])), subtract_integral_mean=False)
-                integral_over_domain = tuning.integrate(*range_dict[var])
-                int_spline = spline_basis(knots, order, is_cyclic=basis_info[session][var]['is_cyclic'],subtract_integral=True)
-                aa, bb = range_dict[var]
-                tun_func = tuning_function(int_spline, np.hstack((beta, [0])), subtract_integral_mean=True,range_integr=range_dict[var])
-
-                xx=np.linspace(aa,bb,10**4)
-                nrm = np.sqrt(simps(tun_func(xx)**2,dx=xx[1]-xx[0]))
-                lam_tun_func =  (tun_func,nrm)
-
-            else:
+            if not var in full.index_dict.keys():
+                beta_len = 0
                 beta = np.zeros(beta_len)
                 integral_over_domain = 0.
-                lam_tun_func = lambda x:0,1
+                lam_tun_func = lambda x: 0, 1
+            else:
+                beta_len = len(full.index_dict[var])
+
+                knots = full.smooth_info[var]['knots'][0]
+                if gam_res is None:
+                    beta = np.zeros(beta_len)*np.nan
+                    integral_over_domain = np.nan
+                    remove_bool[count_fit] = False
+                    lam_tun_func = lambda x: np.nan,np.nan
+                elif var in gam_res.var_list:
+                    beta = gam_res.beta[gam_res.index_dict[var]]
+
+
+                    order = gam_res.smooth_info[var]['ord']
+                    is_cyclic = gam_res.smooth_info[var]['is_cyclic']
+                    exp_bspline = spline_basis(knots, order, is_cyclic=is_cyclic)
+                    tuning = tuning_function(exp_bspline, np.hstack((beta,[0])), subtract_integral_mean=False)
+                    integral_over_domain = tuning.integrate(*range_dict[var])
+                    int_spline = spline_basis(knots, order, is_cyclic=is_cyclic,subtract_integral=True)
+                    aa, bb = range_dict[var]
+                    tun_func = tuning_function(int_spline, np.hstack((beta, [0])), subtract_integral_mean=True,range_integr=range_dict[var])
+
+                    xx=np.linspace(aa,bb,10**4)
+                    nrm = np.sqrt(simps(tun_func(xx)**2,dx=xx[1]-xx[0]))
+                    lam_tun_func =  (tun_func,nrm)
+
+                else:
+                    beta = np.zeros(beta_len)
+                    integral_over_domain = 0.
+                    lam_tun_func = lambda x:0,1
 
             tuning_func_dict[var][session][count_fit] = deepcopy(lam_tun_func)
             beta_dict[var][session][count_fit, :] = beta
@@ -284,11 +309,24 @@ print('extracting matrix for L2 integral computation...')
 for i in range(session_list.shape[0]):
     session_1 = session_list[i]
     fits_1 = os.listdir(base_fld % session_1)
+    rmv = []
+    for name in fits_1:
+        if not re.match('^fit_results_m\d+s\d+_c\d+_all_1.0000.dill$',name):
+            rmv += [name]
+    for name in rmv:
+        fits_1.remove(name)
+
     for j in range(i,session_list.shape[0]):
         progress()
         progress.current+=1
         session_2 = session_list[j]
         fits_2 = os.listdir(base_fld % session_2)
+        rmv = []
+        for name in fits_2:
+            if not re.match('^fit_results_m\d+s\d+_c\d+_all_1.0000.dill$', name):
+                rmv += [name]
+        for name in rmv:
+            fits_2.remove(name)
 
         for var in np.hstack((spatial_list, extra_var)):
             if  not var in int_matrix_dict.keys():
@@ -298,24 +336,32 @@ for i in range(session_list.shape[0]):
 
 
             # extract first basis
-            order = basis_info[session_1][var]['order']
+
 
             with open(os.path.join(base_fld % session_1, fits_1[0]), 'rb') as dill_fh:
                 gam_dict = dill.load(dill_fh)
             full = gam_dict['full']
+            if not var in full.smooth_info.keys():
+                int_matrix_dict[var][(session_1, session_2)] = None
+                continue
             knots = full.smooth_info[var]['knots'][0]
-            is_cyclic = basis_info[session_1][var]['is_cyclic']
-            exp_bspline_1 = spline_basis(knots, order, is_cyclic=basis_info[session_1][var]['is_cyclic'],subtract_integral=True)
+            order = full.smooth_info[var]['ord']
+            is_cyclic = full.smooth_info[var]['is_cyclic']
+            exp_bspline_1 = spline_basis(knots, order, is_cyclic=is_cyclic,subtract_integral=True)
 
             # extract second basis
-            order = basis_info[session_2][var]['order']
 
             with open(os.path.join(base_fld % session_2, fits_2[0]), 'rb') as dill_fh:
                 gam_dict = dill.load(dill_fh)
             full = gam_dict['full']
+            if not var in full.smooth_info.keys():
+                int_matrix_dict[var][(session_1, session_2)] = None
+                continue
             knots = full.smooth_info[var]['knots'][0]
-            is_cyclic = basis_info[session_2][var]['is_cyclic']
-            exp_bspline_2 = spline_basis(knots, order, is_cyclic=basis_info[session_2][var]['is_cyclic'],
+            order = full.smooth_info[var]['ord']
+            is_cyclic = full.smooth_info[var]['is_cyclic']
+
+            exp_bspline_2 = spline_basis(knots, order, is_cyclic=is_cyclic,
                                          subtract_integral=True)
 
             a,b = range_dict[var]

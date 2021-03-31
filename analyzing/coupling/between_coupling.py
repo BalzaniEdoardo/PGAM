@@ -28,6 +28,7 @@ monkey = 'Schro'
 ele_dist = dat['electrode distance']
 
 
+
 plt.figure()
 plt.suptitle('Fraction coupled x distance')
 color_dict = {'MST':'g','PPC':'b','PFC':'r'}
@@ -35,7 +36,7 @@ for (ba_sender,ba_receiver) in [('MST', 'MST'),('PPC', 'PPC'),('PFC', 'PFC')]:
     # ba_sender = 'MST'
     # ba_receiver = 'MST'
     
-    filt = ((dat['brain area receiver'] == ba_receiver ) & 
+    filt = ((dat['brain area receiver'] == ba_receiver ) &
             (dat['brain area sender'] == ba_sender) &
             (dat['monkey'] == monkey)
             )
@@ -64,7 +65,7 @@ for (ba_sender,ba_receiver) in [('MST', 'MST'),('PPC', 'PPC'),('PFC', 'PFC')]:
     # ba_sender = 'MST'
     # ba_receiver = 'MST'
     
-    filt = ((dat['brain area receiver'] == ba_receiver ) & 
+    filt = ((dat['brain area receiver'] == ba_receiver ) &
             (dat['brain area sender'] == ba_sender) &
             (dat['monkey'] == monkey)
             )
@@ -86,7 +87,9 @@ plt.ylabel('coupling strength')
 plt.legend()
 
 # select some significant coupling cross-area
-
+dat = np.load('coupling_info.npy', allow_pickle=True)
+dat = dat[(dat['pseudo-r2']>=0.01)]
+dat = dat[dat['session'] !='m53s127']
 
 plt.figure()
 
@@ -96,12 +99,15 @@ ba_receiver = 'PFC'
 
 
 
-filt = ((dat['brain area receiver'] == ba_receiver ) & 
-            (dat['brain area sender'] == ba_sender) &
+filt = ((dat['receiver brain area'] == ba_receiver ) & 
+            (dat['sender brain area'] == ba_sender) &
             (dat['monkey'] == monkey) &
             (dat['is significant'])
             )
 betw_dat = dat[filt]
+
+filt = dat['manipulation type'][filt] == 'all'
+betw_dat = betw_dat[filt]
 
 coup_str = np.sort(betw_dat['coupling strength'])
 cs_cdf = ECDF(coup_str)
@@ -114,12 +120,16 @@ plt.plot(xx,cs_cdf(xx),label='MST->PFC')
 ba_sender = 'MST'
 ba_receiver = 'PPC'
 
-filt = ((dat['brain area receiver'] == ba_receiver ) & 
-            (dat['brain area sender'] == ba_sender) &
+filt = ((dat['receiver brain area'] == ba_receiver ) & 
+            (dat['sender brain area'] == ba_sender) &
             (dat['monkey'] == monkey) &
             (dat['is significant'])
             )
 betw_dat = dat[filt]
+
+filt = dat['manipulation type'][filt] == 'all'
+betw_dat = betw_dat[filt]
+
 
 coup_str = np.sort(betw_dat['coupling strength'])
 cs_cdf = ECDF(coup_str)
@@ -133,8 +143,8 @@ ba_receiver = 'MST'
 
 
 
-filt = ((dat['brain area receiver'] == ba_receiver ) & 
-            (dat['brain area sender'] == ba_sender) &
+filt = ((dat['receiver brain area'] == ba_receiver ) & 
+            (dat['sender brain area'] == ba_sender) &
             (dat['monkey'] == monkey) &
             (dat['is significant'])
             )
@@ -150,12 +160,14 @@ plt.plot(xx,cs_cdf(xx),label='PPC->MST')
 # PPC -> PFC
 ba_sender = 'PPC'
 ba_receiver = 'PFC'
-filt = ((dat['brain area receiver'] == ba_receiver ) & 
-            (dat['brain area sender'] == ba_sender) &
+filt = ((dat['receiver brain area'] == ba_receiver ) & 
+            (dat['sender brain area'] == ba_sender) &
             (dat['monkey'] == monkey) &
             (dat['is significant'])
             )
 betw_dat = dat[filt]
+filt = dat['manipulation type'][filt] == 'all'
+betw_dat = betw_dat[filt]
 
 coup_str = np.sort(betw_dat['coupling strength'])
 cs_cdf = ECDF(coup_str)
@@ -164,8 +176,8 @@ plt.plot(xx,cs_cdf(xx),label='PPC->PFC')
 # PFC - >MST
 ba_sender = 'PFC'
 ba_receiver = 'MST'
-filt = ((dat['brain area receiver'] == ba_receiver ) & 
-            (dat['brain area sender'] == ba_sender) &
+filt = ((dat['receiver brain area'] == ba_receiver ) & 
+            (dat['sender brain area'] == ba_sender) &
             (dat['monkey'] == monkey) &
             (dat['is significant'])
             )
@@ -178,8 +190,8 @@ plt.plot(xx,cs_cdf(xx),label='PFC->MST')
 # pfc -> ppc
 ba_sender = 'PFC'
 ba_receiver = 'PPC'
-filt = ((dat['brain area receiver'] == ba_receiver ) & 
-            (dat['brain area sender'] == ba_sender) &
+filt = ((dat['receiver brain area'] == ba_receiver ) & 
+            (dat['sender brain area'] == ba_sender) &
             (dat['monkey'] == monkey) &
             (dat['is significant'])
             )
@@ -198,8 +210,8 @@ plt.plot(xx,cs_cdf(xx),label='PFC->PPC')
 # ba_receiver = 'MST'
 # # xx = np.linspace(coup_str[0], coup_str[-1],100)
 
-# filt = ((dat['brain area receiver'] == ba_receiver ) & 
-#             (dat['brain area sender'] == ba_sender) &
+# filt = ((dat['receiver brain area'] == ba_receiver ) & 
+#             (dat['sender brain area'] == ba_sender) &
 #             (dat['monkey'] == monkey) &
 #             (dat['is significant'])
 #             )
@@ -213,8 +225,8 @@ plt.plot(xx,cs_cdf(xx),label='PFC->PPC')
 
 # ba_sender = 'PPC'
 # ba_receiver = 'PPC'
-# filt = ((dat['brain area receiver'] == ba_receiver ) & 
-#             (dat['brain area sender'] == ba_sender) &
+# filt = ((dat['receiver brain area'] == ba_receiver ) & 
+#             (dat['sender brain area'] == ba_sender) &
 #             (dat['monkey'] == monkey) &
 #             (dat['is significant'])
 #             )
@@ -228,8 +240,8 @@ plt.plot(xx,cs_cdf(xx),label='PFC->PPC')
 
 # ba_sender = 'PFC'
 # ba_receiver = 'PFC'
-# filt = ((dat['brain area receiver'] == ba_receiver ) & 
-#             (dat['brain area sender'] == ba_sender) &
+# filt = ((dat['receiver brain area'] == ba_receiver ) & 
+#             (dat['sender brain area'] == ba_sender) &
 #             (dat['monkey'] == monkey) &
 #             (dat['is significant'])
 #             )
@@ -262,20 +274,23 @@ ba_receiver = 'PFC'
 
 
 
-filt = ((dat['brain area receiver'] == ba_receiver ) & 
-            (dat['brain area sender'] == ba_sender) &
+filt = ((dat['receiver brain area'] == ba_receiver ) & 
+            (dat['sender brain area'] == ba_sender) &
             (dat['monkey'] == monkey) &
             (dat['is significant'])
             )
 betw_dat = dat[filt]
-idx = np.argsort(betw_dat['coupling strength'])
+filt = dat['manipulation type'][filt] == 'all'
+betw_dat = betw_dat[filt]
+
+idxSort = np.argsort(betw_dat['coupling strength'])
 
 plt.figure(figsize=(12,8))
 for kk in range(1,26):
     
-    unit_rec = betw_dat[idx[-kk]]['unit receiver']
-    unit_sen = betw_dat[idx[-kk]]['unit sender']
-    session = betw_dat[idx[-kk]]['session']
+    unit_rec = betw_dat[idxSort[-kk]]['receiver unit id']
+    unit_sen = betw_dat[idxSort[-kk]]['sender unit id']
+    session = betw_dat[idxSort[-kk]]['session']
     cond = 'all'
     value = 1
     
@@ -298,7 +313,8 @@ for kk in range(1,26):
     impulse[(dim_kern - 1) // 2] = 1
     xx = 0.006 * np.linspace(-(dim_kern - 1) / 2, (dim_kern - 1) / 2, dim_kern)
     fX, fX_p_ci, fX_m_ci = full_gam.smooth_compute([impulse], var, perc=0.99, trial_idx=None)# full_gam.['neu_%d'%unit_sen]
-    
+    plt.title('%s %d->%d' % (betw_dat[idxSort[-kk]]['session'], betw_dat[idxSort[-kk]]['sender unit id'],
+                             betw_dat[idxSort[-kk]]['receiver unit id']), fontsize=8)
     idx  = np.where(xx > 0)[0]
     pp, = plt.plot(-xx[idx][::-1],fX[idx][::-1])
     plt.fill_between(-xx[idx][::-1], fX_m_ci[idx][::-1], fX_p_ci[idx][::-1],color=pp.get_color(),alpha=0.4)
@@ -325,20 +341,23 @@ ba_receiver = 'PPC'
 
 
 
-filt = ((dat['brain area receiver'] == ba_receiver ) & 
-            (dat['brain area sender'] == ba_sender) &
+filt = ((dat['receiver brain area'] == ba_receiver ) & 
+            (dat['sender brain area'] == ba_sender) &
             (dat['monkey'] == monkey) &
             (dat['is significant'])
             )
 betw_dat = dat[filt]
-idx = np.argsort(betw_dat['coupling strength'])
+filt = dat['manipulation type'][filt] == 'all'
+betw_dat = betw_dat[filt]
+
+idxSort = np.argsort(betw_dat['coupling strength'])
 
 plt.figure(figsize=(12,8))
 for kk in range(1,26):
     
-    unit_rec = betw_dat[idx[-kk]]['unit receiver']
-    unit_sen = betw_dat[idx[-kk]]['unit sender']
-    session = betw_dat[idx[-kk]]['session']
+    unit_rec = betw_dat[idxSort[-kk]]['receiver unit id']
+    unit_sen = betw_dat[idxSort[-kk]]['sender unit id']
+    session = betw_dat[idxSort[-kk]]['session']
     cond = 'all'
     value = 1
     
@@ -361,7 +380,8 @@ for kk in range(1,26):
     impulse[(dim_kern - 1) // 2] = 1
     xx = 0.006 * np.linspace(-(dim_kern - 1) / 2, (dim_kern - 1) / 2, dim_kern)
     fX, fX_p_ci, fX_m_ci = full_gam.smooth_compute([impulse], var, perc=0.99, trial_idx=None)# full_gam.['neu_%d'%unit_sen]
-    
+    plt.title('%s %d->%d' % (betw_dat[idxSort[-kk]]['session'], betw_dat[idxSort[-kk]]['sender unit id'],
+                             betw_dat[idxSort[-kk]]['receiver unit id']), fontsize=8)
     idx  = np.where(xx > 0)[0]
     pp, = plt.plot(-xx[idx][::-1],fX[idx][::-1])
     plt.fill_between(-xx[idx][::-1], fX_m_ci[idx][::-1], fX_p_ci[idx][::-1],color=pp.get_color(),alpha=0.4)
@@ -384,20 +404,23 @@ ba_receiver = 'MST'
 
 
 
-filt = ((dat['brain area receiver'] == ba_receiver ) & 
-            (dat['brain area sender'] == ba_sender) &
+filt = ((dat['receiver brain area'] == ba_receiver ) & 
+            (dat['sender brain area'] == ba_sender) &
             (dat['monkey'] == monkey) &
             (dat['is significant'])
             )
 betw_dat = dat[filt]
-idx = np.argsort(betw_dat['coupling strength'])
+filt = dat['manipulation type'][filt] == 'all'
+betw_dat = betw_dat[filt]
+
+idxSort = np.argsort(betw_dat['coupling strength'])
 
 plt.figure(figsize=(12,8))
 for kk in range(1,26):
     
-    unit_rec = betw_dat[idx[-kk]]['unit receiver']
-    unit_sen = betw_dat[idx[-kk]]['unit sender']
-    session = betw_dat[idx[-kk]]['session']
+    unit_rec = betw_dat[idxSort[-kk]]['receiver unit id']
+    unit_sen = betw_dat[idxSort[-kk]]['sender unit id']
+    session = betw_dat[idxSort[-kk]]['session']
     cond = 'all'
     value = 1
     
@@ -424,7 +447,8 @@ for kk in range(1,26):
     idx  = np.where(xx > 0)[0]
     pp, = plt.plot(-xx[idx][::-1],fX[idx][::-1])
     plt.fill_between(-xx[idx][::-1], fX_m_ci[idx][::-1], fX_p_ci[idx][::-1],color=pp.get_color(),alpha=0.4)
-    
+    plt.title('%s %d->%d' % (betw_dat[idxSort[-kk]]['session'], betw_dat[idxSort[-kk]]['sender unit id'],
+                             betw_dat[idxSort[-kk]]['receiver unit id']), fontsize=8)
     if kk >20:
         plt.xlabel('time [sec]')
     
@@ -443,20 +467,23 @@ ba_receiver = 'PPC'
 
 
 
-filt = ((dat['brain area receiver'] == ba_receiver ) & 
-            (dat['brain area sender'] == ba_sender) &
+filt = ((dat['receiver brain area'] == ba_receiver ) & 
+            (dat['sender brain area'] == ba_sender) &
             (dat['monkey'] == monkey) &
             (dat['is significant'])
             )
 betw_dat = dat[filt]
-idx = np.argsort(betw_dat['coupling strength'])
+filt = dat['manipulation type'][filt] == 'all'
+betw_dat = betw_dat[filt]
+
+idxSort = np.argsort(betw_dat['coupling strength'])
 
 plt.figure(figsize=(12,8))
 for kk in range(1,26):
     
-    unit_rec = betw_dat[idx[-kk]]['unit receiver']
-    unit_sen = betw_dat[idx[-kk]]['unit sender']
-    session = betw_dat[idx[-kk]]['session']
+    unit_rec = betw_dat[idxSort[-kk]]['receiver unit id']
+    unit_sen = betw_dat[idxSort[-kk]]['sender unit id']
+    session = betw_dat[idxSort[-kk]]['session']
     cond = 'all'
     value = 1
     
@@ -483,7 +510,8 @@ for kk in range(1,26):
     idx  = np.where(xx > 0)[0]
     pp, = plt.plot(-xx[idx][::-1],fX[idx][::-1])
     plt.fill_between(-xx[idx][::-1], fX_m_ci[idx][::-1], fX_p_ci[idx][::-1],color=pp.get_color(),alpha=0.4)
-    
+    plt.title('%s %d->%d' % (betw_dat[idxSort[-kk]]['session'], betw_dat[idxSort[-kk]]['sender unit id'],
+                             betw_dat[idxSort[-kk]]['receiver unit id']), fontsize=8)
     if kk >20:
         plt.xlabel('time [sec]')
     
@@ -502,20 +530,23 @@ ba_receiver = 'MST'
 
 
 
-filt = ((dat['brain area receiver'] == ba_receiver ) & 
-            (dat['brain area sender'] == ba_sender) &
+filt = ((dat['receiver brain area'] == ba_receiver ) & 
+            (dat['sender brain area'] == ba_sender) &
             (dat['monkey'] == monkey) &
             (dat['is significant'])
             )
 betw_dat = dat[filt]
-idx = np.argsort(betw_dat['coupling strength'])
+filt = dat['manipulation type'][filt] == 'all'
+betw_dat = betw_dat[filt]
+
+idxSort = np.argsort(betw_dat['coupling strength'])
 
 plt.figure(figsize=(12,8))
 for kk in range(1,26):
     
-    unit_rec = betw_dat[idx[-kk]]['unit receiver']
-    unit_sen = betw_dat[idx[-kk]]['unit sender']
-    session = betw_dat[idx[-kk]]['session']
+    unit_rec = betw_dat[idxSort[-kk]]['receiver unit id']
+    unit_sen = betw_dat[idxSort[-kk]]['sender unit id']
+    session = betw_dat[idxSort[-kk]]['session']
     cond = 'all'
     value = 1
     
@@ -526,7 +557,8 @@ for kk in range(1,26):
         res_dict = dill.load(fh)
     
     full_gam = res_dict['full']
-    
+    plt.title('%s %d->%d' % (betw_dat[idxSort[-kk]]['session'], betw_dat[idxSort[-kk]]['sender unit id'],
+                             betw_dat[idxSort[-kk]]['receiver unit id']), fontsize=8)
     
     var = 'neu_%d'%unit_sen
     dim_kern = full_gam.smooth_info[var]['basis_kernel'].shape[0]
@@ -561,56 +593,84 @@ ba_receiver = 'PFC'
 
 
 
-filt = ((dat['brain area receiver'] == ba_receiver ) & 
-            (dat['brain area sender'] == ba_sender) &
+filt = ((dat['receiver brain area'] == ba_receiver ) & 
+            (dat['sender brain area'] == ba_sender) &
             (dat['monkey'] == monkey) &
             (dat['is significant'])
             )
 betw_dat = dat[filt]
-idx = np.argsort(betw_dat['coupling strength'])
+filt = dat['manipulation type'][filt] == 'all'
+betw_dat = betw_dat[filt]
 
-plt.figure(figsize=(12,8))
-for kk in range(1,26):
-    
-    unit_rec = betw_dat[idx[-kk]]['unit receiver']
-    unit_sen = betw_dat[idx[-kk]]['unit sender']
-    session = betw_dat[idx[-kk]]['session']
-    cond = 'all'
-    value = 1
-    
-    
-    plt.subplot(5,5,kk)
-    fld_dill = '/Volumes/WD_Edo/firefly_analysis/LFP_band/GAM_fit_with_acc/gam_%s'
-    with open(os.path.join(fld_dill%session,'fit_results_%s_c%d_%s_%.4f.dill'%(session,unit_rec,cond,value)),'rb') as fh:
-        res_dict = dill.load(fh)
-    
-    full_gam = res_dict['full']
-    
-    
-    var = 'neu_%d'%unit_sen
-    dim_kern = full_gam.smooth_info[var]['basis_kernel'].shape[0]
-    knots_num = full_gam.smooth_info[var]['knots'][0].shape[0]
-    ord_ = full_gam.smooth_info[var]['ord']
-    idx_select = np.arange(0, dim_kern, (dim_kern + 1) // knots_num)
-    
-    impulse = np.zeros(dim_kern)
-    impulse[(dim_kern - 1) // 2] = 1
-    xx = 0.006 * np.linspace(-(dim_kern - 1) / 2, (dim_kern - 1) / 2, dim_kern)
-    fX, fX_p_ci, fX_m_ci = full_gam.smooth_compute([impulse], var, perc=0.99, trial_idx=None)# full_gam.['neu_%d'%unit_sen]
-    
-    idx  = np.where(xx > 0)[0]
-    pp, = plt.plot(-xx[idx][::-1],fX[idx][::-1])
-    plt.fill_between(-xx[idx][::-1], fX_m_ci[idx][::-1], fX_p_ci[idx][::-1],color=pp.get_color(),alpha=0.4)
-    
-    if kk >20:
-        plt.xlabel('time [sec]')
-    
-    if kk % 5 == 1:
-        plt.ylabel('gain')
-plt.suptitle('PPC->PFC coupling filter examples')
+idxSort = np.argsort(betw_dat['coupling strength'])
 
-plt.tight_layout(rect=[0, 0.03, 1, 0.95])
-plt.savefig('/Users/edoardo/Work/Code/GAM_code/analyzing/coupling/coupling_filt_example/ppc_to_pfc_couplingFilt.png')
+kk = 1
+
+for fn in  range(5):
+    plt.figure(figsize=(12,8))
+    for jj in range(1,26):
+
+        unit_rec = betw_dat[idxSort[-kk]]['receiver unit id']
+        unit_sen = betw_dat[idxSort[-kk]]['sender unit id']
+        session = betw_dat[idxSort[-kk]]['session']
+        cond = 'all'
+        value = 1
+
+
+        plt.subplot(5,5,jj)
+        plt.title('%s %d->%d'%(betw_dat[idxSort[-kk]]['session'],betw_dat[idxSort[-kk]]['sender unit id'],
+                               betw_dat[idxSort[-kk]]['receiver unit id']),fontsize=8)
+
+
+
+        fld_dill = '/Volumes/WD_Edo/firefly_analysis/LFP_band/GAM_fit_with_acc/gam_%s'
+        with open(os.path.join(fld_dill%session,'fit_results_%s_c%d_%s_%.4f.dill'%(session,unit_rec,cond,value)),'rb') as fh:
+            res_dict = dill.load(fh)
+
+        full_gam = res_dict['full']
+        red_gam = res_dict['reduced']
+
+        var = 'neu_%d'%unit_sen
+        dim_kern = full_gam.smooth_info[var]['basis_kernel'].shape[0]
+        knots_num = full_gam.smooth_info[var]['knots'][0].shape[0]
+        ord_ = full_gam.smooth_info[var]['ord']
+        idx_select = np.arange(0, dim_kern, (dim_kern + 1) // knots_num)
+
+        sel = np.where(full_gam.covariate_significance['covariate'] == var)[0][0]
+        selr = np.where(red_gam.covariate_significance['covariate'] == var)[0][0]
+
+
+
+        impulse = np.zeros(dim_kern)
+        impulse[(dim_kern - 1) // 2] = 1
+        xx = 0.006 * np.linspace(-(dim_kern - 1) / 2, (dim_kern - 1) / 2, dim_kern)
+        fX, fX_p_ci, fX_m_ci = full_gam.smooth_compute([impulse], var, perc=0.99, trial_idx=None)# full_gam.['neu_%d'%unit_sen]
+
+
+        fXr, fX_p_cir, fX_m_cir = red_gam.smooth_compute([impulse], var, perc=0.99, trial_idx=None)
+
+
+        idx  = np.where(xx > 0)[0]
+        pp, = plt.plot(-xx[idx][::-1],fX[idx][::-1])
+        plt.fill_between(-xx[idx][::-1], fX_m_ci[idx][::-1], fX_p_ci[idx][::-1],color=pp.get_color(),alpha=0.4)
+        # if red_gam.covariate_significance['p-val'][selr] < 0.001:
+        #     pp, = plt.plot(-xx[idx][::-1], fXr[idx][::-1], label='*')
+        # else:
+        #     pp, = plt.plot(-xx[idx][::-1], fXr[idx][::-1])
+
+        # plt.fill_between(-xx[idx][::-1], fX_m_cir[idx][::-1], fX_p_cir[idx][::-1], color=pp.get_color(), alpha=0.4)
+
+        kk += 1
+
+        if kk >20:
+            plt.xlabel('time [sec]')
+
+        if kk % 5 == 1:
+            plt.ylabel('gain')
+    plt.suptitle('PPC->PFC coupling filter examples')
+
+    plt.tight_layout(rect=[0, 0.03, 1, 0.95])
+    plt.savefig('/Users/edoardo/Work/Code/GAM_code/analyzing/coupling/coupling_filt_example/%d_ppc_to_pfc_couplingFilt.png'%fn)
 
 
 

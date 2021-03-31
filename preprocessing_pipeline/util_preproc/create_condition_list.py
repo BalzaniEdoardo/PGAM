@@ -66,7 +66,7 @@ for fh in os.listdir('/Volumes/WD_Edo/firefly_analysis/LFP_band/concatenation_wi
                   'ptb':[0,1]} #'density':[0.0001, 0.005]}
     # cond_dict = {'all': [True] }
     # cond_dict.pop('all')
-    sess_keep = ['m53s113']
+    sess_keep = ['m73s1']
     if  not session in   sess_keep:
         continue
     # cond_dict = {'controlgain':[2,1.5]}
