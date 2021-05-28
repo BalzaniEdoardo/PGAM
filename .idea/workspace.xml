@@ -1,0 +1,1028 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ChangeListManager">
+    <list default="true" id="9bb4d728-5c33-4d96-aff5-5fadfc64f7ed" name="Default Changelist" comment="(">
+      <change beforePath="$PROJECT_DIR$/demo_fit.py" beforeDir="false" afterPath="$PROJECT_DIR$/demo_fit.py" afterDir="false" />
+    </list>
+    <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FileEditorManager">
+    <leaf SIDE_TABS_SIZE_LIMIT_KEY="300" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Python Script" />
+      </list>
+    </option>
+  </component>
+  <component name="FindInProjectRecents">
+    <findStrings>
+      <find>== 'density'</find>
+      <find>OLS</find>
+      <find>savefig</find>
+      <find>dat_tmp</find>
+      <find>load</find>
+      <find>save</find>
+      <find>sn</find>
+      <find>np.log</find>
+      <find>sender_brain_area</find>
+      <find>def ex</find>
+      <find>self.pre_trial_dur</find>
+      <find>post_trial_dur</find>
+      <find>pre_trial_dur</find>
+      <find>tuning_gain</find>
+      <find>RSQ</find>
+      <find>jpn5</find>
+      <find>fit_longFilters</find>
+      <find>fit_fully_coupled</find>
+      <find>cond_kno</find>
+      <find>fit_full_and_reduced</find>
+      <find>Iterations:</find>
+      <find>hist_filt_dur</find>
+      <find>no tun</find>
+      <find>bootstrap</find>
+      <find>full_spike_hist</find>
+      <find>pseudo_r2_compute</find>
+      <find>dat = np.load(fhName, allow_pickle=True)</find>
+      <find>eb162</find>
+      <find>tight</find>
+      <find>tig</find>
+    </findStrings>
+    <replaceStrings>
+      <replace>tun_sign</replace>
+      <replace>receiver unit id</replace>
+      <replace>sender unit id</replace>
+      <replace>brain_area</replace>
+      <replace>[sel][sign][idx]</replace>
+      <replace>[mutual_info[sel]['significance']]</replace>
+      <replace>-(k+1)</replace>
+      <replace>== 0.005</replace>
+      <replace>== 'controlgain'</replace>
+      <replace>sender brain area</replace>
+      <replace>mutual_info</replace>
+      <replace>jpn5</replace>
+    </replaceStrings>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="IdeDocumentHistory">
+    <option name="CHANGED_PATHS">
+      <list>
+        <option value="$PROJECT_DIR$/analyzing/coupling/coupling_x_cond/coupling_x_cond.py" />
+        <option value="$PROJECT_DIR$/analyzing/coupling/coupling_x_cond/plot_coipling_change.py" />
+        <option value="$PROJECT_DIR$/analyzing/coupling/coupling_x_cond/oddeven_plot_coipling_change.py" />
+        <option value="$PROJECT_DIR$/analyzing/coupling/coupling_plots_quigley.py" />
+        <option value="$PROJECT_DIR$/analyzing/density_condition/betweenArea_cs_dens.py" />
+        <option value="$PROJECT_DIR$/analyzing/coupling/logistic_regr.py" />
+        <option value="$PROJECT_DIR$/analyzing/trajectory/check_radial_path.py" />
+        <option value="$PROJECT_DIR$/analyzing/extract_tuning/similarity_index_condition.py" />
+        <option value="$PROJECT_DIR$/analyzing/extract_tuning/similarity_index_condition_coupling.py" />
+        <option value="$PROJECT_DIR$/analyzing/coupling/check_fit_statistics_distribution.py" />
+        <option value="$PROJECT_DIR$/analyzing/coupling/merge_pairs.py" />
+        <option value="$PROJECT_DIR$/analyzing/coupling/check_fit_statistics_distribution_density.py" />
+        <option value="$PROJECT_DIR$/analyzing/coupling/similarity_index_coupling.py" />
+        <option value="$PROJECT_DIR$/analyzing/tuning_change/cond_tuning_frac.py" />
+        <option value="$PROJECT_DIR$/analyzing/tuning_change/cond_tuning_frac_subset.py" />
+        <option value="$PROJECT_DIR$/analyzing/trajectory/analuze_trajectories.py" />
+        <option value="$APPLICATION_HOME_DIR$/helpers/pydev/_pydev_bundle/curvature_coompute.py" />
+        <option value="$PROJECT_DIR$/analyzing/trajectory/save_trajectory_only.py" />
+        <option value="$PROJECT_DIR$/analyzing/trajectory/analyze_trajectories.py" />
+        <option value="$PROJECT_DIR$/preprocessing_pipeline/download_mat.py" />
+        <option value="$PROJECT_DIR$/analyzing/density_condition/coupling_plots_dens_with_slope.py" />
+        <option value="$PROJECT_DIR$/analyzing/density_condition/coupling_vs_tuning_gain.py" />
+        <option value="$PROJECT_DIR$/analyzing/density_condition/coupling_vs_mutual_info.py" />
+        <option value="$PROJECT_DIR$/analyzing/coupling/long_filters/check_long_filter_res.py" />
+        <option value="$PROJECT_DIR$/preprocessing_pipeline/synchronize_cluster_long.py" />
+        <option value="$PROJECT_DIR$/plotting/spike_time_corr.py" />
+        <option value="$PROJECT_DIR$/fitting/full_model_fit_long_filters.py" />
+        <option value="$PROJECT_DIR$/preprocessing_pipeline/synchronize_cluster_long_eb162.py" />
+        <option value="$PROJECT_DIR$/select_variables/history_and_coupling_compare.py" />
+        <option value="$PROJECT_DIR$/fitting/LFP_model_fit_cluster.py" />
+        <option value="$PROJECT_DIR$/analyzing/mutual_info/long_mutual_info_postProc.py" />
+        <option value="$PROJECT_DIR$/analyzing/coupling/similarity_index_coupling_by_session.py" />
+        <option value="$PROJECT_DIR$/analyzing/coupling_longFilters/longFilters_similarity_index_coupling_odd.py" />
+        <option value="$PROJECT_DIR$/analyzing/coupling/similarity_index_coupling_odd.py" />
+        <option value="$PROJECT_DIR$/analyzing/density_condition/coupling_plots_dens.py" />
+        <option value="$PROJECT_DIR$/analyzing/mutual_info/mutual_info_postProc.py" />
+        <option value="$PROJECT_DIR$/analyzing/coupling/similarity_index_shuffling.py" />
+        <option value="$PROJECT_DIR$/analyzing/density_condition/plot_ci.py" />
+        <option value="$PROJECT_DIR$/figures/final_figures/PanelA/figure2_raster.py" />
+        <option value="$PROJECT_DIR$/analyzing/lfp_vs_coupling/merge_lfp.py" />
+        <option value="$PROJECT_DIR$/analyzing/density_condition/mutual_information.py" />
+        <option value="$PROJECT_DIR$/select_variables/with_and_wo_LFP_compare.py" />
+        <option value="$PROJECT_DIR$/preprocessing_pipeline/synchronize_cluster_LFP_vs_coupling.py" />
+        <option value="$PROJECT_DIR$/analyzing/lfp_vs_coupling/figure_lfp_vs_coupling.py" />
+        <option value="/Volumes/WD_Edo/firefly_analysis/LFP_band/FINALFIG/Figure2/code/figure2_fractionTuned.py" />
+        <option value="$PROJECT_DIR$/analyzing/lfp_crossArea/merge_MI_lfpFit.py" />
+        <option value="$PROJECT_DIR$/figures/final_figures/PanelA/fractionTuned_pointplot.py" />
+        <option value="$PROJECT_DIR$/preprocessing_pipeline/concatenate_data_akis.py" />
+        <option value="$PROJECT_DIR$/preprocessing_pipeline/util_preproc/create_condition_list.py" />
+        <option value="$PROJECT_DIR$/analyzing/full_vs_reduced/pr2_compare.py" />
+        <option value="$PROJECT_DIR$/analyzing/factor_analysis/factor_analysis.py" />
+      </list>
+    </option>
+  </component>
+  <component name="ProjectFrameBounds">
+    <option name="y" value="23" />
+    <option name="width" value="1680" />
+    <option name="height" value="884" />
+  </component>
+  <component name="ProjectView">
+    <navigator proportions="" version="1">
+      <foldersAlwaysOnTop value="true" />
+    </navigator>
+    <panes>
+      <pane id="ProjectPane">
+        <subPane>
+          <expand>
+            <path>
+              <item name="GAM_code" type="b2602c69:ProjectViewProjectNode" />
+              <item name="GAM_code" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="GAM_code" type="b2602c69:ProjectViewProjectNode" />
+              <item name="GAM_code" type="462c0819:PsiDirectoryNode" />
+              <item name="analyzing" type="462c0819:PsiDirectoryNode" />
+            </path>
+          </expand>
+          <select />
+        </subPane>
+      </pane>
+      <pane id="Scope" />
+    </panes>
+  </component>
+  <component name="PropertiesComponent">
+    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
+    <property name="settings.editor.selected.configurable" value="editing.templates" />
+  </component>
+  <component name="PyConsoleOptionsProvider">
+    <option name="myPythonConsoleState">
+      <console-settings module-name="GAM_code" is-module-sdk="true">
+        <option name="myUseModuleSdk" value="true" />
+        <option name="myModuleName" value="GAM_code" />
+      </console-settings>
+    </option>
+  </component>
+  <component name="RecentsManager">
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/figures/final_figures" />
+    </key>
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/figures/final_figures/PanelA" />
+      <recent name="$PROJECT_DIR$/preprocessing_pipeline" />
+      <recent name="$PROJECT_DIR$/analyzing/coupling" />
+      <recent name="$PROJECT_DIR$/select_variables" />
+      <recent name="$PROJECT_DIR$/fitting" />
+    </key>
+  </component>
+  <component name="RunDashboard">
+    <option name="ruleStates">
+      <list>
+        <RuleState>
+          <option name="name" value="ConfigurationTypeDashboardGroupingRule" />
+        </RuleState>
+        <RuleState>
+          <option name="name" value="StatusDashboardGroupingRule" />
+        </RuleState>
+      </list>
+    </option>
+  </component>
+  <component name="RunManager" selected="Python.factor_analysis">
+    <configuration name="create_condition_list" type="PythonConfigurationType" factoryName="Python" temporary="true">
+      <module name="GAM_code" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/preprocessing_pipeline/util_preproc" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/preprocessing_pipeline/util_preproc/create_condition_list.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="factor_analysis" type="PythonConfigurationType" factoryName="Python" temporary="true">
+      <module name="GAM_code" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/analyzing/factor_analysis" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/analyzing/factor_analysis/factor_analysis.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="true" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="figure_lfp_vs_coupling" type="PythonConfigurationType" factoryName="Python" temporary="true">
+      <module name="GAM_code" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/analyzing/lfp_vs_coupling" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/analyzing/lfp_vs_coupling/figure_lfp_vs_coupling.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="true" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="pr2_compare" type="PythonConfigurationType" factoryName="Python" temporary="true">
+      <module name="GAM_code" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/analyzing/full_vs_reduced" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/analyzing/full_vs_reduced/pr2_compare.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="true" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="synchronize_cluster" type="PythonConfigurationType" factoryName="Python" temporary="true">
+      <module name="GAM_code" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/preprocessing_pipeline" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/preprocessing_pipeline/synchronize_cluster.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="true" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Python.factor_analysis" />
+        <item itemvalue="Python.factor_analysis" />
+        <item itemvalue="Python.factor_analysis" />
+        <item itemvalue="Python.factor_analysis" />
+        <item itemvalue="Python.pr2_compare" />
+      </list>
+    </recent_temporary>
+  </component>
+  <component name="SvnConfiguration">
+    <configuration />
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="9bb4d728-5c33-4d96-aff5-5fadfc64f7ed" name="Default Changelist" comment="" />
+      <created>1611260406140</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1611260406140</updated>
+    </task>
+    <task id="LOCAL-00001" summary="code for post-processing computing mutual info">
+      <created>1614353187288</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1614353187288</updated>
+    </task>
+    <option name="localTasksCounter" value="2" />
+    <servers />
+  </component>
+  <component name="TodoView">
+    <todo-panel id="selected-file">
+      <is-autoscroll-to-source value="true" />
+    </todo-panel>
+    <todo-panel id="all">
+      <are-packages-shown value="true" />
+      <is-autoscroll-to-source value="true" />
+    </todo-panel>
+  </component>
+  <component name="ToolWindowManager">
+    <frame x="0" y="23" width="1680" height="884" extended-state="0" />
+    <layout>
+      <window_info active="true" content_ui="combo" id="Project" order="0" sideWeight="0.4989154" visible="true" weight="0.30586082" />
+      <window_info id="Structure" order="1" sideWeight="0.5010846" side_tool="true" weight="0.3956044" />
+      <window_info id="Favorites" order="2" side_tool="true" />
+      <window_info anchor="bottom" id="Message" order="0" />
+      <window_info anchor="bottom" id="Find" order="1" />
+      <window_info anchor="bottom" id="Run" order="2" weight="0.32769832" />
+      <window_info anchor="bottom" id="Debug" order="3" sideWeight="0.49798658" weight="0.40702212" />
+      <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
+      <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
+      <window_info anchor="bottom" id="TODO" order="6" weight="0.32769832" />
+      <window_info anchor="bottom" id="Version Control" order="7" weight="0.32769832" />
+      <window_info anchor="bottom" id="Terminal" order="8" sideWeight="0.49932885" weight="0.32769832" />
+      <window_info anchor="bottom" id="Event Log" order="9" sideWeight="0.503663" side_tool="true" weight="0.4567474" />
+      <window_info anchor="bottom" id="Python Console" order="10" sideWeight="0.496337" visible="true" weight="0.40052015" />
+      <window_info anchor="right" id="Commander" internal_type="SLIDING" order="0" type="SLIDING" weight="0.4" />
+      <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
+      <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
+      <window_info anchor="right" id="R Graphics" order="3" />
+      <window_info anchor="right" id="R Packages" order="4" />
+    </layout>
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="code for post-processing computing mutual info" />
+    <option name="LAST_COMMIT_MESSAGE" value="code for post-processing computing mutual info" />
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/analyzing/firing_rate_condition/sign_alteration_tuning_func.py</url>
+          <line>229</line>
+          <option name="timeStamp" value="7" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/analyzing/firing_rate_condition/sign_alteration_tuning_func.py</url>
+          <line>217</line>
+          <option name="timeStamp" value="10" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/analyzing/mutual_info/mutual_info_postProc.py</url>
+          <line>510</line>
+          <option name="timeStamp" value="32" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/analyzing/mutual_info/mutual_info_postProc.py</url>
+          <line>585</line>
+          <option name="timeStamp" value="33" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/analyzing/mutual_info/mutual_info_postProc.py</url>
+          <line>232</line>
+          <option name="timeStamp" value="34" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/analyzing/mutual_info/mutual_info_postProc.py</url>
+          <line>28</line>
+          <option name="timeStamp" value="35" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/analyzing/mutual_info/mutual_info_postProc.py</url>
+          <line>107</line>
+          <option name="timeStamp" value="37" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/analyzing/trajectory/extract_monkey_traj.py</url>
+          <line>59</line>
+          <option name="timeStamp" value="41" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/analyzing/trajectory/save_trajectory_only.py</url>
+          <line>32</line>
+          <option name="timeStamp" value="43" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/analyzing/mutual_info/heatmapMI.py</url>
+          <line>113</line>
+          <option name="timeStamp" value="44" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/analyzing/coupling/logistic_regr.py</url>
+          <line>192</line>
+          <option name="timeStamp" value="45" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$USER_HOME$/anaconda3/lib/python3.7/site-packages/sklearn/metrics/_scorer.py</url>
+          <line>235</line>
+          <option name="timeStamp" value="47" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/analyzing/coupling/exctract_couplingInfo.py</url>
+          <line>205</line>
+          <option name="timeStamp" value="51" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/preprocessing_pipeline/util_preproc/extract_presence_rate.py</url>
+          <line>405</line>
+          <option name="timeStamp" value="63" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/analyzing/coupling/between_coupling.py</url>
+          <line>89</line>
+          <option name="timeStamp" value="64" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/analyzing/coupling/coupling_plots.py</url>
+          <line>64</line>
+          <option name="timeStamp" value="65" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/firefly_utils/knots_constructor.py</url>
+          <line>468</line>
+          <option name="timeStamp" value="66" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/firefly_utils/knots_constructor.py</url>
+          <line>486</line>
+          <option name="timeStamp" value="67" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/analyzing/coupling/exctract_couplingInfo_CLUSTER.py</url>
+          <line>275</line>
+          <option name="timeStamp" value="73" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/preprocessing_pipeline/util_preproc/extract_presence_rate.py</url>
+          <line>380</line>
+          <option name="timeStamp" value="75" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/analyzing/tuning_similarity/prepare_data_for_stacked_sessions.py</url>
+          <line>225</line>
+          <option name="timeStamp" value="77" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/analyzing/tuning_similarity/prepare_data_for_stacked_sessions.py</url>
+          <line>250</line>
+          <option name="timeStamp" value="78" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/analyzing/time_warped_rate/align_rates_ptb.py</url>
+          <line>401</line>
+          <option name="timeStamp" value="83" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/analyzing/tuning_similarity/tuning_similarity_matrix.py</url>
+          <line>34</line>
+          <option name="timeStamp" value="84" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/analyzing/coupling/coupling_strength.py</url>
+          <line>62</line>
+          <option name="timeStamp" value="87" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/analyzing/cluster_x_multiResp/tuning_info_cluster.py</url>
+          <line>226</line>
+          <option name="timeStamp" value="88" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/analyzing/cluster_x_multiResp/tuning_info_cluster.py</url>
+          <line>317</line>
+          <option name="timeStamp" value="89" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/analyzing/cluster_x_multiResp/exctract_repStrength_CLUSTER.py</url>
+          <line>154</line>
+          <option name="timeStamp" value="94" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/analyzing/cluster_x_multiResp/exctract_repStrength_CLUSTER.py</url>
+          <line>238</line>
+          <option name="timeStamp" value="95" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/analyzing/cluster_x_multiResp/exctract_repStrength_CLUSTER.py</url>
+          <line>355</line>
+          <option name="timeStamp" value="96" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/analyzing/cluster_x_multiResp/umap_clustering_respStrength.py</url>
+          <line>122</line>
+          <option name="timeStamp" value="103" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/analyzing/lfp_crossArea/cross_coherence_funcs.py</url>
+          <line>69</line>
+          <option name="timeStamp" value="105" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/analyzing/lfp_crossArea/merge_LFP.py</url>
+          <line>21</line>
+          <option name="timeStamp" value="107" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/analyzing/tuning_similarity/tuning_sim_x_coupling_var_groups.py</url>
+          <line>100</line>
+          <option name="timeStamp" value="108" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/preprocessing_pipeline/util_preproc/create_condition_list.py</url>
+          <line>136</line>
+          <option name="timeStamp" value="112" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/fitting/LFP_model_fit_cluster.py</url>
+          <line>293</line>
+          <option name="timeStamp" value="115" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/analyzing/mutual_info/mutual_info_postProc_LFP.py</url>
+          <line>899</line>
+          <option name="timeStamp" value="149" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/analyzing/cluster_x_multiResp/umap_clustering_kernel.py</url>
+          <line>95</line>
+          <option name="timeStamp" value="157" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/analyzing/lfp_crossArea/LFP_exctract_repStrength_CLUSTER.py</url>
+          <line>232</line>
+          <option name="timeStamp" value="159" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/analyzing/lfp_crossArea/LFP_exctract_repStrength_CLUSTER.py</url>
+          <line>300</line>
+          <option name="timeStamp" value="161" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/analyzing/lfp_crossArea/coupling_strength_x_syncrho.py</url>
+          <line>65</line>
+          <option name="timeStamp" value="170" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/analyzing/lfp_crossArea/coupling_strength_x_syncrho.py</url>
+          <line>70</line>
+          <option name="timeStamp" value="174" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/preprocessing_pipeline/concatenate_data.py</url>
+          <line>206</line>
+          <option name="timeStamp" value="177" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/analyzing/cluster_x_multiResp/noLFP_umap_clustering_kernel.py</url>
+          <line>93</line>
+          <option name="timeStamp" value="179" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/analyzing/lfp_crossArea/fract_tuned_LFPSynchro.py</url>
+          <line>232</line>
+          <option name="timeStamp" value="187" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/analyzing/mutual_info/mutual_info_postProc_LFP.py</url>
+          <line>316</line>
+          <option name="timeStamp" value="188" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/analyzing/mutual_info/mutual_info_postProc_LFP.py</url>
+          <line>447</line>
+          <option name="timeStamp" value="189" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/analyzing/mutual_info/mutual_info_postProc_LFP.py</url>
+          <line>102</line>
+          <option name="timeStamp" value="190" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/fitting/LFP_model_fit_cluster.py</url>
+          <line>117</line>
+          <option name="timeStamp" value="199" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/fitting/LFP_model_fit_cluster.py</url>
+          <line>99</line>
+          <option name="timeStamp" value="200" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/analyzing/density_condition/coupling_plots_dens.py</url>
+          <line>266</line>
+          <option name="timeStamp" value="214" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/analyzing/density_condition/coupling_plots_dens_with_slope.py</url>
+          <line>403</line>
+          <option name="timeStamp" value="217" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/analyzing/density_condition/coupling_plots_dens_with_slope.py</url>
+          <line>412</line>
+          <option name="timeStamp" value="218" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/analyzing/coupling/logistic_regr.py</url>
+          <line>93</line>
+          <option name="timeStamp" value="219" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/analyzing/trajectory/check_radial_path.py</url>
+          <line>59</line>
+          <option name="timeStamp" value="221" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/analyzing/trajectory/check_radial_path.py</url>
+          <line>95</line>
+          <option name="timeStamp" value="223" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/analyzing/trajectory/check_radial_path.py</url>
+          <line>107</line>
+          <option name="timeStamp" value="224" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/analyzing/coupling/check_fit_statistics_distribution_density.py</url>
+          <line>161</line>
+          <option name="timeStamp" value="230" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/analyzing/coupling/check_fit_statistics_distribution_density.py</url>
+          <line>159</line>
+          <option name="timeStamp" value="231" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/analyzing/trajectory/analyze_trajectories.py</url>
+          <line>157</line>
+          <option name="timeStamp" value="239" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/preprocessing_pipeline/download_mat.py</url>
+          <line>26</line>
+          <option name="timeStamp" value="242" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/preprocessing_pipeline/download_mat.py</url>
+          <line>19</line>
+          <option name="timeStamp" value="243" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/firefly_utils/data_handler.py</url>
+          <line>113</line>
+          <option name="timeStamp" value="247" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/firefly_utils/data_handler.py</url>
+          <line>121</line>
+          <option name="timeStamp" value="248" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/firefly_utils/data_handler.py</url>
+          <line>137</line>
+          <option name="timeStamp" value="250" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/firefly_utils/data_handler.py</url>
+          <line>153</line>
+          <option name="timeStamp" value="251" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/analyzing/density_condition/coupling_vs_tuning_gain.py</url>
+          <line>32</line>
+          <option name="timeStamp" value="252" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/preprocessing_pipeline/util_preproc/create_condition_list.py</url>
+          <line>27</line>
+          <option name="timeStamp" value="253" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/preprocessing_pipeline/util_preproc/create_condition_list.py</url>
+          <line>126</line>
+          <option name="timeStamp" value="257" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/plotting/spike_time_corr.py</url>
+          <line>314</line>
+          <option name="timeStamp" value="258" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/plotting/spike_time_corr.py</url>
+          <line>16</line>
+          <option name="timeStamp" value="259" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/plotting/spike_time_corr.py</url>
+          <line>207</line>
+          <option name="timeStamp" value="260" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/plotting/spike_time_corr.py</url>
+          <line>250</line>
+          <option name="timeStamp" value="261" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/plotting/spike_time_corr.py</url>
+          <line>333</line>
+          <option name="timeStamp" value="262" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/plotting/spike_time_corr.py</url>
+          <line>313</line>
+          <option name="timeStamp" value="263" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/preprocessing_pipeline/synchronize_cluster_long.py</url>
+          <line>17</line>
+          <option name="timeStamp" value="266" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/analyzing/mutual_info/long_mutual_info_postProc.py</url>
+          <line>89</line>
+          <option name="timeStamp" value="271" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/analyzing/mutual_info/long_mutual_info_postProc.py</url>
+          <line>101</line>
+          <option name="timeStamp" value="272" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/analyzing/mutual_info/long_mutual_info_postProc.py</url>
+          <line>484</line>
+          <option name="timeStamp" value="274" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/analyzing/mutual_info/long_mutual_info_postProc.py</url>
+          <line>582</line>
+          <option name="timeStamp" value="275" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/analyzing/mutual_info/long_mutual_info_postProc.py</url>
+          <line>599</line>
+          <option name="timeStamp" value="276" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/analyzing/mutual_info/long_mutual_info_postProc.py</url>
+          <line>615</line>
+          <option name="timeStamp" value="277" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/analyzing/mutual_info/long_mutual_info_postProc.py</url>
+          <line>448</line>
+          <option name="timeStamp" value="282" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/analyzing/mutual_info/long_mutual_info_postProc.py</url>
+          <line>440</line>
+          <option name="timeStamp" value="284" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/analyzing/density_condition/mutual_information.py</url>
+          <line>325</line>
+          <option name="timeStamp" value="285" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$USER_HOME$/anaconda3/lib/python3.7/site-packages/seaborn/categorical.py</url>
+          <line>1543</line>
+          <option name="timeStamp" value="289" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/select_variables/with_and_wo_LFP_compare.py</url>
+          <line>132</line>
+          <option name="timeStamp" value="301" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/analyzing/lfp_vs_coupling/figure_lfp_vs_coupling.py</url>
+          <line>13</line>
+          <option name="timeStamp" value="302" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/preprocessing_pipeline/concatenate_data_akis.py</url>
+          <line>245</line>
+          <option name="timeStamp" value="304" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/firefly_utils/lfp_class.py</url>
+          <line>147</line>
+          <option name="timeStamp" value="309" />
+        </line-breakpoint>
+      </breakpoints>
+      <default-breakpoints>
+        <breakpoint type="python-exception">
+          <properties notifyOnTerminate="true" exception="BaseException">
+            <option name="notifyOnTerminate" value="true" />
+          </properties>
+        </breakpoint>
+      </default-breakpoints>
+    </breakpoint-manager>
+  </component>
+  <component name="debuggerHistoryManager">
+    <expressions id="evaluateCodeFragment">
+      <expression>
+        <expression-string>loglike(np.diag(diagR), C)</expression-string>
+        <language-id>Python</language-id>
+        <evaluation-mode>CODE_FRAGMENT</evaluation-mode>
+      </expression>
+      <expression>
+        <expression-string>np.diag(R)</expression-string>
+        <language-id>Python</language-id>
+        <evaluation-mode>CODE_FRAGMENT</evaluation-mode>
+      </expression>
+      <expression>
+        <expression-string>loglike(np.diag(R), C)</expression-string>
+        <language-id>Python</language-id>
+        <evaluation-mode>CODE_FRAGMENT</evaluation-mode>
+      </expression>
+      <expression>
+        <expression-string>diagR</expression-string>
+        <language-id>Python</language-id>
+        <evaluation-mode>CODE_FRAGMENT</evaluation-mode>
+      </expression>
+      <expression>
+        <expression-string>diagR = np.diag(S) - np.diag(np.dot(C, delta.T/y.shape[0]))</expression-string>
+        <language-id>Python</language-id>
+        <evaluation-mode>CODE_FRAGMENT</evaluation-mode>
+      </expression>
+      <expression>
+        <expression-string>np.einsum('kt,ht-&gt;kh',mu, mu) + N*cov</expression-string>
+        <language-id>Python</language-id>
+        <evaluation-mode>CODE_FRAGMENT</evaluation-mode>
+      </expression>
+      <expression>
+        <expression-string>delta</expression-string>
+        <language-id>Python</language-id>
+        <evaluation-mode>CODE_FRAGMENT</evaluation-mode>
+      </expression>
+      <expression>
+        <expression-string>delta = np.dot(y.T, mu.T)</expression-string>
+        <language-id>Python</language-id>
+        <evaluation-mode>CODE_FRAGMENT</evaluation-mode>
+      </expression>
+      <expression>
+        <expression-string>np.einsum('kt,ht-&gt;kh',mu,mu)</expression-string>
+        <language-id>Python</language-id>
+        <evaluation-mode>CODE_FRAGMENT</evaluation-mode>
+      </expression>
+    </expressions>
+    <expressions id="evaluateExpression">
+      <expression>
+        <expression-string>info_neu['log |cov|'][cc]</expression-string>
+        <language-id>Python</language-id>
+        <evaluation-mode>EXPRESSION</evaluation-mode>
+      </expression>
+      <expression>
+        <expression-string>unit_info['presence_rate']</expression-string>
+        <language-id>Python</language-id>
+        <evaluation-mode>EXPRESSION</evaluation-mode>
+      </expression>
+      <expression>
+        <expression-string>monkey_info = monkey_info_class()</expression-string>
+        <language-id>Python</language-id>
+        <evaluation-mode>EXPRESSION</evaluation-mode>
+      </expression>
+      <expression>
+        <expression-string>pd.DataFrame(info_coupling)</expression-string>
+        <language-id>Python</language-id>
+        <evaluation-mode>EXPRESSION</evaluation-mode>
+      </expression>
+      <expression>
+        <expression-string>pd.Da</expression-string>
+        <language-id>Python</language-id>
+        <evaluation-mode>EXPRESSION</evaluation-mode>
+      </expression>
+      <expression>
+        <expression-string>0.006 * (fX[7:11] - fX[0]).sum()</expression-string>
+        <language-id>Python</language-id>
+        <evaluation-mode>EXPRESSION</evaluation-mode>
+      </expression>
+    </expressions>
+  </component>
+  <component name="editorHistoryManager">
+    <entry file="file://$PROJECT_DIR$/select_variables/history_and_coupling_compare.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="7995">
+          <caret line="533" selection-start-line="470" selection-start-column="4" selection-end-line="533" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/analyzing/mutual_info/long_mutual_info_postProc.py" />
+    <entry file="file://$PROJECT_DIR$/analyzing/trajectory/save_trajectory_only.py" />
+    <entry file="file://$PROJECT_DIR$/analyzing/trajectory/curvature_compute.py" />
+    <entry file="file://$PROJECT_DIR$/analyzing/coupling/similarity_index_coupling.py" />
+    <entry file="file://$USER_HOME$/anaconda3/lib/python3.7/site-packages/scipy/stats/_stats_mstats_common.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1680">
+          <caret line="116" selection-start-line="116" selection-end-line="116" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/analyzing/trajectory/extract_monkey_traj.py" />
+    <entry file="file://$PROJECT_DIR$/analyzing/coupling/exctract_couplingInfo_CLUSTER.py" />
+    <entry file="file://$PROJECT_DIR$/analyzing/coupling/similarity_index_coupling_by_session.py" />
+    <entry file="file://$USER_HOME$/anaconda3/lib/python3.7/site-packages/statsmodels/distributions/empirical_distribution.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-396">
+          <caret line="137" selection-start-line="137" selection-end-line="137" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/analyzing/coupling/similarity_index_coupling_odd.py" />
+    <entry file="file://$USER_HOME$/anaconda3/lib/python3.7/inspect.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="143">
+          <caret line="2836" selection-start-line="2836" selection-end-line="2836" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/analyzing/coupling_longFilters/longFilters_similarity_index_coupling_odd.py" />
+    <entry file="file://$PROJECT_DIR$/analyzing/density_condition/coupling_vs_tuning_gain.py" />
+    <entry file="file://$PROJECT_DIR$/analyzing/coupling/check_fit_statistics_distribution_density.py" />
+    <entry file="file://$PROJECT_DIR$/analyzing/density_condition/coupling_plots_dens.py" />
+    <entry file="file://$USER_HOME$/anaconda3/lib/python3.7/site-packages/seaborn/_decorators.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="375">
+          <caret line="45" selection-start-line="45" selection-end-line="45" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/anaconda3/lib/python3.7/site-packages/seaborn/categorical.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="750">
+          <caret line="1560" column="4" selection-start-line="1560" selection-start-column="4" selection-end-line="1560" selection-end-column="4" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/analyzing/density_condition/betweenArea_cs_dens.py" />
+    <entry file="file://$PROJECT_DIR$/fitting/LFP_model_fit_cluster.py" />
+    <entry file="file://$PROJECT_DIR$/preprocessing_pipeline/synchronize_cluster_LFP.py" />
+    <entry file="file://$PROJECT_DIR$/fitting/full_model_fit_long_filters.py" />
+    <entry file="file://$PROJECT_DIR$/analyzing/coupling/between_area_coupling_cluster.py" />
+    <entry file="file://$PROJECT_DIR$/analyzing/density_condition/plot_ci.py" />
+    <entry file="file://$PROJECT_DIR$/figures/final_figures/PanelA/figure2_raster.py" />
+    <entry file="file://$PROJECT_DIR$/analyzing/lfp_vs_coupling/merge_lfp.py" />
+    <entry file="file://$PROJECT_DIR$/analyzing/density_condition/mutual_information.py" />
+    <entry file="file://$PROJECT_DIR$/select_variables/with_and_wo_LFP_compare.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-1885">
+          <caret line="180" column="84" selection-start-line="180" selection-start-column="84" selection-end-line="180" selection-end-column="84" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/analyzing/mutual_info/mutual_info_postProc.py" />
+    <entry file="file://$PROJECT_DIR$/preprocessing_pipeline/synchronize_cluster_LFP_vs_coupling.py" />
+    <entry file="file://$PROJECT_DIR$/figures/final_figures/PanelA/heatmap_and_mixedsel.py" />
+    <entry file="file:///Volumes/WD_Edo/firefly_analysis/LFP_band/FINALFIG/Figure2/code/analyze_mutual_info.py" />
+    <entry file="file://$PROJECT_DIR$/analyzing/lfp_crossArea/merge_MI_lfpFit.py" />
+    <entry file="file://$PROJECT_DIR$/preprocessing_pipeline/util_preproc/path_class.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-87" />
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/firefly_utils/extract_presence_rate_old.py" />
+    <entry file="file://$PROJECT_DIR$/preprocessing_pipeline/concatenate_data_akis.py" />
+    <entry file="file://$PROJECT_DIR$/firefly_utils/data_handler.py" />
+    <entry file="file://$PROJECT_DIR$/firefly_utils/python_monkey_info.py" />
+    <entry file="file://$PROJECT_DIR$/preprocessing_pipeline/util_preproc/extract_presence_rate.py" />
+    <entry file="file://$PROJECT_DIR$/analyzing/coupling/similarity_index_shuffling.py" />
+    <entry file="file:///Volumes/WD_Edo/firefly_analysis/LFP_band/FINALFIG/Figure2/code/figure2_fractionTuned.py" />
+    <entry file="file://$PROJECT_DIR$/preprocessing_pipeline/util_preproc/create_condition_list.py" />
+    <entry file="file://$PROJECT_DIR$/firefly_utils/lfp_class.py" />
+    <entry file="file://$USER_HOME$/anaconda3/lib/python3.7/codecs.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="143">
+          <caret line="309" selection-start-line="309" selection-end-line="309" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/figures/final_figures/PanelA/figure2_fractionTuned_byMonk.py" />
+    <entry file="file://$PROJECT_DIR$/figures/final_figures/PanelA/fractionTuned_pointplot.py" />
+    <entry file="file://$PROJECT_DIR$/analyzing/lfp_vs_coupling/figure_lfp_vs_coupling.py" />
+    <entry file="file://$PROJECT_DIR$/analyzing/full_vs_reduced/pr2_compare.py" />
+    <entry file="file://$PROJECT_DIR$/analyzing/decoding/decoding_analysis.py" />
+    <entry file="file://$PROJECT_DIR$/analyzing/factor_analysis/factor_analysis.py" />
+    <entry file="file://$PROJECT_DIR$/demo_fit.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-941">
+          <caret line="23" column="35" selection-start-line="23" selection-start-column="35" selection-end-line="23" selection-end-column="35" />
+          <folding>
+            <element signature="e#0#25#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+  </component>
+</project>

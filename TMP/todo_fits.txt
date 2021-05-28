@@ -1,0 +1,26 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Thu Jan  7 14:52:10 2021
+
+@author: edoardo
+"""
+
+Command for synch:
+JP cluster
+rsync -azP  --exclude='*.npy' --exclude '*.sh' --exclude '*.out' --exclude '*.py'  jpn5@greene.hpc.nyu.edu:/scratch/jpn5/fit_with_accel/ /Volumes/WD_Edo/firefly_analysis/LFP_band/GAM_fit_with_acc/
+
+EB cluster
+rsync -azP  --exclude='*.npy' --exclude '*.sh' --exclude '*.out' --exclude '*.py'  eb162@greene.hpc.nyu.edu:/scratch/eb162/fit_with_accel/ /Volumes/WD_Edo/firefly_analysis/LFP_band/GAM_fit_with_acc/
+
+First fit stateed at 2:54pm
+Legenda
+ R: running on JP account
+ E: running on EB account
+ C: need checkiing
+ D: done and checked
+ 
+sbatch --array=1-105 gam_fit_m53s41.sh
+sbatch --array=1-126 gam_fit_m53s42.sh
+sbatch --array=1-124 gam_fit_m53s43.sh
+sbatch --array=1-115 gam_fit_m53s44.sh

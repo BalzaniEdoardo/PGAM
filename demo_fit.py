@@ -10,13 +10,79 @@ from gam_data_handlers import *
 import dill
 import statsmodels.api as sm
 np.random.seed(4)
+dill._dill._reverse_typemap['ClassType'] = type
+from io import StringIO
+
+
+class NullIO(StringIO):
+    def write(self, txt):
+        pass
+
+
+def silent(fn):
+    """Decorator to silence functions."""
+    def silent_fn(*args, **kwargs):
+        saved_stdout = sys.stdout
+        sys.stdout = NullIO()
+        result = fn(*args, **kwargs)
+        sys.stdout = saved_stdout
+        return result
+    return silent_fn
 
 
 
-with open('spat_and_temp_filt.dill','rb') as fh:
-    dict_tuning = dill.load(fh)
 
+class continuous_tuning_func(object):
+    def __init__(self,func_list,beta,range=(-np.inf,np.inf),nan_outRange=True):
+        assert(len(func_list) == len(beta))
+        self.func_list = func_list
+        self.beta = beta
+        self.modelX = np.zeros((0,beta.shape[0]))
+        self.nan_outRange = nan_outRange
+        assert(len(range)==2)
+        self.range = range
 
+    def construct_model_matrix(self,x):
+        modelX = np.zeros((x.shape[0],self.beta.shape[0]))
+        k = 0
+        for func in self.func_list:
+            modelX[:,k] = func(x)
+            k += 1
+        return modelX
+
+    def set_model_matrix(self,x):
+        self.modelX = self.construct_model_matrix(x)
+
+    def del_model_matrix(self):
+        self.modelX = np.zeros((0, self.beta.shape[0]))
+
+    def __call__(self,x):
+
+        res = np.zeros(x.shape[0])
+        if self.nan_outRange:
+            res = res*np.nan
+        sele = (x >= self.range[0]) * (x <= self.range[1])
+        modelX = self.construct_model_matrix(x[sele])
+        res[sele] = np.dot(modelX,self.beta)
+
+        return res
+    
+beta_mat = np.load('beta_filter_bank.npy')
+filter_used_conv = np.load('temporal_filter_zeropad.npy')
+temp_filter = np.load('temporal_filter.npy')
+
+sigma = 1.
+mu = np.linspace(-5,5,10)
+func_list = []
+for k in range(mu.shape[0]):
+    rv = sts.norm(mu[k],sigma)
+    x = np.linspace(-10,10,1000)
+    plt.plot(x,rv.pdf(x))
+    func_list += [sts.norm(mu[k], sigma).pdf]
+resp_func = continuous_tuning_func(func_list,beta_mat[0],range=(-5,5),nan_outRange=True)
+
+# with open('spat_and_temp_filt.dill','rb') as fh:
+#     dict_tuning = dill.load(fh)
 
 ## inputs parameters
 num_events = 6000
@@ -60,9 +126,7 @@ XN = XN[:time_points]
 print('correlation true vs nusiance',sts.pearsonr(XT,XN)[0])
 
 
-# set firing rate
-filter_used_conv = dict_tuning['temporal']['zeropad'] # temporal filter (vector)
-resp_func = dict_tuning['spatial'] # funciton
+
 
 log_mu0 = np.convolve(events, filter_used_conv, mode='same') + resp_func(XT)
 # set mean rate
@@ -87,10 +151,11 @@ sm_handler.add_smooth('temporal', [events], ord=order, knots=[int_knots],
 
 # add spatial variable and nuisance
 int_knots =np.linspace(-5,5,int_knots_num)
-sm_handler.add_smooth('spatial', [XT], ord=4, knots=[int_knots],
+knots = np.hstack(([int_knots[0]]*3, int_knots, [int_knots[-1]]*3))
+sm_handler.add_smooth('spatial', [XT], ord=4, knots=[knots],
                           penalty_type='der', der=2,
                           is_temporal_kernel=False,lam=10)
-sm_handler.add_smooth('spatial_nuis', [XN], ord=4, knots=[int_knots],
+sm_handler.add_smooth('spatial_nuis', [XN], ord=4, knots=[knots],
                       penalty_type='der', der=2,
                       is_temporal_kernel=False,lam=10)
 
@@ -146,7 +211,7 @@ ax2.spines['right'].set_visible(False)
 # plot results
 ax3 = plt.subplot(223)
 plt.title('temporal')
-filter_used = dict_tuning['temporal']['filteronly']
+filter_used = temp_filter
 time = np.arange(len(filter_used)) * (-0.006)
 time = time[::-1] + 0.5
 keep = time < 0
