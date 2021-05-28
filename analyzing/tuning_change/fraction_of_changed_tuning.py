@@ -81,7 +81,7 @@ for fh in lst_files:
 
     var_vector = []
     for var in var_sign['variable']:
-        if var.startswith('neu') or var.startswith('lfp') or var.startswith('spike_hist'):
+        if var.startswith('neu') or var.startswith('spike_hist') :#or var.startswith('lfp') :
             cc+=1
             continue
         sele_non_coupling[cc] = True
@@ -153,7 +153,7 @@ for ba in np.unique(result_table['brain_area']):
         ax.spines['right'].set_visible(False)
         plt.title(var)
     plt.tight_layout(rect=[0, 0.03, 1, 0.95])
-    plt.savefig('%s_tuningChange.pdf'%(ba))
+    # plt.savefig('%s_tuningChange.pdf'%(ba))
 
         # df = pd.DataFrame(res_cond)
         # df['p-val'] = df['p-val'] < 0.001

@@ -10,6 +10,7 @@ import matplotlib.pylab as plt
 import scipy.stats as sts
 import pandas as pd
 coupl_info = np.load('/Users/edoardo/Work/Code/GAM_code/analyzing/coupling/coupling_info.npy')
+from scipy.io import savemat
 
 # sel monkey
 coupl_info = coupl_info[(coupl_info['pseudo-r2']>=0.02)]
@@ -127,3 +128,4 @@ cramers_corrected_stat(label_coupling,bl_label)
 
 
 
+savemat('coupling_info.mat',mdict={'coupl_info':coupl_info})

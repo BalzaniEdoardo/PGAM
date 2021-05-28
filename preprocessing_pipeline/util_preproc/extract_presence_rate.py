@@ -337,8 +337,10 @@ def compute_amplitude_tc(ampl_spk,time_spk,bin_sec,tot_time):
     return ampl_median
 
 def extract_presecnce_rate_Uprobe(occupancy_bin_sec,occupancy_rate_th,unit_info,session,
-                                  path_user,linearprobe_sampling_fq):
+                                  path_user,linearprobe_sampling_fq,use_server='server'):
     sorted_fold = path_user.get_path('cluster_data', session)
+    if use_server:
+        sorted_fold = sorted_fold.replace('/Volumes/server/Data/Monkey2_newzdrive',use_server)
     N = unit_info['brain_area'].shape[0]
     unit_info['presence_rate'] = np.zeros(N)
     # unit_info['dip_pval'] = np.zeros(unit_info['brain_area'].shape[0])
@@ -382,7 +384,7 @@ def extract_presecnce_rate_Uprobe(occupancy_bin_sec,occupancy_rate_th,unit_info,
 
 
 def extract_presecnce_rate(occupancy_bin_sec,occupancy_rate_th,unit_info,session,
-                           path_user,utah_array_sappling_fq,linearprobe_sampling_fq):
+                           path_user,utah_array_sappling_fq,linearprobe_sampling_fq,use_server=None):
     # monkey_info = monkey_info_class()
 
     N = unit_info['brain_area'].shape[0]
@@ -393,6 +395,8 @@ def extract_presecnce_rate(occupancy_bin_sec,occupancy_rate_th,unit_info,session
 
     # first extract utah array
     sorted_fold = path_user.get_path('cluster_data',session)
+    if use_server:
+        sorted_fold = sorted_fold.replace('server',use_server)
     spike_times, spike_clusters, spike_templates, amplitudes, templates, channel_map, clusterIDs, cluster_quality= \
         load_kilosort_data(sorted_fold, \
                            utah_array_sappling_fq, \

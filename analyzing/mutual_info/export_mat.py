@@ -12,7 +12,7 @@ from copy import deepcopy
 from scipy.io import savemat
 
 
-fld_file = '/Volumes/WD_Edo/firefly_analysis/LFP_band/processed_data/mutual_info/'
+fld_file = '/scratch/jpn5/mutual_info_lfp'
 lst_done = os.listdir(fld_file)
 # mutual_info_and_tunHz_m53s42.dill
 
@@ -33,11 +33,11 @@ for fh in lst_done:
         mutual_info = np.hstack((mutual_info,mi))
         tuning = np.hstack((tuning, tun))
   
-np.save('/Volumes/WD_Edo/firefly_analysis/LFP_band/FINALFIG/Figure2/data/tuning_func.npy',tuning)
-np.save('/Volumes/WD_Edo/firefly_analysis/LFP_band/FINALFIG/Figure2/data/mutual_info.npy',
+np.save('/scratch/jpn5/mutual_info_lfp/tuning_func_LFP.npy',tuning)
+np.save('/scratch/jpn5/mutual_info_lfp/mutual_info_LFP.npy',
         mutual_info)
 print('done python')
-savemat('/Volumes/WD_Edo/firefly_analysis/LFP_band/FINALFIG/Figure2/data/tuning_func.mat',{'tuning':tuning})
-savemat('/Volumes/WD_Edo/firefly_analysis/LFP_band/FINALFIG/Figure2/data/mutual_info.mat',
+savemat('/scratch/jpn5/mutual_info_lfp/tuning_func_LFP.mat',{'tuning':tuning})
+savemat('//scratch/jpn5/mutual_info_lfp/mutual_info_LFP.mat',
         {'mutual_info':mutual_info})
 

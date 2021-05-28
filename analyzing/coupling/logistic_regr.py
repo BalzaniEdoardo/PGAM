@@ -8,6 +8,7 @@ Created on Wed Mar 10 15:35:07 2021
 from copy import deepcopy
 import sys
 from statsmodels.discrete.discrete_model import Logit
+from statsmodels.regression.linear_model import OLS
 import numpy as np
 sys.path.append('/Users/edoardo/Work/Code/GAM_code/GAM_library')
 from gam_data_handlers import splineDesign
@@ -180,17 +181,106 @@ fit_train = logit_spline.fit()
 #       pseudo_r2_compute(Y[test],family,modelX[test],fit_train.params))
 
 # fit regul
-model = LogisticRegression(penalty='elasticnet',
-                            fit_intercept=False,solver='saga',l1_ratio=0.2)
+# model = LogisticRegression(penalty='elasticnet',
+#                             fit_intercept=False,solver='saga',l1_ratio=0.2)
+#
+# best_pr2 = -1
+# func = lambda X,Y: pseudo_r2_compute(Y,family,X,fit_train.params)
+# score = make_scorer(func, greater_is_better=True, needs_proba=True)
+#
+# parm_dict = {'C':np.logspace(-4,2,10),'l1_ratio':np.linspace(0,1,5)}
+# clf = GridSearchCV(model, parm_dict,scoring=score)
+# clf.fit(modelX, Y)
+#
+# result = clf.best_estimator_.fit(modelX, Y)
+#
+#
 
-best_pr2 = -1
-func = lambda X,Y: pseudo_r2_compute(Y,family,X,fit_train.params)
-score = make_scorer(func, greater_is_better=True,needs_proba=True)
+# coupling strength
+Y = coupling_data['coupling strength']
+X = np.zeros((Y.shape[0], 4))
+X[:, 0] = 1
+X[coupling_data['sender brain area'] == 'MST', 1] = 1
+X[coupling_data['sender brain area'] == 'PFC', 2] = 1
+cc = 0
+for row in coupling_data:
+    X[cc, 3] = compute_dist(row['sender electrode id'], row['receiver electrode id'], row['monkey'],
+                            row['sender brain area'])
+    cc += 1
 
-parm_dict = {'C':np.logspace(-4,2,10),'l1_ratio':np.linspace(0,1,5)}
-clf = GridSearchCV(model, parm_dict,scoring=score)
-clf.fit(modelX, Y)
+true_dist = deepcopy(X[:, 3])
+mean_dist = X[:,3].mean()
+std_dist = X[:,3].std()
 
-result = clf.best_estimator_.fit(modelX, Y)
+X[:, 3] = sts.zscore(X[:, 3])
 
+# splint
+all_tr = np.arange(X.shape[0], dtype=int)
+train = all_tr[all_tr % 10 != 0]
+test = all_tr[all_tr % 10 == 0]
+model = OLS(Y[train], X[train])
+logit_reg = model.fit()
 
+pred = logit_reg.predict(X[test])
+res = np.round(pred)
+
+# GLM
+knots = np.linspace(np.min(X[:, 3]), np.max(X[:, 3]), 5)
+knots = np.hstack(([knots[0]] * 3, knots, [knots[-1]] * 3))
+MX = splineDesign(knots, X[:, 3], ord=4, der=0, outer_ok=False)
+prep = (MX - MX.mean(axis=0))[:, :-1]
+
+# fit reg
+modelX = np.hstack((X[:, :-1], prep))
+link = sm.families.links.logit()
+family = sm.families.Binomial(link=link)
+logit_spline = OLS(Y, modelX)
+res_unreg = logit_spline.fit()
+
+dist = np.linspace(np.min(X[:, 3]), np.max(X[:, 3]) - 0.0001, 100)
+zdist = (dist - np.mean(X[:, 3])) / np.std(X[:, 3])
+MX_pred = splineDesign(knots, zdist, ord=4, der=0, outer_ok=False)
+prep_pred = (MX_pred - MX.mean(axis=0))[:, :-1]
+
+# mod ppc
+modelPPC = np.zeros((100, 3 + prep_pred[1].shape[0]))
+modelPPC[:, 3:] = prep_pred
+modelPPC[:, 0] = 1
+
+modelPFC = np.zeros((100, 3 + prep_pred[1].shape[0]))
+modelPFC[:, 3:] = prep_pred
+modelPFC[:, 0] = 1
+modelPFC[:, 2] = 1
+
+modelMST = np.zeros((100, 3 + prep_pred[1].shape[0]))
+modelMST[:, 3:] = prep_pred
+modelMST[:, 0] = 1
+modelMST[:, 1] = 1
+
+prob_ppc = res_unreg.predict(modelPPC)
+prob_pfc = res_unreg.predict(modelPFC)
+prob_mst = res_unreg.predict(modelMST)
+
+import matplotlib.pylab as plt
+
+srt = np.argsort(X[:, 3])
+pred_all = res_unreg.predict(modelX)
+plt.figure()
+ax = plt.subplot(111)
+plt.plot(true_dist[srt][coupling_data[srt]['sender brain area'] == 'PPC'],
+         pred_all[srt][coupling_data[srt]['sender brain area'] == 'PPC'], color='b', label='PPC')
+plt.plot(true_dist[srt][coupling_data[srt]['sender brain area'] == 'MST'],
+         pred_all[srt][coupling_data[srt]['sender brain area'] == 'MST'], color='g', label='MST')
+
+plt.plot(true_dist[srt][coupling_data[srt]['sender brain area'] == 'PFC'],
+         pred_all[srt][coupling_data[srt]['sender brain area'] == 'PFC'], color='r', label='PFC')
+
+ax.spines['top'].set_visible(False)
+ax.spines['right'].set_visible(False)
+plt.ylabel('coupling strength')
+plt.xlabel('$\mu$m')
+plt.legend()
+plt.savefig('ols_pred_prob.pdf')
+
+logit_spline = OLS(Y[train], modelX[train])
+fit_train = logit_spline.fit()

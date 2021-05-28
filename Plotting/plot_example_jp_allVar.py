@@ -28,7 +28,7 @@ from time import perf_counter
 from scipy.io import savemat
 
 
-session = 'm73s1'
+session = 'm71s18'
 # dat = np.load('/Users/edoardo/Work/Code/GAM_code/analyzing/extract_tuning/eval_matrix_and_info.npz')
 # info = dat['info']
 # sele = info['session'] == session
@@ -44,7 +44,7 @@ info_selectivity = info_selectivity[keep]
 info_selectivity = info_selectivity[info_selectivity['rad_vel']]
 
 
-unit_list = [1,4,5,6,7,8,9,10]#np.sort(np.unique(info_selectivity['unit']))
+unit_list = [4,17,18,19,20]#np.sort(np.unique(info_selectivity['unit']))
 # unit_list = [41]
 plot_boolean = 1
 skip_first = 0

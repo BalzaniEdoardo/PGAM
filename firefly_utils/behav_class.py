@@ -148,6 +148,10 @@ class behavior_experiment(object):
 
         self.n_trials = trials_behv.shape[0]
         self.trbeh = trials_behv
+        # only for replay trials
+        if 'trial_id' in trials_behv.dtype.names:
+            self.trial_id = np.squeeze(np.hstack(trials_behv['trial_id']))
+
         # sample freq for the behavior
         self.dt =  dt
         # duration of the pre/post-trial (experiment dependent)
@@ -194,7 +198,10 @@ class behavior_experiment(object):
             print('no eyetracking...')
 
         # time of perturbation
-        self.events.t_ptb = create_dict_beahv(trials_behv, 'events', 't_ptb')
+        try:
+            self.events.t_ptb = create_dict_beahv(trials_behv, 'events', 't_ptb')
+        except:
+            print('no t_ptb')
         
         # time of movement start
         self.events.t_move = create_dict_beahv(trials_behv, 'events', 't_move')
@@ -596,7 +603,10 @@ class load_trial_types(object):
         self.trial_type['density'] = np.nan
         for k in range(struc_array.shape[1]):
             descr = struc_array[0,k]['val'][0]
-            density = float('0.'+descr.split('0.')[1])
+            try:
+                density = float('0.'+descr.split('0.')[1])
+            except IndexError:
+                density = float(descr.split('=')[1])
             # density = float(descr.split('=')[1].rstrip().lstrip())
             trialIndx = np.array(struc_array[0,k]['trlindx'].flatten(),dtype=bool)
             self.trial_type['density'][trialIndx] = density

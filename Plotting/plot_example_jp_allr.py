@@ -28,23 +28,26 @@ from time import perf_counter
 from scipy.io import savemat
 
 
-session = 'm53s113'
+session = 'm73s3'
 # dat = np.load('/Users/edoardo/Work/Code/GAM_code/analyzing/extract_tuning/eval_matrix_and_info.npz')
 # info = dat['info']
 # sele = info['session'] == session
 # info = info[sele]
 
-info_selectivity = np.load('/Users/edoardo/Work/Code/GAM_code/analyzing/extract_tuning/response_strength_info.npy')
-keep = ((info_selectivity['session'] == session) * 
-    (info_selectivity['manipulation type']=='odd')*
-    ((info_selectivity['manipulation value'] == 0)|
-    (info_selectivity['manipulation value'] == 1))
-)
-info_selectivity = info_selectivity[keep]
-info_selectivity = info_selectivity[info_selectivity['rad_vel']]
+# info_selectivity = np.load('/Users/edoardo/Work/Code/GAM_code/analyzing/extract_tuning/response_strength_info.npy')
+# keep = ((info_selectivity['session'] == session) * 
+#     (info_selectivity['manipulation type']=='odd')*
+#     ((info_selectivity['manipulation value'] == 0)|
+#     (info_selectivity['manipulation value'] == 1))
+# )
+# info_selectivity = info_selectivity[keep]
+# info_selectivity = info_selectivity[info_selectivity['rad_vel']]
 
 
-unit_list = np.sort(np.unique(info_selectivity['unit']))
+# unit_list = np.sort(np.unique(info_selectivity['unit']))
+
+unit_list = [1,2,4]
+
 # unit_list = [41]
 plot_boolean = 1
 skip_first = 0

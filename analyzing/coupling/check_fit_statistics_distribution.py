@@ -38,7 +38,7 @@ dat = dat[bl_session]
 del bl_session
 
 
-dat = dat[dat['manipulation type'] == 'all']
+# dat = dat[dat['manipulation type'] == 'all']
 dat = dat[dat['sender brain area'] != dat['receiver brain area']]
 plt.figure()
 plt.subplot(121)

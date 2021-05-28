@@ -23,12 +23,15 @@ if os.path.exists('/Users/edoardo/Work/Code/GAM_code/GAM_library'):
     is_clust = False
 else:
     JOB = int(sys.argv[1]) - 1
+    # add PGAM script folders to the paths
     sys.path.append('/scratch/jpn5/GAM_Repo/GAM_library')
     sys.path.append('/scratch/jpn5/GAM_Repo/firefly_utils')
     sys.path.append('/scratch/jpn5/GAM_Repo/preprocessing_pipeline/util_preproc/')
+    # path where the session are saved
     folder_fh = '/scratch/jpn5/mutual_info/'
-    done_folder = '/scratch/jpn5/mutual_info/done'
-    folder_incomplete = '/scratch/jpn5/mutual_info/incomplete'
+    # subfolder with the already preprocessed files
+    done_folder = '/scratch/jpn5/mutual_info_lfp/done'
+    folder_incomplete = '/scratch/jpn5/mutual_info_lfp/incomplete'
     is_clust = True
 
 from spline_basis_toolbox import *
@@ -964,17 +967,6 @@ for within_area in ['PPC','PFC','MST','VIP']:
                           kernel_length=kernel_len,
                           kernel_direction=kernel_direction,ord_AD=3,ad_knots=4,
                           repeat_extreme_knots=False)
-            # if 'controlgain' in cond_dict.keys():
-            #     sm_handler2.add_smooth(var, [x_trans], ord=order, knots=[knots],
-            #                       knots_num=None, perc_out_range=None,
-            #                       is_cyclic=[is_cyclic], lam=50,
-            #                       penalty_type=penalty_type,
-            #                       der=der,
-            #                       trial_idx=trial_idx_train, time_bin=time_bin,
-            #                       is_temporal_kernel=is_temporal_kernel,
-            #                       kernel_length=kernel_len,
-            #                       kernel_direction=kernel_direction, ord_AD=3, ad_knots=4,
-            #                       repeat_extreme_knots=False)
 
         if first:
             first = False
@@ -983,10 +975,7 @@ for within_area in ['PPC','PFC','MST','VIP']:
             index_dict = deepcopy(index_dic_orig)
             index_dict['spike_hist'] = index_dict.pop('neu_%d'%neuron)
 
-            # if 'controlgain' in cond_dict.keys():
-            #     modelX2, index_dic_orig2 = sm_handler2.get_exog_mat(sm_handler.smooths_var)
-            #     index_dict2 = deepcopy(index_dic_orig2)
-            #     index_dict2['spike_hist'] = index_dict2.pop('neu_%d' % neuron)
+
 
 
         else:
@@ -1001,23 +990,7 @@ for within_area in ['PPC','PFC','MST','VIP']:
             index_dict = deepcopy(index_dic_orig)
             index_dict['spike_hist'] = index_dict.pop('neu_%d'%neuron)
 
-            # if 'controlgain' in cond_dict.keys():
-            #     tmp = sm_handler2['lfp_beta'].additive_model_preprocessing()[0].toarray()
-            #     modelX2[:, index_dic_orig2['lfp_beta']] = tmp
-            #     tmp = sm_handler2['lfp_alpha'].additive_model_preprocessing()[0].toarray()
-            #     modelX2[:, index_dic_orig2['lfp_alpha']] = tmp
-            #     tmp = sm_handler2['lfp_theta'].additive_model_preprocessing()[0].toarray()
-            #     modelX2[:, index_dic_orig2['lfp_theta']] = tmp
-            #     del tmp
-            #
-            #     index_dict2 = deepcopy(index_dic_orig2)
-            #     index_dict2['spike_hist'] = index_dict2.pop('neu_%d' % neuron)
 
-        # modelX_dict = {'other':modelX}
-        # index_dict_cond = {'other':index_dict}
-        # if 'controlgain' in cond_dict.keys():
-        #     modelX_dict['gain=1'] = modelX2
-        #     index_dict_cond['gain=1'] = index_dict2
 
         spikes_neu = np.squeeze(spikes[keep, idx_neu])
         mutual_info_neu,tuning_neu = compute_mutual_info(spikes_neu, sm_handler, modelX, trial_type,

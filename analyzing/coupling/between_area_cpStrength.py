@@ -13,6 +13,7 @@ import dill
 import pandas as pd
 import seaborn as sbn
 from copy import deepcopy
+from scipy.io import savemat
 
 
 def select_var(dat,sender,receiver,var):
@@ -223,3 +224,6 @@ ax._remove_legend(True)
 
 plt.tight_layout(rect=[0, 0.03, 1, 0.95])
 plt.savefig('excit_inhib_coupling_joint.pdf')
+
+
+savemat('coupling_strength.mat',mdict={'coupling_strength':table})

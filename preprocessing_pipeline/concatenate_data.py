@@ -12,6 +12,7 @@ from extract_presence_rate import *
 
 user_paths = get_paths_class()
 
+use_server = 'server'
 # =============================================================================
 # Here you should give the base directory that contains the .mat
 # the code will walk through alll subdirectory, and if it will find a
@@ -44,7 +45,7 @@ for root, dirs, files in os.walk(DIRECT, topdown=False):
 # concat_list = concat_list[ii+1:]
 # fld_list = fld_list[ii+1:]
 
-concat_list=[ 'm73s1']
+concat_list = ['m72s11']
 # concat_list = ['m72s2']
 
 sv_folder = '/Volumes/WD_Edo/firefly_analysis/LFP_band/concatenation_with_accel'
@@ -115,7 +116,7 @@ cnt_concat = 0
 
 for session in concat_list:
     
-    # if not session in ['m72s3', 'm72s4', 'm72s6', 'm72s8']:
+    # if not session in ['m71s18']:
     #     continue
     if session in use_left_eye:
         use_eye = 'left'
@@ -167,10 +168,26 @@ for session in concat_list:
     #     print('unable to open', session,'\n',e)
     #     continue
     
-
+##########################################################################
+    #  SETTA IL REPLAY DI MODO DA INSERIRE SOLO I TRIAL CHE CORRISPONDONO ALL'ACTIVE PHASE
+    #  SALVA IL TRIAL ID
     exp_data.set_filters('all', True)
-    # impose all replay trials
-    exp_data.filter = exp_data.filter + exp_data.info.get_replay(0,skip_not_ok=False)
+
+    if any(exp_data.info.trial_type['replay'] == 0): # replay triial are available
+        trial_all_id = exp_data.behav.trial_id[np.where(exp_data.filter)[0]]
+        repl_tr = []
+        for id in trial_all_id:
+            pair = np.where(exp_data.behav.trial_id == id)[0]
+            for tr in pair:
+                if exp_data.info.trial_type['replay'][tr] == 0:
+                    repl_tr += [tr]
+        exp_data.filter[np.array(repl_tr)] = True
+
+    # # impose all replay trials
+    # is_replay = any(exp_data.info.get_replay(0,skip_not_ok=False))
+    # exp_data.filter = exp_data.filter + exp_data.info.get_replay(0,skip_not_ok=False)
+    #
+
     # savemat('lfp_raw_%s.mat'%session,{'lfp':exp_data.lfp.lfp})
 
     t_targ = dict_to_vec(exp_data.behav.events.t_targ)
@@ -183,7 +200,7 @@ for session in concat_list:
 
     var_names = ('rad_vel','ang_vel','rad_path','ang_path','rad_target','ang_target',
                  'lfp_beta','lfp_alpha','lfp_theta','t_move','t_flyOFF','t_stop','t_reward','eye_vert','eye_hori',
-                 'hand_vel1','hand_vel2','rad_acc','ang_acc','t_ptb')
+                 'hand_vel1','hand_vel2','rad_acc','ang_acc')
                  #'lfp_alpha_power',
                  #'lfp_theta_power','lfp_beta_power')
     try:
@@ -243,10 +260,10 @@ for session in concat_list:
     try:
         if ('m72' in session) or ('m73' in session):
             res['unit_info'] = extract_presecnce_rate_Uprobe(occupancy_bin_sec,occupancy_rate_th,res['unit_info'],session,
-                                                             user_paths,linearprobe_sampling_fq)
+                                                             user_paths,linearprobe_sampling_fq,use_server=False)
         else:
             res['unit_info'] = extract_presecnce_rate(occupancy_bin_sec,occupancy_rate_th,res['unit_info'],session,
-                           user_paths,utah_array_sampling_fq,linearprobe_sampling_fq)
+                           user_paths,utah_array_sampling_fq,linearprobe_sampling_fq,use_server=False)
     except Exception as e:
         print(e)
         print('skip %s'%session)

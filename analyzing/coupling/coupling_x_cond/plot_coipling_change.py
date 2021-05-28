@@ -15,10 +15,10 @@ dat = np.load('/Users/edoardo/Work/Code/GAM_code/analyzing/coupling/coupling_x_c
               allow_pickle=True)
 
 
-cond = 'density'
+cond = 'odd'
 
 
-cond_comp = {'density':(0.0001,0.005),'controlgain':(1,2),'ptb':(0,1)}
+cond_comp = {'density':(0.0001,0.005),'controlgain':(1,2),'ptb':(0,1),'odd':(0,1)}
 
 dat_cond = dat[(dat['monkey'] == monkey) & (dat['manipulation type'] == cond)]
 

@@ -336,6 +336,9 @@ for session in concat_list:
         
         clust_id_ref = exp_data.spikes.cluster_id[sele]
 
+        if clust_id_ele != 17:
+            continue
+
         tspk1 = spike_times[spike_clusters == clust_id_ref[0]]
         
         

@@ -16,6 +16,7 @@ from scipy.interpolate import interp1d
 from PIL import ImageColor
 from data_handler import *
 from path_class import get_paths_class
+import statsmodels.api as sm
 gen_path = get_paths_class()
 
 def dict_to_vec(dictionary):
@@ -37,7 +38,7 @@ use_left_eye = ['m53s83','m53s84','m53s86','m53s90','m53s92','m53s133','m53s134'
 
 trajectory_all_session = np.zeros(0,dtype=object)
 
-dtype_initial_cond = {'names':('x_fly','y_fly','rad_vel','ang_vel','ang_target','rad_target'),'formats':(float,float,float,float,float,float)}
+dtype_initial_cond = {'names':('x_fly','y_fly','rad_vel','ang_vel','ang_target','rad_target','t_start','t_stop'),'formats':(float,float,float,float,float,float,float,float)}
 init_cond = np.zeros(0,dtype=dtype_initial_cond)
 dtype_dict = {'names':('session','all', 'reward', 'density', 'ptb', 'microstim', 'landmark', 'replay','controlgain','firefly_fullON'),
             'formats':('U20',bool,int,float,int,int,int,int,float,int)}
@@ -62,13 +63,14 @@ for session in session_list:
 #     print('extract trials')
     trajectories = np.zeros(exp_data.behav.n_trials,dtype=object)
     init_cond_session = np.zeros(exp_data.behav.n_trials,dtype=dtype_initial_cond)
-    
+
     ## create bin spikes
     # t_targ = dict_to_vec(exp_data.behav.events.t_targ)
     # t_stop = dict_to_vec(exp_data.behav.events.t_stop)
     # exp_data.spikes.bin_spikes(exp_data.behav.time_stamps, t_start=t_targ,t_stop=t_stop)
     # np.save('spikes/spike_trajectory_%s.npy'%session,exp_data.spikes.binned_spikes)
     for k in range(exp_data.behav.n_trials):
+        print(session,k,exp_data.behav.n_trials)
         sele = (exp_data.behav.time_stamps[k] > exp_data.behav.events.t_targ[k]) * (exp_data.behav.time_stamps[k] <= exp_data.behav.events.t_stop[k])
         # print(k,exp_data.behav.continuous.x_monk[k][sele][1],exp_data.behav.continuous.y_monk[k][sele][1])
         if np.sum(sele)==0:
@@ -78,7 +80,8 @@ for session in session_list:
             d0 = np.nan
             x_fly = np.nan
             y_fly = np.nan
-            xy = np.zeros(0,dtype={'names':('x_monk','y_monk','ts'),'formats':(float,float,float)})
+            xy = np.zeros(0,dtype={'names':('x_monk','y_monk','ts','x_smooth','y_smooth'),
+                                   'formats':(float,float,float,float,float)})
         else:
             idx_on_stop = np.where(sele)[0]
             v0 = exp_data.behav.continuous.rad_vel[k][idx_on_stop[0]]
@@ -95,10 +98,29 @@ for session in session_list:
             x_fly = exp_data.behav.continuous.x_fly[k]
             y_fly = exp_data.behav.continuous.y_fly[k]
             
-            xy = np.zeros(idx_on_stop.shape[0],dtype={'names':('x_monk','y_monk','ts'),'formats':(float,float,float)})
+            xy = np.zeros(idx_on_stop.shape[0],dtype={'names':('x_monk','y_monk','ts','x_smooth','y_smooth'),
+                                                      'formats':(float,float,float,float,float)})
             xy['x_monk'] = exp_data.behav.continuous.x_monk[k][sele]
             xy['y_monk'] = exp_data.behav.continuous.y_monk[k][sele]
             xy['ts'] = exp_data.behav.time_stamps[k][sele]
+            Num = sele.sum()
+            if Num < 30:
+                xy['x_smooth'] = np.nan
+                xy['y_smooth'] = np.nan
+
+
+            else:
+                fr = 20. / Num
+                xsm = np.zeros((Num, 2)) * np.nan
+                ysm = np.zeros((Num, 2)) * np.nan
+                xsm[~np.isnan(xy['x_monk'])] = sm.nonparametric.lowess(xy['x_monk'], np.arange(
+                    xy['x_monk'].shape[0]), fr)
+                ysm[~np.isnan(xy['y_monk'])] = sm.nonparametric.lowess(xy['y_monk'], np.arange(
+                    xy['y_monk'].shape[0]), fr)
+                xy['x_smooth'] = xsm[:, 1]
+                xy['y_smooth'] = ysm[:, 1]
+
+
         trajectories[k] = xy
         init_cond_session['x_fly'][k] = x_fly
         init_cond_session['y_fly'][k] = y_fly
@@ -106,6 +128,8 @@ for session in session_list:
         init_cond_session['ang_vel'][k] = w0
         init_cond_session['rad_target'][k] = d0
         init_cond_session['ang_target'][k] = a0
+        init_cond_session['t_stop'][k] = exp_data.behav.events.t_stop[k]
+        init_cond_session['t_start'][k] = exp_data.behav.events.t_move[k]
         # init_cond_session['t_stop'][k] = exp_data.behav.events.t_stop[k][0]
         # init_cond_session['t_targ'][k] = exp_data.behav.events.t_targ[k][0]
 
@@ -113,8 +137,8 @@ for session in session_list:
     trajectory_all_session = np.hstack((trajectory_all_session,trajectories))
 #     break
 
-# np.savez('traj_and_info.npz',
-#           trajectories=trajectory_all_session,info_all=info_all_session,init_cond=init_cond)
+np.savez('traj_and_info.npz',
+          trajectories=trajectory_all_session,info_all=info_all_session,init_cond=init_cond)
 
 
 

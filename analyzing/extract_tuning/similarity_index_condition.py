@@ -46,11 +46,11 @@ info_evals = dat['info']
 eval_matrix = dat['eval_matrix']
 var_list = dat['index_list']
 
-variable_combine = ['ang_path']
-monkey = 'm44'
+variable_combine = ['rad_vel']
+monkey = 'm53'
 
 
-cond_dict = {'odd':[0,1], 'density':[0.005,0.0001]}
+cond_dict = { 'density':[0.005,0.0001]}
 # man_type = 'odd'
 # odd_val = 1
 # even_val  = 0

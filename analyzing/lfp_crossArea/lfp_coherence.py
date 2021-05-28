@@ -50,111 +50,83 @@ use_ele['Viktor'] = {
     'PFC':list(range(1,25))[::5],
     'VIP':list(range(1,25))[::5],
     }
-
-
-
-if os.path.exists('/scratch/jpn5'):
-    fh_folder = '/scratch/jpn5/mat_files/'
-    JOB = int(sys.argv[1]) - 1
-else:
-    fh_folder = 'D:\Savin-Angelaki\saved\mat_files\\'
-    JOB = 0
-    
-all_fh = os.listdir(fh_folder)
-lst_fh = []
-pattern = '^m\d+s\d+.mat$'
-
-for name in all_fh:
-    if re.match(pattern,name):
-        lst_fh += [name]
-        
-fh = lst_fh[JOB]
-
-# unpack LFP
-dat = loadmat(os.path.join(fh_folder,fh))['lfps']
-
-# select the electrode
-monkey = monkey_dict[fh.split('s')[0]]
-ch_list = []
-
-for ch in range(dat.shape[1]):
-    area = dat[0,ch]['brain_area'][0]
-    ele_id = dat[0,ch]['electrode_id'][0][0]
-    if ele_id in use_ele[monkey][area]:
-       ch_list += [ch] 
-
-# compute coherence
-trNum = dat[:,0]['trials'][0].shape[1]
-dt = 0.006
-edges = np.linspace(0,80,40)
-N = len(ch_list)*(len(ch_list)-1)//2
-cohHist = np.zeros((N, edges.shape[0]-1))
-
-dtype_dict = {
-    'names':('monkey','session','area_ele1','area_ele2','electrode_id1','electrode_id2'),
-    'formats':('U30',)*4+(int,)*2
-    }
-info = np.zeros(N,dtype=dtype_dict)
-cc = 0
-for k in range(len(ch_list)):
-    for j in range(k+1,len(ch_list)):
-        print(k,j)
-        ch1 = ch_list[k]
-        ch2 = ch_list[j]
-        for tr in range(trNum):
-            
-            lfp1 = np.squeeze(dat[:,ch1]['trials'][0][0,tr][0])
-            lfp2 = np.squeeze(dat[:,ch2]['trials'][0][0,tr][0])
-    
-            f, fki, fkj, cij, ph, coh = mtem(lfp1, lfp2, dt)
-            
-            if tr==0:
-                coh_all = np.zeros((trNum,),dtype=object)
-                freq_all = np.zeros((trNum,),dtype=object)
-            coh_all[tr] = np.real(coh)
-            freq_all[tr] = f
-        
-        # stack all coherence estimates
-        CH = np.hstack(coh_all)
-        F = np.hstack(freq_all)
-        for kk in range(cohHist.shape[1]):
-            cohHist[cc, kk] = CH[(F >= edges[kk]) & (F < edges[kk+1])].mean()
-        info[cc]['monkey'] = monkey
-        info[cc]['session'] = fh.split('.')[0]
-        info[cc]['area_ele1'] = dat[0,ch1]['brain_area'][0]
-        info[cc]['area_ele2'] = dat[0,ch2]['brain_area'][0]
-        info[cc]['electrode_id1'] = dat[0,ch1]['electrode_id'][0][0]
-        info[cc]['electrode_id2'] = dat[0,ch2]['electrode_id'][0][0]
-
-        cc+=1
-np.savez('%s_LFP_coherence.npz'%fh.split('.')[0],info=info,choerence=cohHist,
-         freq=edges[:-1])
-
-# ch1 = 29
-# ch2 =81
-# tr = 10
-# 
-
-# 
-# t0 = perf_counter()
-# for tr in range(trNum):
-#     print('trial', tr)
-#     lfp1 = np.squeeze(dat[:,ch1]['trials'][0][0,tr][0])
-#     lfp2 = np.squeeze(dat[:,ch2]['trials'][0][0,tr][0])
-    
-#     f, fki, fkj, cij, ph, coh = mtem(lfp1, lfp2, dt)
-#     if tr==0:
-#         coh_all = np.zeros((trNum,),dtype=object)
-#         freq_all = np.zeros((trNum,),dtype=object)
-#     coh_all[tr] = np.real(coh)
-#     freq_all[tr] = f
-# t1 = perf_counter()
-
-# print('time pair',t1-t0)
+#
+#
+#
+# if os.path.exists('/scratch/jpn5'):
+#     fh_folder = '/scratch/jpn5/mat_files/'
+#     JOB = int(sys.argv[1]) - 1
+# else:
+#     fh_folder = 'D:\Savin-Angelaki\saved\mat_files\\'
+#     JOB = 0
+#
+# all_fh = os.listdir(fh_folder)
+# lst_fh = []
+# pattern = '^m\d+s\d+.mat$'
+#
+# for name in all_fh:
+#     if re.match(pattern,name):
+#         lst_fh += [name]
+#
+# fh = lst_fh[JOB]
+#
+# # unpack LFP
+# dat = loadmat(os.path.join(fh_folder,fh))['lfps']
+#
+# # select the electrode
+# monkey = monkey_dict[fh.split('s')[0]]
+# ch_list = []
+#
+# for ch in range(dat.shape[1]):
+#     area = dat[0,ch]['brain_area'][0]
+#     ele_id = dat[0,ch]['electrode_id'][0][0]
+#     if ele_id in use_ele[monkey][area]:
+#        ch_list += [ch]
+#
+# # compute coherence
+# trNum = dat[:,0]['trials'][0].shape[1]
+# dt = 0.006
 # edges = np.linspace(0,80,40)
-# CH = np.hstack(coh_all)
-# F = np.hstack(freq_all)
-# cohHist = np.zeros((edges.shape[0]-1))
-# for k in range(cohHist.shape[0]):
-#     cohHist[k] = CH[(F >= edges[k]) & (F < edges[k+1])].mean()
+# N = len(ch_list)*(len(ch_list)-1)//2
+# cohHist = np.zeros((N, edges.shape[0]-1))
+#
+# dtype_dict = {
+#     'names':('monkey','session','area_ele1','area_ele2','electrode_id1','electrode_id2'),
+#     'formats':('U30',)*4+(int,)*2
+#     }
+# info = np.zeros(N,dtype=dtype_dict)
+# cc = 0
+# for k in range(len(ch_list)):
+#     for j in range(k+1,len(ch_list)):
+#         print(k,j)
+#         ch1 = ch_list[k]
+#         ch2 = ch_list[j]
+#         for tr in range(trNum):
+#
+#             lfp1 = np.squeeze(dat[:,ch1]['trials'][0][0,tr][0])
+#             lfp2 = np.squeeze(dat[:,ch2]['trials'][0][0,tr][0])
+#
+#             f, fki, fkj, cij, ph, coh = mtem(lfp1, lfp2, dt)
+#
+#             if tr==0:
+#                 coh_all = np.zeros((trNum,),dtype=object)
+#                 freq_all = np.zeros((trNum,),dtype=object)
+#             coh_all[tr] = np.real(coh)
+#             freq_all[tr] = f
+#
+#         # stack all coherence estimates
+#         CH = np.hstack(coh_all)
+#         F = np.hstack(freq_all)
+#         for kk in range(cohHist.shape[1]):
+#             cohHist[cc, kk] = CH[(F >= edges[kk]) & (F < edges[kk+1])].mean()
+#         info[cc]['monkey'] = monkey
+#         info[cc]['session'] = fh.split('.')[0]
+#         info[cc]['area_ele1'] = dat[0,ch1]['brain_area'][0]
+#         info[cc]['area_ele2'] = dat[0,ch2]['brain_area'][0]
+#         info[cc]['electrode_id1'] = dat[0,ch1]['electrode_id'][0][0]
+#         info[cc]['electrode_id2'] = dat[0,ch2]['electrode_id'][0][0]
+#
+#         cc+=1
+# np.savez('%s_LFP_coherence.npz'%fh.split('.')[0],info=info,choerence=cohHist,
+#          freq=edges[:-1])
 

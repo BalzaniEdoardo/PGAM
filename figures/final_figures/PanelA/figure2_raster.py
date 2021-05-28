@@ -158,7 +158,10 @@ causal = {'t_flyOFF':False,
 
 
 col_line = '#F6D55C'
-color_dict = {'PFC':'r','MST':'g','PPC':'b','VIP':'k'}
+color_dict = {'PFC':'r',
+              'MST':(0, 176/255.,80/255.),
+              'PPC':(40./255.,20/255.,205/255.),
+              'VIP':'k'}
 
 
 
@@ -266,30 +269,37 @@ for neu_info in list_candidate:
     spikes = np.squeeze(spikes[:, neuron-1])
     selected = np.where(trial_type['reward'] == 1)[0]
     target_on = np.squeeze(X[:,var_names=='t_flyOFF'])
+    t_stop = np.squeeze(X[:,var_names=='t_stop'])
     length_vec = []
     raster = []
+    tstop_vec = []
     for tr in selected:
         sel = trial_idx==tr
         target_on_tr = target_on[sel]
+        t_stop_tr = t_stop[sel]
         ion = np.where(target_on_tr)[0][0] - 50
+        tstop_vec += [(np.where(t_stop_tr)[0][0]-ion) * 0.006]
+
         if sel.sum()*0.006 > 5:
             break
         tr_spk = spikes[sel][ion:]
-        raster += [np.where(tr_spk>0)[0]*0.006]
+        raster += [np.where(tr_spk>0)[0] * 0.006]
         length_vec += [sel.sum()-ion]
-        
+    tstop_vec = np.array(tstop_vec)
     idx_sort = np.argsort(length_vec)
     raster = np.array(raster)[idx_sort]
+    tstop_vec = tstop_vec[idx_sort]
     plt.figure(figsize=(3,3))
     ax = plt.subplot(111)
     plt.eventplot(raster,lw=1,color=color_dict[brain_area])
+    plt.plot(tstop_vec,np.arange(tstop_vec.shape[0]),'ok',ms=1)
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
     plt.xlabel('time [sec]',fontsize=10)
     plt.ylabel('trials',fontsize=10)
     plt.yticks([])
     plt.tight_layout()
-    plt.savefig('/Volumes/WD_Edo/firefly_analysis/LFP_band/FINALFIG/Figure2/raw_pdf/%s_raster.pdf'%brain_area)
+    plt.savefig('/Volumes/WD_Edo/firefly_analysis/LFP_band/FINALFIG/Figure2/raw_pdf/t_stop_%s_raster.pdf'%brain_area)
     
 # compute raster plots
 # filter trials

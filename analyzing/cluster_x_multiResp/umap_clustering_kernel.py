@@ -200,9 +200,16 @@ for label in np.unique(clusterer.labels_):
 plt.title('HDBScan results')
 plt.savefig('umap_dim_reduction.png')
 index_list = dat['index_list']
-mdict = {'kernel_matrix':data, 'info':info, 'umap_proj':umap_res, 'cluster_label':clusterer.labels_,
+print(info.shape,data.shape,umap_res.shape,brain_area.shape)
+
+
+mdict = {'kernel_matrix':data, 'info':info[unit_sel], 'umap_proj':umap_res, 'cluster_label':clusterer.labels_,
          'brain_area':brain_area, 'variable_label':index_list}
 savemat('hdbscan_umap_kernel.mat',mdict=mdict)
+np.save('hdbscan_umap_kernel.npy',mdict)
+
+
+
 #
 
 #
