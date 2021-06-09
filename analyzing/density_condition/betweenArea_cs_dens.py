@@ -216,8 +216,8 @@ hd_pfc_cs = coupl_info[(coupl_info['manipulation type'] == 'density')&(coupl_inf
 
 cs_dtype = {'names': ('monkey','session','sender unit id','receiver unit id',
                       'sender brain area', 'receiver brain area',
-                       'coupling strength HD','coupling strength LD'),
-            'formats':('U30','U30',int,int,'U30','U30',float,float)}
+                       'coupling strength HD','coupling strength LD','significance HD','significance LD'),
+            'formats':('U30','U30',int,int,'U30','U30',float,float,bool,bool)}
 
 cs_table_pair = np.zeros(ld_pfc_cs.shape[0],dtype=cs_dtype)
 cc = 0
@@ -248,6 +248,10 @@ for session in np.unique(ld_pfc_cs['session']):
         cs_table_pair['coupling strength LD'][cc] = row['coupling strength']
         cs_table_pair['sender brain area'][cc] = row_hd['sender brain area']
         cs_table_pair['receiver brain area'][cc] = row['receiver brain area']
+        cs_table_pair['significance LD'][cc] = row['is significant']
+        cs_table_pair['significance HD'][cc] = row_hd['is significant']
+
+
         cc += 1
 
 
@@ -382,7 +386,7 @@ print('PPC->MST',slope_ppc_mst,RSQ_ppc_to_mst)
 print('PPC->PFC',slope_ppc_pfc,RSQ_ppc_to_pfc)
 
 
-dd = {'names':('pair','coupling strength','density'),'formats':('U30',float,'U30')}
+dd = {'names':('pair','coupling strength','density','significance'),'formats':('U30',float,'U30',bool)}
 tab = np.zeros(0,dtype=dd)
 
 for area1 in ['MST','PPC','PFC']:
@@ -397,6 +401,9 @@ for area1 in ['MST','PPC','PFC']:
 
         tmp['density'][:bl.sum()] = 'Low Density'
         tmp['density'][bl.sum():] = 'High Density'
+        tmp['significance'][:bl.sum()] = cs_table_pair[bl]['significance LD']
+        tmp['significance'][bl.sum():] = cs_table_pair[bl]['significance HD']
+
         tab = np.hstack((tab,tmp))
 
 import pandas as pd
@@ -405,3 +412,29 @@ import seaborn as sbn
 df = pd.DataFrame(tab)
 plt.figure()
 sbn.pointplot(x='pair',y='coupling strength',hue='density',data=df,dodge=0.2,linestyles='none')
+
+
+
+plt.figure(figsize=(11,4))
+ddf = df[(df['pair'] != 'MST->MST') & (df['pair'] != 'PPC->PPC') & (df['pair'] != 'PFC->PFC')]
+ax = plt.subplot(111)
+sbn.pointplot(x='pair',y='significance', hue='density', data=ddf,dodge=0.2,linestyles='none',ax=ax)
+
+ax.spines['top'].set_visible(False)
+ax.spines['right'].set_visible(False)
+
+ax.set_ylabel('fraction coupled')
+ax.set_xlabel('brain regions')
+plt.savefig('pointplot_between_area_fracCoupl.pdf')
+
+plt.figure(figsize=(8,4))
+ddf = df[(df['pair'] == 'MST->MST') | (df['pair'] == 'PPC->PPC') | (df['pair'] == 'PFC->PFC')]
+ax = plt.subplot(111)
+sbn.pointplot(x='pair',y='significance', hue='density',order=['MST->MST','PPC->PPC','PFC->PFC'], data=ddf,dodge=0.2,linestyles='none',ax=ax)
+
+ax.spines['top'].set_visible(False)
+ax.spines['right'].set_visible(False)
+
+ax.set_ylabel('fraction coupled')
+ax.set_xlabel('brain regions')
+plt.savefig('pointplot_within_area_fracCoupl.pdf')

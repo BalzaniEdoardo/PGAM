@@ -21,6 +21,9 @@ use_server = None#'/Volumes/server2/Monkeys'
 # =============================================================================
 DIRECT = '/Volumes/WD_Edo/firefly_analysis/LFP_band/DATASET_accel/'
 
+# folder in which you'll save the output files
+sv_folder = '/Volumes/WD_Edo/firefly_analysis/LFP_band/concatenation_with_accel'
+
 print('The code assumes that the lfp_session.mat  files are in the same folder as the session.mat file!')
 # list of session to be concatenated
 
@@ -40,54 +43,23 @@ for root, dirs, files in os.walk(DIRECT, topdown=False):
             concat_list += [name.split('.mat')[0]]
             fld_list += [root]
 
-           
-# ii = np.where(np.array(concat_list)=='m53s96')[0][0]
-# concat_list = concat_list[ii+1:]
-# fld_list = fld_list[ii+1:]
-
-concat_list=['m73s8']
-# concat_list = ['m72s2']
-
-sv_folder = '/Volumes/WD_Edo/firefly_analysis/LFP_band/concatenation_with_accel'
-
-# concat_list = []
+concat_list = ['m73s5']
 
 ptrn = '^m\d+s\d+.mat$'
 ptrn = '^m\d+s\d+$'
 
-# cc_list = ['m53s51']
-# for name in cc_list: #os.listdir('/Volumes/WD_Edo/firefly_analysis/LFP_band/DATASET_accel/'):
-#     if  not re.match(ptrn,name):
-#         continue
-#     print(name)
-#     svname = name.replace('.mat','.npz')
-#     if not '.' in name:
-#         svname = name + '.npz'
-#     if not os.path.exists(os.path.join(sv_folder,svname)):
-#         concat_list += [name.split('.')[0]]
 
 
-fld_list = ['/Volumes/WD_Edo/firefly_analysis/LFP_band/DATASET_accel/']*len(concat_list)
+fld_list = [DIRECT]*len(concat_list)
 
 save = True
 send = True
-# concat_list = ['m51s38']
-# fld_list = ['Users/jean-paulnoel/Documents/Savin-Angelaki/saved']*len(concat_list)
 
-# destination folder
-#sv_folder = '/Volumes/WD Edo/firefly_analysis/LFP_band/DATASET/PPC+PFC+MST/'
-# sv_folder = '/Users/edoardo/Work/Code/GAM_code/fitting/'
-
-# path to files
-
-# path to preproc mat files
-#base_file = '/Volumes/WD Edo/firefly_analysis/LFP_band/DATASET/PPC+PFC+MST/'
 base_file = user_paths.get_path('local_concat','m44s174')
 
 base_file = '/Volumes/WD_Edo/firefly_analysis/LFP_band/DATASET_accel/'
 baseflld = os.path.dirname(base_file)
 
-#result_fld = '/Volumes/WD Edo/firefly_analysis/LFP_band/results_radTarg/'
 
 # list of session in which forcing the use of left eye posiiton
 use_left_eye = ['53s48']
@@ -116,8 +88,7 @@ cnt_concat = 0
 
 for session in concat_list:
     
-    # if not session in ['m72s3', 'm72s4', 'm72s6', 'm72s8']:
-    #     continue
+
     if session in use_left_eye:
         use_eye = 'left'
     else:
@@ -159,20 +130,16 @@ for session in concat_list:
     if is_phase:
         phase_precomputed += [session]
         continue
-    # try:
+
     exp_data = data_handler(dat, behav_dat_key, spike_key, lfp_key, behav_stat_key, pre_trial_dur=pre_trial_dur,
                         post_trial_dur=post_trial_dur,
                         lfp_beta=lfp_beta['lfp_beta'], lfp_alpha=lfp_alpha['lfp_alpha'],lfp_theta=lfp_theta['lfp_theta'], extract_lfp_phase=(not is_phase),
                         use_eye=use_eye,fhLFP=fhLFP)
-    # except Exception as e:
-    #     print('unable to open', session,'\n',e)
-    #     continue
     
 
     exp_data.set_filters('all', True)
     # impose all replay trials
     exp_data.filter = exp_data.filter + exp_data.info.get_replay(0,skip_not_ok=False)
-    # savemat('lfp_raw_%s.mat'%session,{'lfp':exp_data.lfp.lfp})
 
     t_targ = dict_to_vec(exp_data.behav.events.t_targ)
     t_move = dict_to_vec(exp_data.behav.events.t_move)
@@ -185,8 +152,7 @@ for session in concat_list:
     var_names = ('rad_vel','ang_vel','rad_path','ang_path','rad_target','ang_target',
                  'lfp_beta','lfp_alpha','lfp_theta','t_move','t_flyOFF','t_stop','t_reward','eye_vert','eye_hori',
                  'hand_vel1','hand_vel2','rad_acc','ang_acc')
-                 #'lfp_alpha_power',
-                 #'lfp_theta_power','lfp_beta_power')
+
     try:
         y, X, trial_idx = exp_data.concatenate_inputs(*var_names, t_start=t_start, t_stop=t_stop)
     except MemoryError as ex:
@@ -207,9 +173,7 @@ for session in concat_list:
     res['data_concat']['lfp_alpha'] = X['lfp_alpha'].T
     res['data_concat']['lfp_theta'] = X['lfp_theta'].T
     res['data_concat']['trial_idx'] = trial_idx
-    # res['lfp_alpha_power'] = X['lfp_alpha_power'].T
-    # res['lfp_theta_power'] = X['lfp_theta_power'].T
-    # res['lfp_beta_power'] = X['lfp_beta_power'].T
+
     res['info_trial'] = exp_data.info
     res['pre_trial_dur'] = pre_trial_dur
     res['post_trial_dur'] = post_trial_dur
@@ -231,12 +195,6 @@ for session in concat_list:
     print('num units',exp_data.spikes.unit_type.shape)
     cc = 0
     for var in var_Xt:
-        # if 'lfp' in var or var == 'phase':
-        #     continue
-        # if var in ['phase','lfp_beta','lfp_alpha','lfp_theta'] or 'lfp' in var:
-        #     res['data_concat']['Xt'][:, cc] = np.nan
-        #     cc += 1
-        #     continue
         res['data_concat']['Xt'][:,cc] = X[var]
         cc += 1
 
@@ -263,8 +221,7 @@ for session in concat_list:
         saveCompressed(os.path.join(sv_folder,'%s.npz'%session),unit_info=res['unit_info'],info_trial=res['info_trial'],data_concat=res['data_concat'],
              var_names=np.array(res['var_names']),time_bin=res['time_bin'],post_trial_dur=res['post_trial_dur'],
              pre_trial_dur=res['pre_trial_dur'], force_zip64=True)#,lfp_alpha_power=res['lfp_alpha_power'],
-             #lfp_beta_power=res['lfp_beta_power'],lfp_theta_power=res['lfp_theta_power'],
-             #force_zip64=True)
+
 
     if send:
         try:

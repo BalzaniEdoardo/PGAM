@@ -501,14 +501,14 @@ for area in ['MST','PPC','PFC']:
                 cs_table_pair['coupling_strength_LD'] > 10 ** -3) & (cs_table_pair['coupling_strength_HD'] > 10 ** -3) &\
          ((cs_table_pair['sign_LD']) & (cs_table_pair['sign_HD']))
 
-    yy = np.log(cs_table_pair['coupling_strength_HD'][bl])
-    xx = np.log(cs_table_pair['coupling_strength_LD'][bl])
+    yy = np.log(cs_table_pair['coupling_strength_LD'][bl])
+    xx = np.log(cs_table_pair['coupling_strength_HD'][bl])
     plt.subplot(2,3,k)
     plt.scatter(xx, yy, color=color_dict[area],s=5)
     plt.plot([-2.5,2],[-2.5,2],'k')
     plt.scatter([np.median(xx)],[np.median(yy)],edgecolor='k',facecolor=color_dict[area],s=80)
-    plt.xlabel('$\log(CS)_{LD}$')
-    plt.ylabel('$\log(CS)_{HD}$')
+    plt.xlabel('$\log(CS)_{HD}$')
+    plt.ylabel('$\log(CS)_{LD}$')
     plt.title(area)
     dict_res[area] = {
         'high_density':np.log(cs_table_pair['coupling_strength_HD'][bl]),
@@ -528,7 +528,7 @@ for area in ['MST','PPC','PFC']:
     k+=1
     print(area, np.std(delt),sts.pearsonr(xx,yy)[0])
 plt.tight_layout()
-plt.savefig('within_area_cs.png')
+plt.savefig('within_area_cs.pdf')
 savemat('coupling_strength_with_density.mat',mdict=dict_res)
 
 

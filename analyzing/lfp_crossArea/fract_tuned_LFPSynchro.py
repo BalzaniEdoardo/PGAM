@@ -165,60 +165,77 @@ for row in mutual_info_LFP:
 
     cc+=1
 
-idx = np.where(count_sign_table['brain area'] != '')[0]
+idx = np.where(count_sign_table['brain_area'] != '')[0]
 assert (all(np.diff(idx)==1))
 count_sign_table = count_sign_table[idx]
 
 df = pd.DataFrame(count_sign_table)
 
+order = ['lfp_beta','lfp_alpha','lfp_theta']
 
 
-df_ppc = df[df['brain area'] == 'PPC']
-df_pfc = df[df['brain area'] == 'PFC']
+df_ppc = df[df['brain_area'] == 'PPC']
+df_pfc = df[df['brain_area'] == 'PFC']
 
-order = ['rad_vel','ang_vel','rad_acc','ang_acc','t_move','t_stop','t_flyOFF','rad_target',
-         'ang_target','rad_path','ang_path','lfp_beta','lfp_alpha','lfp_theta','t_reward','eye_vert','eye_hori']
+order = ['lfp_beta','lfp_alpha','lfp_theta']
 cm_pfc = cm.get_cmap('Reds')
 
-sns.catplot(x="variable", y="significance", hue="LFP locked", kind="bar", order=order, data=df_pfc,palette=sns.color_palette([cm_pfc(0.5)[:3],cm_pfc(0.9)[:3]]),height=5,aspect=2.5,legend_out=False,
-            )
+plt.figure()
+ax=plt.subplot(111)
+sns.pointplot(x="variable", y="significance", hue="LFP_locked", kind="bar", order=order, data=df_pfc,palette=sns.color_palette([cm_pfc(0.5)[:3],cm_pfc(0.9)[:3]]),height=5,aspect=2.5,legend_out=False,
+              dodge=0.2, linestyles='none',ax=ax)
 plt.xticks(rotation=90)
 plt.title('PFC fraction tuned')
 
 plt.tight_layout()
+plt.ylim(0,1.2)
+ax.spines['top'].set_visible(False)
+ax.spines['right'].set_visible(False)
+
 plt.savefig('fract_tuned_pfc.pdf')
 
 
 
-
+plt.figure()
+ax=plt.subplot(111)
 cm_ppc = cm.get_cmap('Blues')
-sns.catplot(x="variable", y="significance", hue="LFP locked", kind="bar", palette=sns.color_palette([cm_ppc(0.5)[:3],cm_ppc(0.9)[:3]]), order=order, data=df_ppc,height=5,aspect=2.5,legend_out=False,
-            )
+sns.pointplot(x="variable", y="significance", hue="LFP_locked", kind="bar", palette=sns.color_palette([cm_ppc(0.5)[:3],cm_ppc(0.9)[:3]]), order=order, data=df_ppc,height=5,aspect=2.5,legend_out=False
+              , dodge = 0.2, linestyles = 'none',ax=ax)
 plt.xticks(rotation=90)
 plt.title('PPC fraction tuned')
 
 plt.tight_layout()
+plt.ylim(0,1.2)
+ax.spines['top'].set_visible(False)
+ax.spines['right'].set_visible(False)
+
 plt.savefig('fract_tuned_ppc.pdf')
 
+plt.figure()
+ax=plt.subplot(111)
 
-
-
-sns.catplot(x="variable", y="significance", hue="coupling sign", kind="bar", palette=sns.color_palette([cm_ppc(0.5)[:3],cm_ppc(0.9)[:3]]), order=order, data=df_ppc,height=5,aspect=2.5,legend_out=False,
-            )
+sns.pointplot(x="variable", y="significance", hue="coupling_sign", palette=sns.color_palette([cm_ppc(0.5)[:3],cm_ppc(0.9)[:3]]), order=order, data=df_ppc,height=5,aspect=2.5,legend_out=False
+            ,dodge=0.2,linestyles='none',ax=ax)
 plt.xticks(rotation=90)
 plt.title('PPC fraction tuned')
+plt.ylim(0,1.2)
 
 plt.tight_layout()
+ax.spines['top'].set_visible(False)
+ax.spines['right'].set_visible(False)
 plt.savefig('coupling_fract_tuned_ppc.pdf')
 
 
-
-sns.catplot(x="variable", y="significance", hue="coupling sign", kind="bar", order=order, data=df_pfc,palette=sns.color_palette([cm_pfc(0.5)[:3],cm_pfc(0.9)[:3]]),height=5,aspect=2.5,legend_out=False,
-            )
+plt.figure()
+ax=plt.subplot(111)
+sns.pointplot(x="variable", y="significance", hue="coupling_sign", kind="bar", order=order, data=df_pfc,palette=sns.color_palette([cm_pfc(0.5)[:3],cm_pfc(0.9)[:3]]),height=5,aspect=2.5,legend_out=False,dodge=0.2,linestyles='none',ax=ax)
 plt.xticks(rotation=90)
 plt.title('PFC fraction tuned')
-
+plt.ylim(0,1.2)
 plt.tight_layout()
+ax.spines['top'].set_visible(False)
+ax.spines['right'].set_visible(False)
+
 plt.savefig('coupling_fract_tuned_pfc.pdf')
 
 
@@ -251,7 +268,7 @@ plt.savefig('coupling_fract_tuned_pfc.pdf')
 #                 tmp['mutual info'][cc] = mi
 #                 tmp['significance'][cc] = varSign
 #                 tmp['LFP synchro'][cc] = is_sign
-#                 tmp['brain area'][cc] = ba
+#                 tmp['brain_area'][cc] = ba
 #                 tmp['monkey'][cc] = row['monkey']
 #                 tmp['session'][cc] = session
 #                 count_sign_table = np.hstack((count_sign_table,tmp))

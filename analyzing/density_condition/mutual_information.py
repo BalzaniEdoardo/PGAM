@@ -320,10 +320,10 @@ savemat('tuning_regression_res.mat',mdict={'regression':regr_res})
 df = pd.DataFrame(regr_res)
 df = df[df['fdr_pval'] < 0.005]
 df = df.rename(columns = {'slope':'gain'}, inplace = False)
-
+#df['gain'] = 1. / df['gain']
 plt.figure(figsize=(14,4))
 ax = plt.subplot(111)
-pnp = sbs.pointplot(x='variable',y='gain',hue='brain_area',order=order,hue_order=['MST','PPC','PFC'],data=df,
+pnp = sbs.pointplot(x='variable', y='gain', hue='brain_area', order=order, hue_order=['MST','PPC','PFC'],data=df,
               dodge=0.2,palette={'MST':'g','PPC':'b','PFC':'r'},linestyles='none',ax=ax)
 ax.spines['top'].set_visible(False)
 ax.spines['right'].set_visible(False)
@@ -333,7 +333,7 @@ plt.xticks(rotation=90)
 plt.tight_layout()
 
 # ax.set_xlim(xlim)
-plt.savefig('gain_tuning_density.pdf')
+plt.savefig('rerv_gain_tuning_density.pdf')
 
 df = pd.DataFrame(regr_res)
 df = df[df['fdr_pval'] < 0.005]
@@ -351,3 +351,189 @@ plt.tight_layout()
 
 # ax.set_xlim(xlim)
 plt.savefig('intercept_tuning_density.png')
+
+
+## figure S10, examples
+
+color_hd = (0, 176./255, 80/255.)
+color_ld = (0, 176./(1.8*255), 80/(1.8*255.))
+ba = 'MST'
+plt.figure(figsize=(10,6))
+plt_num = 1
+k=1
+for var in ['rad_vel', 't_stop']:
+    idx = (mutual_info_ld['variable'] == var) * (mutual_info_ld['brain_area']==ba)
+    mi_ld = mutual_info_ld[idx]
+    mi_hd = mutual_info_hd[idx]
+    tun_ld = tuning_ld[idx]
+    tun_hd = tuning_hd[idx]
+    srt = np.argsort(mi_ld['mutual_info'] - mi_hd['mutual_info'])
+
+
+    scr = -1
+    while scr < 0.9:
+        model = LinearRegression(fit_intercept=True)
+        regr = model.fit(tun_ld['y_model'][srt[k]].reshape(tun_ld['y_model'][srt[k]].shape[0], 1),
+                         tun_hd['y_model'][srt[k]])
+
+        scr = regr.score(tun_ld['y_model'][srt[k]].reshape(tun_ld['y_model'][srt[k]].shape[0], 1),
+                         tun_hd['y_model'][srt[k]])
+
+        if scr < 0.9:
+            k += 1
+            continue
+
+        ax = plt.subplot(2,3,plt_num)
+        plt.title(var)
+
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+
+
+        plt.plot(tun_ld['x'][srt[k]],tun_ld['y_model'][srt[k]],color=color_ld,label='low density',lw=2)
+
+        plt.plot(tun_hd['x'][srt[k]], tun_hd['y_model'][srt[k]], color=color_hd,label='high density',lw=2)
+        # plt.plot(tun_hd['x'][srt[k]], tun_hd['y_raw'][srt[k]], color=(.5,)*3,ls='--')
+        model = LinearRegression(fit_intercept=True)
+        regr = model.fit(tun_ld['y_model'][srt[k]].reshape(tun_ld['y_model'][srt[k]].shape[0], 1),
+                         tun_hd['y_model'][srt[k]])
+        prd = regr.predict(tun_ld['y_model'][srt[k]].reshape(tun_ld['y_model'][srt[k]].shape[0], 1))
+        plt.plot(tun_hd['x'][srt[k]],prd,color=color_ld,ls='--',label='gain correct low density')
+        plt_num += 1
+
+        # plt.legend()
+    # for k in range(4):
+    #     plt.subplot(2, 4, plt_num)
+    #     plt.plot(tun_ld['x'][srt[-(k+1)]],tun_ld['y_model'][srt[-(k+1)]],color='g')
+    #     # plt.plot(tun_ld['x'][srt[-(k+1)]], tun_ld['y_raw'][srt[-(k+1)]], color='g',ls='--')
+    #     plt.plot(tun_hd['x'][srt[-(k+1)]], tun_hd['y_model'][srt[-(k+1)]], color=(.5,)*3)
+    #     # plt.plot(tun_hd['x'][srt[-(k+1)]], tun_hd['y_raw'][srt[-(k+1)]], color=(.5,)*3,ls='--')
+    #
+
+    plt_num = 4
+
+
+ba = 'PPC'
+plt_num = 2
+k=-30
+color_hd = (40/(0.9*255.),20/(0.9*255.),204/(255.*0.9))
+color_ld = (40/(255.*1.8),20/(255.*1.8),204/(255.*1.8))
+
+for var in ['rad_vel', 't_stop']:
+    idx = (mutual_info_ld['variable'] == var) * (mutual_info_ld['brain_area']==ba)
+    mi_ld = mutual_info_ld[idx]
+    mi_hd = mutual_info_hd[idx]
+    tun_ld = tuning_ld[idx]
+    tun_hd = tuning_hd[idx]
+    srt = np.argsort(mi_ld['mutual_info'] - mi_hd['mutual_info'])
+
+
+    scr = -1
+    while scr < 0.8:
+        model = LinearRegression(fit_intercept=True)
+        regr = model.fit(tun_ld['y_model'][srt[k]].reshape(tun_ld['y_model'][srt[k]].shape[0], 1),
+                         tun_hd['y_model'][srt[k]])
+
+        scr = regr.score(tun_ld['y_model'][srt[k]].reshape(tun_ld['y_model'][srt[k]].shape[0], 1),
+                         tun_hd['y_model'][srt[k]])
+
+        if scr < 0.8:
+            k += 1
+            continue
+
+        ax = plt.subplot(2,3,plt_num)
+        plt.title(var)
+
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+
+
+
+        plt.plot(tun_ld['x'][srt[k]],tun_ld['y_model'][srt[k]],color=color_ld,label='low density',lw=2)
+
+        plt.plot(tun_hd['x'][srt[k]], tun_hd['y_model'][srt[k]], color=color_hd,label='high density',lw=2)
+        # plt.plot(tun_hd['x'][srt[k]], tun_hd['y_raw'][srt[k]], color=(.5,)*3,ls='--')
+        model = LinearRegression(fit_intercept=True)
+        regr = model.fit(tun_ld['y_model'][srt[k]].reshape(tun_ld['y_model'][srt[k]].shape[0], 1),
+                         tun_hd['y_model'][srt[k]])
+        prd = regr.predict(tun_ld['y_model'][srt[k]].reshape(tun_ld['y_model'][srt[k]].shape[0], 1))
+        plt.plot(tun_hd['x'][srt[k]],prd,color=color_ld,ls='--',label='gain correct low density')
+        plt_num += 1
+
+        # plt.legend()
+    # for k in range(4):
+    #     plt.subplot(2, 4, plt_num)
+    #     plt.plot(tun_ld['x'][srt[-(k+1)]],tun_ld['y_model'][srt[-(k+1)]],color='g')
+    #     # plt.plot(tun_ld['x'][srt[-(k+1)]], tun_ld['y_raw'][srt[-(k+1)]], color='g',ls='--')
+    #     plt.plot(tun_hd['x'][srt[-(k+1)]], tun_hd['y_model'][srt[-(k+1)]], color=(.5,)*3)
+    #     # plt.plot(tun_hd['x'][srt[-(k+1)]], tun_hd['y_raw'][srt[-(k+1)]], color=(.5,)*3,ls='--')
+    #
+
+    plt_num = 5
+
+
+
+
+ba = 'PFC'
+plt_num = 3
+k=-30
+color_hd = (255./255.,0/255.,0./255.)
+color_ld = (255/(255.*1.8),0/(255.*1.8),0/(255.*1.8))
+
+for var in ['rad_vel', 't_stop']:
+    idx = (mutual_info_ld['variable'] == var) * (mutual_info_ld['brain_area']==ba)
+    mi_ld = mutual_info_ld[idx]
+    mi_hd = mutual_info_hd[idx]
+    tun_ld = tuning_ld[idx]
+    tun_hd = tuning_hd[idx]
+    srt = np.argsort(mi_ld['mutual_info'] - mi_hd['mutual_info'])
+
+
+    scr = -1
+    while scr < 0.8:
+        model = LinearRegression(fit_intercept=True)
+        regr = model.fit(tun_ld['y_model'][srt[k]].reshape(tun_ld['y_model'][srt[k]].shape[0], 1),
+                         tun_hd['y_model'][srt[k]])
+
+        scr = regr.score(tun_ld['y_model'][srt[k]].reshape(tun_ld['y_model'][srt[k]].shape[0], 1),
+                         tun_hd['y_model'][srt[k]])
+
+        if scr < 0.8:
+            k += 1
+            continue
+
+        ax = plt.subplot(2,3,plt_num)
+        plt.title(var)
+
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+
+
+        plt.plot(tun_ld['x'][srt[k]],tun_ld['y_model'][srt[k]],color=color_ld,label='low density',lw=2)
+
+        plt.plot(tun_hd['x'][srt[k]], tun_hd['y_model'][srt[k]], color=color_hd,label='high density',lw=2)
+        # plt.plot(tun_hd['x'][srt[k]], tun_hd['y_raw'][srt[k]], color=(.5,)*3,ls='--')
+        model = LinearRegression(fit_intercept=True)
+        regr = model.fit(tun_ld['y_model'][srt[k]].reshape(tun_ld['y_model'][srt[k]].shape[0], 1),
+                         tun_hd['y_model'][srt[k]])
+        prd = regr.predict(tun_ld['y_model'][srt[k]].reshape(tun_ld['y_model'][srt[k]].shape[0], 1))
+        plt.plot(tun_hd['x'][srt[k]],prd,color=color_ld,ls='--',label='gain correct low density')
+        plt_num += 1
+
+        # plt.legend()
+    # for k in range(4):
+    #     plt.subplot(2, 4, plt_num)
+    #     plt.plot(tun_ld['x'][srt[-(k+1)]],tun_ld['y_model'][srt[-(k+1)]],color='g')
+    #     # plt.plot(tun_ld['x'][srt[-(k+1)]], tun_ld['y_raw'][srt[-(k+1)]], color='g',ls='--')
+    #     plt.plot(tun_hd['x'][srt[-(k+1)]], tun_hd['y_model'][srt[-(k+1)]], color=(.5,)*3)
+    #     # plt.plot(tun_hd['x'][srt[-(k+1)]], tun_hd['y_raw'][srt[-(k+1)]], color=(.5,)*3,ls='--')
+    #
+
+    plt_num = 6
+
+
+
+
+plt.tight_layout(rect=[0, 0.03, 1, 0.95])
+
+plt.savefig('example_tuning_gain.pdf')

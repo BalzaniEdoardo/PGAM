@@ -177,6 +177,67 @@ plt.savefig('logit_pred_prob.pdf')
 
 logit_spline = Logit(Y[train], modelX[train])
 fit_train = logit_spline.fit()
+
+# indep fits
+
+mst_idx = (modelX[:,1] == 1) & (modelX[:,2] == 0)
+pfc_idx = (modelX[:,1] == 0) & (modelX[:,2] == 1)
+ppc_idx = (modelX[:,1] == 0) & (modelX[:,2] == 0)
+
+logit_spline_mst = Logit(Y[mst_idx], sm.add_constant(modelX[mst_idx,3:]))
+logit_spline_pfc = Logit(Y[pfc_idx], sm.add_constant(modelX[pfc_idx,3:]))
+logit_spline_ppc = Logit(Y[ppc_idx], sm.add_constant(modelX[ppc_idx,3:]))
+
+fit_mst = logit_spline_mst.fit()
+fit_pfc = logit_spline_pfc.fit()
+fit_ppc = logit_spline_ppc.fit()
+
+
+# srt_mst = np.argsort(X[mst_idx,3])
+# srt_pfc = np.argsort(X[pfc_idx,3])
+# srt_ppc = np.argsort(X[ppc_idx,3])
+
+
+##
+
+dist = np.linspace(np.min(true_dist),np.max(true_dist)-0.0001,1000)
+zdist = (dist - np.mean(true_dist))/np.std(true_dist)
+MX_pred = splineDesign(knots, zdist, ord=4, der=0, outer_ok=False)
+prep_pred = (MX_pred - MX.mean(axis=0))[:,:-1]
+
+
+prob_mst = fit_mst.predict( sm.add_constant(prep_pred))
+prob_pfc = fit_pfc.predict( sm.add_constant(prep_pred))
+prob_ppc = fit_ppc.predict( sm.add_constant(prep_pred))
+
+
+
+plt.figure()
+ax = plt.subplot(111)
+mx = np.max(true_dist[(modelX[:,1]==1) & (modelX[:,2]==0)])
+
+plt.plot(dist[dist<mx],prob_mst[dist<mx],label='MST',color=(0,142./255,0))
+plt.plot(dist[dist<mx],prob_ppc[dist<mx],label='PPC',color='b')
+plt.plot(dist[dist<mx],prob_pfc[dist<mx],label='PFC',color='r')
+plt.legend()
+plt.xlabel('electrode dist. [um]')
+plt.ylabel('coupling prob.')
+
+ax.spines['top'].set_visible(False)
+ax.spines['right'].set_visible(False)
+
+plt.savefig('estim_coupling_probability.pdf')
+
+
+sel = np.where(dist <= 500)[0][-1]
+print('MST',prob_mst[sel],'PPC',prob_ppc[sel],'PFC',prob_pfc[sel])
+
+# mst_idx = (modelX[:,1] == 1) & (modelX[:,2] == 0)
+#
+#
+# logit_spline = Logit(Y[mst_idx], modelX[mst_idx,3:])
+
+
 # print('test pr2',
 #       pseudo_r2_compute(Y[test],family,modelX[test],fit_train.params))
 
@@ -196,91 +257,91 @@ fit_train = logit_spline.fit()
 #
 #
 
-# coupling strength
-Y = coupling_data['coupling strength']
-X = np.zeros((Y.shape[0], 4))
-X[:, 0] = 1
-X[coupling_data['sender brain area'] == 'MST', 1] = 1
-X[coupling_data['sender brain area'] == 'PFC', 2] = 1
-cc = 0
-for row in coupling_data:
-    X[cc, 3] = compute_dist(row['sender electrode id'], row['receiver electrode id'], row['monkey'],
-                            row['sender brain area'])
-    cc += 1
-
-true_dist = deepcopy(X[:, 3])
-mean_dist = X[:,3].mean()
-std_dist = X[:,3].std()
-
-X[:, 3] = sts.zscore(X[:, 3])
-
-# splint
-all_tr = np.arange(X.shape[0], dtype=int)
-train = all_tr[all_tr % 10 != 0]
-test = all_tr[all_tr % 10 == 0]
-model = OLS(Y[train], X[train])
-logit_reg = model.fit()
-
-pred = logit_reg.predict(X[test])
-res = np.round(pred)
-
-# GLM
-knots = np.linspace(np.min(X[:, 3]), np.max(X[:, 3]), 5)
-knots = np.hstack(([knots[0]] * 3, knots, [knots[-1]] * 3))
-MX = splineDesign(knots, X[:, 3], ord=4, der=0, outer_ok=False)
-prep = (MX - MX.mean(axis=0))[:, :-1]
-
-# fit reg
-modelX = np.hstack((X[:, :-1], prep))
-link = sm.families.links.logit()
-family = sm.families.Binomial(link=link)
-logit_spline = OLS(Y, modelX)
-res_unreg = logit_spline.fit()
-
-dist = np.linspace(np.min(X[:, 3]), np.max(X[:, 3]) - 0.0001, 100)
-zdist = (dist - np.mean(X[:, 3])) / np.std(X[:, 3])
-MX_pred = splineDesign(knots, zdist, ord=4, der=0, outer_ok=False)
-prep_pred = (MX_pred - MX.mean(axis=0))[:, :-1]
-
-# mod ppc
-modelPPC = np.zeros((100, 3 + prep_pred[1].shape[0]))
-modelPPC[:, 3:] = prep_pred
-modelPPC[:, 0] = 1
-
-modelPFC = np.zeros((100, 3 + prep_pred[1].shape[0]))
-modelPFC[:, 3:] = prep_pred
-modelPFC[:, 0] = 1
-modelPFC[:, 2] = 1
-
-modelMST = np.zeros((100, 3 + prep_pred[1].shape[0]))
-modelMST[:, 3:] = prep_pred
-modelMST[:, 0] = 1
-modelMST[:, 1] = 1
-
-prob_ppc = res_unreg.predict(modelPPC)
-prob_pfc = res_unreg.predict(modelPFC)
-prob_mst = res_unreg.predict(modelMST)
-
-import matplotlib.pylab as plt
-
-srt = np.argsort(X[:, 3])
-pred_all = res_unreg.predict(modelX)
-plt.figure()
-ax = plt.subplot(111)
-plt.plot(true_dist[srt][coupling_data[srt]['sender brain area'] == 'PPC'],
-         pred_all[srt][coupling_data[srt]['sender brain area'] == 'PPC'], color='b', label='PPC')
-plt.plot(true_dist[srt][coupling_data[srt]['sender brain area'] == 'MST'],
-         pred_all[srt][coupling_data[srt]['sender brain area'] == 'MST'], color='g', label='MST')
-
-plt.plot(true_dist[srt][coupling_data[srt]['sender brain area'] == 'PFC'],
-         pred_all[srt][coupling_data[srt]['sender brain area'] == 'PFC'], color='r', label='PFC')
-
-ax.spines['top'].set_visible(False)
-ax.spines['right'].set_visible(False)
-plt.ylabel('coupling strength')
-plt.xlabel('$\mu$m')
-plt.legend()
-plt.savefig('ols_pred_prob.pdf')
-
-logit_spline = OLS(Y[train], modelX[train])
-fit_train = logit_spline.fit()
+# # coupling strength
+# Y = coupling_data['coupling strength']
+# X = np.zeros((Y.shape[0], 4))
+# X[:, 0] = 1
+# X[coupling_data['sender brain area'] == 'MST', 1] = 1
+# X[coupling_data['sender brain area'] == 'PFC', 2] = 1
+# cc = 0
+# for row in coupling_data:
+#     X[cc, 3] = compute_dist(row['sender electrode id'], row['receiver electrode id'], row['monkey'],
+#                             row['sender brain area'])
+#     cc += 1
+#
+# true_dist = deepcopy(X[:, 3])
+# mean_dist = X[:,3].mean()
+# std_dist = X[:,3].std()
+#
+# X[:, 3] = sts.zscore(X[:, 3])
+#
+# # splint
+# all_tr = np.arange(X.shape[0], dtype=int)
+# train = all_tr[all_tr % 10 != 0]
+# test = all_tr[all_tr % 10 == 0]
+# model = OLS(Y[train], X[train])
+# logit_reg = model.fit()
+#
+# pred = logit_reg.predict(X[test])
+# res = np.round(pred)
+#
+# # GLM
+# knots = np.linspace(np.min(X[:, 3]), np.max(X[:, 3]), 5)
+# knots = np.hstack(([knots[0]] * 3, knots, [knots[-1]] * 3))
+# MX = splineDesign(knots, X[:, 3], ord=4, der=0, outer_ok=False)
+# prep = (MX - MX.mean(axis=0))[:, :-1]
+#
+# # fit reg
+# modelX = np.hstack((X[:, :-1], prep))
+# link = sm.families.links.logit()
+# family = sm.families.Binomial(link=link)
+# logit_spline = OLS(Y, modelX)
+# res_unreg = logit_spline.fit()
+#
+# dist = np.linspace(np.min(X[:, 3]), np.max(X[:, 3]) - 0.0001, 100)
+# zdist = (dist - np.mean(X[:, 3])) / np.std(X[:, 3])
+# MX_pred = splineDesign(knots, zdist, ord=4, der=0, outer_ok=False)
+# prep_pred = (MX_pred - MX.mean(axis=0))[:, :-1]
+#
+# # mod ppc
+# modelPPC = np.zeros((100, 3 + prep_pred[1].shape[0]))
+# modelPPC[:, 3:] = prep_pred
+# modelPPC[:, 0] = 1
+#
+# modelPFC = np.zeros((100, 3 + prep_pred[1].shape[0]))
+# modelPFC[:, 3:] = prep_pred
+# modelPFC[:, 0] = 1
+# modelPFC[:, 2] = 1
+#
+# modelMST = np.zeros((100, 3 + prep_pred[1].shape[0]))
+# modelMST[:, 3:] = prep_pred
+# modelMST[:, 0] = 1
+# modelMST[:, 1] = 1
+#
+# prob_ppc = res_unreg.predict(modelPPC)
+# prob_pfc = res_unreg.predict(modelPFC)
+# prob_mst = res_unreg.predict(modelMST)
+#
+# import matplotlib.pylab as plt
+#
+# srt = np.argsort(X[:, 3])
+# pred_all = res_unreg.predict(modelX)
+# plt.figure()
+# ax = plt.subplot(111)
+# plt.plot(true_dist[srt][coupling_data[srt]['sender brain area'] == 'PPC'],
+#          pred_all[srt][coupling_data[srt]['sender brain area'] == 'PPC'], color='b', label='PPC')
+# plt.plot(true_dist[srt][coupling_data[srt]['sender brain area'] == 'MST'],
+#          pred_all[srt][coupling_data[srt]['sender brain area'] == 'MST'], color='g', label='MST')
+#
+# plt.plot(true_dist[srt][coupling_data[srt]['sender brain area'] == 'PFC'],
+#          pred_all[srt][coupling_data[srt]['sender brain area'] == 'PFC'], color='r', label='PFC')
+#
+# ax.spines['top'].set_visible(False)
+# ax.spines['right'].set_visible(False)
+# plt.ylabel('coupling strength')
+# plt.xlabel('$\mu$m')
+# plt.legend()
+# plt.savefig('ols_pred_prob.pdf')
+#
+# logit_spline = OLS(Y[train], modelX[train])
+# fit_train = logit_spline.fit()

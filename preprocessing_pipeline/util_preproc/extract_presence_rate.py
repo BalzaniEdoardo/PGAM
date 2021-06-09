@@ -3,10 +3,10 @@ from python_monkey_info import monkey_info_class
 import os,sys
 from path_class import get_paths_class
 user_path_gen = get_paths_class()
-list_all_dir = [x[0] for x in os.walk(user_path_gen.get_path('ecephys_spike_sorting'))]
-
-for dir_name in list_all_dir:
-    sys.path.append(dir_name)
+# list_all_dir = [x[0] for x in os.walk(user_path_gen.get_path('ecephys_spike_sorting'))]
+#
+# for dir_name in list_all_dir:
+#     sys.path.append(dir_name)
 # from utils import *
 # from metrics import *
 import zipfile
