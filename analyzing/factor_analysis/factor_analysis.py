@@ -87,7 +87,7 @@ def mean_yj_given_ymj(y, C, diagR, sqrty,subtract_mean=True):
         sigma_y_j_mj = np.dot(np.dot(R0j.T, sigma_y), R0j)
 
         Binv = np.linalg.pinv(sigma_y_j_mj[1:, 1:])
-        predict_mean[:, j] = np.dot(np.dot(sigma_y_j_mj[0, 1:], Binv), y_j_mj[:, 1:].T) + mean_[j]
+        predict_mean[:, j] = np.dot(np.dot(sigma_y_j_mj[0, 1:], Binv), y_j_mj[:, 1:].T) - mean_[j]
         predict_var[:, j] = sigma_y_j_mj[0,0] - np.dot(np.dot(sigma_y_j_mj[0, 1:], Binv), sigma_y_j_mj[0, 1:])
     predict_error = np.mean((sqrty - predict_mean)**2)
     return predict_mean,predict_var, predict_error
@@ -109,6 +109,7 @@ if __name__ == '__main__':
 
 
     C = np.random.normal(size=(M,D))**2
+    # C = C / 0.2 * 2
     x = np.random.normal(size=(D,15000))
     R = np.eye(M)
 

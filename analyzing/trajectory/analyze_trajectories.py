@@ -145,7 +145,7 @@ dist_fly = np.zeros(info_sess.shape[0])*np.nan
 lin_dist = np.zeros(info_sess.shape[0])*np.nan
 ang_fly = np.zeros(info_sess.shape[0])*np.nan
 
-e0 = np.dot([1,0])
+e0 = np.array([1,0])
 for tr in range(info_sess.shape[0]):
     if np.isnan(traj_sess[tr]['x_smooth']).sum() == traj_sess[tr].shape[0]:
         continue
@@ -176,9 +176,9 @@ for tr in range(info_sess.shape[0]):
     vec = np.array([trjx[-1] - x_mon, trjy[-1] - y_mon])
     P0 = np.array([x_mon, y_mon])
 
-    vec1 = np.array([trjx[100] - trjx[0], trjy[100] - trjy[0]])
-    Pe = vec * np.dot(vec1, vec) + P0
-
+    # vec1 = np.array([trjx[100] - trjx[0], trjy[100] - trjy[0]])
+    # Pe = vec * np.dot(vec1, vec) + P0
+    #
 
 
     # vec = vec/np.linalg.norm(vec)
@@ -190,35 +190,35 @@ for tr in range(info_sess.shape[0]):
     # XY[:, 1] = trjy
     #
     # rXY = np.dot(Rot,XY.T)
-# tr = -2
-# curvature_example = np.zeros(traj_sess[tr].shape[0])*np.nan
-# use_pt = 4
-# comp_curv = ComputeCurvature()
-# for k in range(use_pt,curvature_example.shape[0]-use_pt):
-#     print(k, curvature_example.shape[0]-use_pt)
-#     xx = traj_sess[tr]['x_smooth'][k-use_pt: k+use_pt]
-#     yy = traj_sess[tr]['y_smooth'][k - use_pt:k + use_pt]
-#
-#     curvature_example[k] = comp_curv.fit(xx,yy)
+tr = 20
+curvature_example = np.zeros(traj_sess[tr].shape[0])*np.nan
+use_pt = 4
+comp_curv = ComputeCurvature()
+for k in range(use_pt,curvature_example.shape[0]-use_pt):
+    print(k, curvature_example.shape[0]-use_pt)
+    xx = traj_sess[tr]['x_smooth'][k-use_pt: k+use_pt]
+    yy = traj_sess[tr]['y_smooth'][k - use_pt:k + use_pt]
 
-# cmap = plt.get_cmap('jet')
-# segs, colors = colored_line_segments(traj_sess[tr]['x_smooth'][use_pt:-use_pt], traj_sess[tr]['y_smooth'][use_pt:-use_pt],
-#                                      color=cmap(curvature_example[use_pt:-use_pt]/np.nanmax(curvature_example[use_pt:])),
-#                                      mid_colors=True)
+    curvature_example[k] = comp_curv.fit(xx,yy)
+
+cmap = plt.get_cmap('jet')
+segs, colors = colored_line_segments(traj_sess[tr]['x_smooth'][use_pt:-use_pt], traj_sess[tr]['y_smooth'][use_pt:-use_pt],
+                                     color=cmap(curvature_example[use_pt:-use_pt]/np.nanmax(curvature_example[use_pt:])),
+                                     mid_colors=True)
+
+fig = plt.figure()
+ax1=plt.subplot(111)
+
+
+ax1.add_collection(lc(segs, colors=colors))
+plt.xlim(traj_sess[tr]['x_monk'][use_pt:-use_pt].min()-5,traj_sess[tr]['x_monk'][use_pt:-use_pt].max()+5)
+plt.ylim(traj_sess[tr]['y_monk'][use_pt:-use_pt].min()-5,traj_sess[tr]['y_monk'][use_pt:-use_pt].max()+5)
+
+
+# ax1=plt.subplot(122)
+# # ax1.scatter(smoothed[tr]['x_monk'][80:-3], smoothed[tr]['y_monk'][80:-3],
+# #             marker='.',color=cmap(curvature_example[80:-3]/np.nanmax(curvature_example[80:])))
+# ax1.add_collection(lc(segs2, colors=colors2))
+# plt.xlim(smoothed[tr]['x_monk'][80:-use_pt].min()-5,smoothed[tr]['x_monk'][80:-use_pt].max()+5)
+# plt.ylim(smoothed[tr]['y_monk'][80:-use_pt].min()-5,smoothed[tr]['y_monk'][80:-use_pt].max()+5)
 #
-# fig = plt.figure()
-# ax1=plt.subplot(111)
-#
-#
-# ax1.add_collection(lc(segs, colors=colors))
-# plt.xlim(traj_sess[tr]['x_monk'][use_pt:-use_pt].min()-5,traj_sess[tr]['x_monk'][use_pt:-use_pt].max()+5)
-# plt.ylim(traj_sess[tr]['y_monk'][use_pt:-use_pt].min()-5,traj_sess[tr]['y_monk'][use_pt:-use_pt].max()+5)
-#
-#
-# # ax1=plt.subplot(122)
-# # # ax1.scatter(smoothed[tr]['x_monk'][80:-3], smoothed[tr]['y_monk'][80:-3],
-# # #             marker='.',color=cmap(curvature_example[80:-3]/np.nanmax(curvature_example[80:])))
-# # ax1.add_collection(lc(segs2, colors=colors2))
-# # plt.xlim(smoothed[tr]['x_monk'][80:-use_pt].min()-5,smoothed[tr]['x_monk'][80:-use_pt].max()+5)
-# # plt.ylim(smoothed[tr]['y_monk'][80:-use_pt].min()-5,smoothed[tr]['y_monk'][80:-use_pt].max()+5)
-# #
