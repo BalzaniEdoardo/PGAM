@@ -1,3 +1,5 @@
+*.zip
+*.xlsx
 select_variables/
 .idea
 TMP/

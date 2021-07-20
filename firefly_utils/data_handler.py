@@ -65,6 +65,81 @@ class data_handler(object):
 
         return train,test
 
+    def GPFA_YU_preprocessing(self, list_timepoints=None):
+        if list_timepoints is None:
+            list_timepoints = [('t_move','t_stop',75),
+                               ('t_stop','t_reward',15)
+                               ]
+        n_trials = self.spikes.n_trials
+
+        # check if the events are consecutive
+        check_ev0 = []
+        check_ev1 = []
+
+        tot_tp = 0
+        for ev0, ev1, tp in list_timepoints:
+            check_ev0 += [ev0]
+            check_ev1 += [ev1]
+            tot_tp += tp - 1
+
+        # tot_tp -= 1
+
+        tp_matrix = np.zeros((n_trials, tot_tp)) * np.nan
+
+
+        rate_tensor = np.zeros((n_trials,self.spikes.num_units, tot_tp)) * np.nan
+
+
+        check_ev0 = np.array(check_ev0[1:])
+        check_ev1 = np.array(check_ev1[:-1])
+        assert(all(check_ev0==check_ev1))
+
+        # loop over trials
+        for tr in range(n_trials):
+            # spk_times = self.spikes.spike_times[:,tr]
+            time_bins = []
+
+            skip_trial = False
+            cc = 1
+            for ev0, ev1, tp in list_timepoints:
+
+                if ev0 != 't_targ_off':
+                    t0 = self.behav.events.__dict__[ev0][tr][0]
+                else:
+                    t0 = self.behav.events.__dict__['t_targ'][tr][0] + self.behav.flyON_dur
+
+                if ev1 != 't_targ_off':
+                    t1 = self.behav.events.__dict__[ev1][tr][0]
+                else:
+                    t1 = self.behav.events.__dict__['t_targ'][tr][0] + self.behav.flyON_dur
+
+                if any(np.isnan([t0,t1])):
+                    skip_trial = True
+                    break
+
+                if t1 < t0:
+                    skip_trial = True
+                    break
+
+                time_lst = np.linspace(t0, t1, tp)
+                if cc != len(list_timepoints):
+                    time_lst = time_lst[:-1]
+
+                time_bins = np.hstack((time_bins,time_lst))
+                cc += 1
+
+            if skip_trial:
+                continue
+
+            tp_matrix[tr, :] = 0.5*(time_bins[:-1] + time_bins[1:])
+            time_int_dur = np.diff(time_bins)
+
+            for unt in range(self.spikes.num_units):
+                rate_tensor[tr,unt,:] = np.histogram(self.spikes.spike_times[unt, tr], bins=time_bins)[0] / time_int_dur
+
+        return tp_matrix, rate_tensor
+
+
     def concatenate_inputs(self,*varnames,t_start=None,t_stop=None):
         time_stamps = deepcopy(self.behav.time_stamps)
 

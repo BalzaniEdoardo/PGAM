@@ -17,6 +17,7 @@ from copy import  deepcopy
 import matplotlib
 matplotlib.rcParams['pdf.fonttype'] = 42
 matplotlib.rcParams['ps.fonttype'] = 42
+matplotlib.rcParams.update({'font.family':'Arial'})
 
 
 monkey_dict = {'m44':'Quigley','m53':'Schro','m91':'Ody','m51':'Bruno','m72':'Marco','m73':'Jimmy'}
@@ -160,7 +161,6 @@ for filter_area in ['MST','PPC','PFC']:
 
         cnt_var += 1
 
-
 plt.figure()
 
 for k in range(4):
@@ -181,6 +181,29 @@ for k in range(4):
 plt.tight_layout(rect=[0, 0.03, 1, 0.95])
 
 plt.savefig('paper_tuning_sim_cp.pdf')
+
+plt.figure()
+
+for k in range(4):
+    ax = plt.subplot(2,2,k+1)
+    ax.yaxis.grid(linestyle='--',alpha=0.5)
+    plt.title(label[k],fontsize=12)
+
+    plt.bar(edge_mst,height_mst[label[k]]/height_mst[label[k]][0],width=delta_edge,color=green)
+    plt.bar(edge_ppc,height_ppc[label[k]]/height_ppc[label[k]][0],width=delta_edge,color=blue)
+    plt.bar(edge_pfc,height_pfc[label[k]]/height_pfc[label[k]][0],width=delta_edge,color=red)
+    # plt.ylim(0,0.75)
+    plt.xticks([edge_ppc[0],edge_ppc[-1]],[0,1])
+    if k % 2 == 0:
+        plt.ylabel('c.p. ratio',fontsize=12)
+    if k >= 2:
+        plt.xlabel('tuning similarity',fontsize=12)
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+
+plt.tight_layout(rect=[0, 0.03, 1, 0.95])
+
+plt.savefig('ratio_paper_tuning_sim_cp.pdf')
 # if filter_area == 'all':
 #     plt.savefig('monk_%s_coupling_prob_grouped.pdf'%monkey)
 #

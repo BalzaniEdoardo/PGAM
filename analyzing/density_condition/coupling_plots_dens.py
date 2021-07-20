@@ -575,3 +575,17 @@ sbs.pointplot(x='sender_brain_area',y='slope',palette={'MST':'g','PPC':'b','PFC'
 plt.savefig('coupling_regr_sem_over_session.png')
 savemat('coupling_strength_regr.mat',mdict={'coupl_regr':table})
 np.save('paired_coupling_strength.npy', cs_table_pair)
+
+
+for area in ['MST','PPC','PFC']:
+    bl = (cs_table_pair['sender_brain_area'] == area) & (cs_table_pair['receiver_brain_area'] == area) & (
+                cs_table_pair['coupling_strength_LD'] > 10 ** -3) & (cs_table_pair['coupling_strength_HD'] > 10 ** -3) &\
+         ((cs_table_pair['sign_LD']) & (cs_table_pair['sign_HD']))
+
+    yy = np.log(cs_table_pair['coupling_strength_LD'][bl])
+    xx = np.log(cs_table_pair['coupling_strength_HD'][bl])
+    
+    tt,p = sts.ttest_1samp(yy-xx,0)
+    eff = (yy-xx).mean()/(xx-yy).std()
+    print(area,tt,p,eff)
+    

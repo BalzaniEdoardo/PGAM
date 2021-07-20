@@ -11,6 +11,7 @@ sys.path.append(os.path.join(os.path.dirname(thisPath),'firefly_utils'))
 # extract:
 #   1) correlation between filters x density condition
 #   2) gain x condition
+from statsmodels.stats.multitest import multipletests
 
 def vcorrcoef(X,y):
     Xm = np.reshape(np.mean(X,axis=1),(X.shape[0],1))
@@ -268,8 +269,25 @@ res_dict_cdf['bounds'] = {'cdf_x':x_corr,'upper':cdf_shuf(x_corr),'lower':cdf_rn
 plt.tight_layout()
 mdict = {'correlation_dict':dict_corr_d,'up_bound':cdf_shuf,'low_bound':cdf_rnd}
 savemat('tuning_stability.mat',mdict=res_dict_cdf)
-#
-#
+
+print(sts.kruskal(dict_corr_d['PPC'],dict_corr_d['PFC'],dict_corr_d['MST']))
+
+pval_mst_pfc = sts.ttest_ind(dict_corr_d['PFC'],dict_corr_d['MST'])
+pval_mst_ppc = sts.ttest_ind(dict_corr_d['PPC'],dict_corr_d['MST'])
+pval_pfc_ppc = sts.ttest_ind(dict_corr_d['PFC'],dict_corr_d['PPC'])
+
+hs_corr = multipletests(np.array([pval_mst_pfc[1],pval_mst_ppc[1],pval_pfc_ppc[1]]), alpha=0.05, method='hs', is_sorted=False, returnsorted=False)
+
+
+print('Kruskall-Wallis test:',sts.kruskal(dict_corr_d['PPC'],dict_corr_d['PFC'],dict_corr_d['MST']))
+print('Post-hoc comparrison holm-sidak corrected p-val: ')
+print('PPC vs PFC', hs_corr[1][2])
+print('PPC vs MST', hs_corr[1][1])
+print('PFC vs MST', hs_corr[1][0])
+
+
+
+
 # #
 # # plt.figure()
 # # for ba in ['MST','PFC','PPC']:

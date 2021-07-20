@@ -11,7 +11,11 @@ import sys,os
 send_to = 'jpn5'
 PP = 'savin1234!'
 
-
+if ('win32' in sys.platform) or ('win64' in sys.platform):
+    putty_exe = 'putty.exe'
+    pass_ssh = '%s -ssh'%putty_exe + ' -pw "%s"'
+else:
+    pass_ssh = 'sshpass -p "%s"'
 
 folder_name = os.path.dirname(os.path.realpath(__file__))
 main_dir = os.path.dirname(folder_name)
@@ -35,13 +39,15 @@ path_fitting_fld = os.path.join(main_dir,'fitting')
 path_ff_utils = os.path.join(main_dir,'firefly_utils')
 path_util_preproc = os.path.join(folder_name,'util_preproc')
 path_jpn5_base = '/scratch/%s/'%send_to#os.path.dirname(os.path.dirname(user_paths.get_path('data_hpc')))
+
+# cluster folder into which to send the condition list
 path_to_fit_fld = os.path.join(path_jpn5_base,'fit_with_accel')#'/scratch/%s/fit_ptb_as_variable'%send_to
 
 # send gam_fit.py
 print('\nsending:')
 print(os.path.join(path_fitting_fld,'gam_fit.py'))
 
-
+# fitting script to send
 fhname = '/Users/edoardo/Work/Code/GAM_code/fitting/full_model_fit_cluster.py'
 with open(fhname,'r') as fh:
     string = fh.read()
@@ -54,10 +60,10 @@ else:
 with open(fhname,'w') as fh:
     fh.write(string)
     
-os.system('sshpass -p "%s" scp %s %s@greene.hpc.nyu.edu:%s' % ( PP, '/Users/edoardo/Work/Code/GAM_code/fitting/full_model_fit_cluster.py',send_to,path_to_fit_fld))
+os.system(pass_ssh%PP + ' scp %s %s@greene.hpc.nyu.edu:%s' % ( fhname,send_to,path_to_fit_fld))
 path_to_script = os.path.join(path_ff_utils,'knots_constructor.py')
 dest_fld = os.path.join(path_jpn5_base,'GAM_Repo','firefly_utils')
-os.system('sshpass -p "%s" scp %s %s@greene.hpc.nyu.edu:%s' % (PP, path_to_script, send_to,dest_fld))
+os.system(pass_ssh%PP + ' scp %s %s@greene.hpc.nyu.edu:%s' % (path_to_script, send_to,dest_fld))
 
 
 # send any condition_list file
@@ -71,7 +77,7 @@ for root, dirs, files in os.walk(main_dir):
             #     continue
             fh_path = os.path.join(root,fhname)
             print('sending: \n',fh_path)
-            os.system('sshpass -p "%s" scp %s %s@greene.hpc.nyu.edu:%s' % (PP, fh_path, send_to, path_to_fit_fld))
+            os.system(pass_ssh%PP + ' scp %s %s@greene.hpc.nyu.edu:%s' % ( fh_path, send_to, path_to_fit_fld))
             print('sent')
             session = fhname.split('.')[0].split('condition_list_')[1]
             with open(os.path.join(main_dir,'sh_template.sh'),'r') as fh:
@@ -93,7 +99,7 @@ for root, dirs, files in os.walk(main_dir):
                 fh.write(sh_text)
                 fh.close()
             print('sending: \n',os.path.join(main_dir,'gam_fit_%s.sh'%session))
-            os.system('sshpass -p "%s" scp %s %s@greene.hpc.nyu.edu:%s' % (PP, os.path.join(main_dir,'gam_fit_%s.sh'%session),send_to, path_to_fit_fld))
+            os.system(pass_ssh%PP + ' scp %s %s@greene.hpc.nyu.edu:%s' % ( os.path.join(main_dir,'gam_fit_%s.sh'%session),send_to, path_to_fit_fld))
             print('sent')
             os.remove(os.path.join(main_dir,'gam_fit_%s.sh'%session))
             
@@ -105,19 +111,19 @@ path_to_basisscript = os.path.join(path_util_preproc,'basis_set_param_per_sessio
 print('\nsending:')
 print(path_to_basisscript)
 dest_fld = os.path.join(path_jpn5_base,'GAM_Repo','preprocessing_pipeline','util_preproc')
-os.system('sshpass -p "%s" scp %s %s@greene.hpc.nyu.edu:%s' % (PP, path_to_basisscript, send_to, dest_fld))
+os.system(pass_ssh%PP + ' scp %s %s@greene.hpc.nyu.edu:%s' % ( path_to_basisscript, send_to, dest_fld))
 
 path_to_script = os.path.join(path_GAM_library,'der_wrt_smoothing.py')
 dest_fld = os.path.join(path_jpn5_base,'GAM_Repo','GAM_library')
-os.system('sshpass -p "%s" scp %s %s@greene.hpc.nyu.edu:%s' % (PP, path_to_script, send_to, dest_fld))
+os.system(pass_ssh%PP + ' scp %s %s@greene.hpc.nyu.edu:%s' % ( path_to_script, send_to, dest_fld))
 
 path_to_script = os.path.join(path_GAM_library,'GAM_library.py')
-os.system('sshpass -p "%s" scp %s %s@greene.hpc.nyu.edu:%s' % (PP, path_to_script,send_to, dest_fld))
+os.system(pass_ssh%PP + ' scp %s %s@greene.hpc.nyu.edu:%s' % ( path_to_script,send_to, dest_fld))
 
 path_to_script = os.path.join(path_GAM_library,'der_wrt_smoothing.py')
-os.system('sshpass -p "%s" scp %s %s@greene.hpc.nyu.edu:%s' % (PP, path_to_script, send_to, dest_fld))
+os.system(pass_ssh%PP + ' scp %s %s@greene.hpc.nyu.edu:%s' % ( path_to_script, send_to, dest_fld))
 
 path_to_script = os.path.join(path_GAM_library,'gam_data_handlers.py')
-os.system('sshpass -p "%s" scp %s %s@greene.hpc.nyu.edu:%s' % (PP, path_to_script,send_to, dest_fld))
+os.system(pass_ssh%PP + ' scp %s %s@greene.hpc.nyu.edu:%s' % ( path_to_script,send_to, dest_fld))
 
 

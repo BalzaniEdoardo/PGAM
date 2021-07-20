@@ -48,12 +48,6 @@ isi_v_filter = dat['isi_v_filter']
 unq_tr = np.unique(trial_idx)
 brain_area = dat['brain_area']
 
-trial_type = dat['trial_type']
-# sele_tr = np.where(trial_type['all'])[0]
-# keep = np.zeros(trial_idx.shape[0], dtype=bool)
-# for tr in sele_tr:
-#     keep[trial_idx==tr] = True
-
 
 
 combine_filter = (cont_rate_filter) * (presence_rate_filter) * (isi_v_filter)
@@ -62,11 +56,18 @@ brain_area = brain_area[combine_filter]
 # unit number according to matlab indexing
 
 ## use 18ms bins
-y_rebin = np.zeros((0,yt.shape[1]))
+
 trial_idx_rebin = []
 t_stop_rebin = []
 t_start_rebin = []
 t_flyOFF_rebin = []
+
+decode = ['rad_vel']#,'ang_vel','eye_vert','eye_hori']
+dd = {}
+for var in decode:
+    dd[var] = sts.zscore(Xt[:,var_names==var])
+
+y_rebin = np.zeros((0,yt.shape[1] + len(decode)))
 for tr in unq_tr:
     sel = trial_idx == tr
     ytr = yt[sel]
@@ -76,7 +77,14 @@ for tr in unq_tr:
     ytr = ytr[:num_bins*3,:]
     tmp = ytr[::3,:] + ytr[1::3,:] + ytr[2::3,:]
 
+
+
+
     Xtr = Xtr[:num_bins*3,:]
+    for var in decode:
+        var_x = dd[var][sel][:num_bins*3]
+        var_x = (var_x[::3] + var_x[1::3] + var_x[2::3])/3.
+        tmp = np.hstack((tmp,var_x))
 
     t_stop_tr = np.zeros(tmp.shape[0])
     ii_stop = np.where(Xtr[:,var_names=='t_stop'] == 1)[0]//3
@@ -179,10 +187,11 @@ for tr in unq_tr:
 
 
 # create filter
+# decoding VAR
 trial_idx = trial_idx_rebin
 yt = y_rebin
 filt_width_list = [3]
-dim_list = [2,6,10,14,20]
+dim_list = [30]#[2,6,10,14,20]
 pred_error = []
 result_dict = {}
 for filtwidth in filt_width_list:
@@ -193,7 +202,8 @@ for filtwidth in filt_width_list:
     h = h / np.sum(h)
 
 
-    sm_spike = pop_spike_convolve(np.sqrt(yt), trial_idx, h)
+    sm_spike = pop_spike_convolve(np.sqrt(yt)[:,:-len(decode)], trial_idx, h)
+    sm_spike = np.hstack((sm_spike, yt[:,-len(decode):]))
 
     sm_spike_centered = sm_spike#-np.nanmean(sm_spike,axis=0)
     non_nan = np.where(~np.isnan(sm_spike_centered))
@@ -216,40 +226,49 @@ for filtwidth in filt_width_list:
         M = yt.shape[1]
         loglike = lambda R, C: sts.multivariate_normal.logpdf(sm_spk_non_nan[:idx_endTrain], mean=np.zeros(M), cov=(np.dot(C, C.T) + R)).mean()
         # print('SKL', loglike(np.diag(fit.noise_variance_), fit.components_.T), 'EM', ll_iter[-1])
+
+        sqrt_yt_test = np.sqrt(yt_non_nan[idx_endTrain:,:-len(decode)])
+        sqrt_yt_test = np.hstack((sqrt_yt_test, yt_non_nan[idx_endTrain:,-len(decode):]))
+
         pred_mu_skl, pred_sigma_skl, predict_error_skl = mean_yj_given_ymj(sm_spk_non_nan[idx_endTrain:], fit.components_.T,
                                                                            fit.noise_variance_,
-                                                        np.sqrt(yt_non_nan[idx_endTrain:]))
+                                                                           sqrt_yt_test)
         pred_error += [predict_error_skl]
         result_dict[D] = {'pred_mu':deepcopy(pred_mu_skl),'sm_spke':sm_spk_non_nan[idx_endTrain:],'trial_idx_non_nan':trial_idx_non_nan[idx_endTrain:],
                           'fit':deepcopy(fit)}
     #
-    # print('FILT WIDTH %d'%filtwidth)
-    # for k in range(yt.shape[1]):
-    #     cr, pp = sts.pearsonr(result_dict[filtwidth]['pred_mu'][:, k], sm_spike_centered[non_nan].reshape(sm_spike_centered[non_nan].shape[0]//yt.shape[1],yt.shape[1])[:, k])
-    #     print(k, cr, pp < 0.05, yt.sum(axis=0)[k] / (yt.shape[0] * 0.006))
+        print('dims %d'%D)
+
+        tmp = sm_spike_centered[non_nan].reshape(sm_spike_centered[non_nan].shape[0]//sqrt_yt_test.shape[1],sqrt_yt_test.shape[1])
+        tmp = tmp[idx_endTrain:,:]
+        for k in range(yt.shape[1]):
+            cr, pp = sts.pearsonr(result_dict[D]['pred_mu'][:, k], tmp[:, k])
+            print(k, cr, pp < 0.05, yt.sum(axis=0)[k] / (yt.shape[0] * 0.006))
 
 
 
 plt.plot( dim_list, pred_error,'-ok')
 
 fit = result_dict[dim_list[np.argmin(pred_error)]]['fit']
-plt.figure()
+plt.figure(figsize=(12,8))
 kk=1
-for ff in dim_list:
-    plt.subplot(3,2,kk)
-    smspk = result_dict[ff]['sm_spke']
-    pred_mu = result_dict[ff]['pred_mu']
+ff = 6
+var_idx = 47
+for tr in range(25):
+    plt.subplot(5,5,kk)
+    smspk = result_dict[D]['sm_spke']
+    pred_mu = result_dict[D]['pred_mu']
     corrs=[]
     for k in range(yt.shape[1]):
         corrs += [sts.pearsonr(smspk[:,k], pred_mu[:,k])[0]]
-    sel = result_dict[ff]['trial_idx_non_nan'] == np.unique(result_dict[2]['trial_idx_non_nan'])[1]
-    p, = plt.plot(smspk[sel,45])
-    plt.title('dim %d'%ff)
-    plt.plot(pred_mu[sel,45],ls='--',color=p.get_color(), label='%.3f'%pred_error[kk-1])
-    plt.legend()
+    sel = result_dict[D]['trial_idx_non_nan'] == np.unique(result_dict[D]['trial_idx_non_nan'])[tr]
+    p, = plt.plot(smspk[sel,var_idx])
+    # plt.title('dim %d'%ff)
+    plt.plot(pred_mu[sel,var_idx],ls='--',color=p.get_color())#, label='%.3f'%pred_error[kk-1])
+    # plt.legend()
     kk+=1
 plt.tight_layout()
-plt.savefig('cv_recovered_rate.png')
+# plt.savefig('cv_recovered_rate.png')
 
 
 
@@ -303,13 +322,82 @@ for k in range(10, 20):
         plt.plot([ii_fly-17,ii_fly-17],[min(tc),max(tc)],'g',label='FLY ON')
 
 
-## density plot
-train_trials = trial_idx[:idx_endTrain]
-hd_bool = np.zeros(train_trials.shape[0],dtype=bool)
-for tr in np.where(trial_type['density']==0.005)[0]:
-    hd_bool[train_trials == tr] = True
+# plt.figure()
+# pcs_res = PC_raw = PCA().fit(sm_spk_non_nan)
+# pcs = pcs_res.transform(sm_spk_non_nan)
+# for k in range(10, 20):
+#     plt.subplot(5, 2, k - 9)
+#     sel = trial_idx_non_nan == np.unique(trial_idx_non_nan)[k]
+#     t_stop = t_stop_rebin[sel]
+#     t_start = t_start_rebin[sel]
+#     t_fly = t_flyOFF_rebin[sel]
+#
+#     plt.plot(pcs[sel, 0])
+#     ii_stop = np.where(t_stop)[0]
+#     ii_start = np.where(t_start)[0]
+#     ii_fly = np.where(t_fly)[0]
+#
+#     if len(ii_stop):
+#         plt.plot([ii_stop,ii_stop],[min(pcs[sel,0]),max(pcs[sel,0])],'k',label='STOP')
+#     if len(ii_start):
+#         plt.plot([ii_start,ii_start],[min(pcs[sel,0]),max(pcs[sel,0])],'r',label='START')
+#     if len(ii_fly):
+#         plt.plot([ii_fly,ii_fly],[min(pcs[sel,0]),max(pcs[sel,0])],'g',label='FLY OFF')
+#         plt.plot([ii_fly-17,ii_fly-17],[min(pcs[sel,0]),max(pcs[sel,0])],'g',label='FLY ON')
 
-latents = result_dict[6]['fit'].transform(sm_spk_non_nan[:idx_endTrain])
 
-cov_HD = np.cov(latents[hd_bool].T)
-cov_LD = np.cov(latents[~hd_bool].T)
+
+# plt.figure(figsize=(11,8))
+# for k in range(25):
+#     tr = 300 + k
+#     plt.subplot(5,5,k+1)
+#     mu_tr = mu[:,trial_idx==unq_tr[tr]]
+#     X_tr = Xt[trial_idx==unq_tr[tr]]
+#     plt.plot(mu_tr[0,:],mu_tr[1,:])
+#     plt.scatter(mu_tr[0,np.where(X_tr[:, var_names=='t_stop'])[0]],mu_tr[1,np.where(X_tr[:, var_names=='t_stop'])[0]],color='g')
+#     plt.scatter(mu_tr[0,np.where(X_tr[:, var_names=='t_move'])[0]],mu_tr[1,np.where(X_tr[:, var_names=='t_move'])[0]],color='r')
+#     plt.scatter(mu_tr[0,np.where(X_tr[:, var_names=='t_flyOFF'])[0]-50],mu_tr[1,np.where(X_tr[:, var_names=='t_flyOFF'])[0]-50],color='k')
+# plt.tight_layout()
+
+
+
+#
+# import statsmodels.api as sm
+# non_nan = ~np.isnan(Xt[:,var_names=='rad_target'])
+# model = sm.OLS(Xt[non_nan.flatten(),var_names=='rad_target'],sm.add_constant(mu[:,non_nan.flatten()].T))
+# res = model.fit()
+# prd = res.predict(sm.add_constant(mu.T))
+#
+# unq_tr = np.unique(trial_idx)
+# plt.figure(figsize=(11,8))
+# for k in range(25):
+#     tr = 300 + k
+#     plt.subplot(5,5,k+1)
+#
+#     X_tr = Xt[trial_idx==unq_tr[tr],var_names=='rad_target']
+#     plt.plot(X_tr)
+#     plt.plot(prd[trial_idx==unq_tr[tr]])
+#
+# plt.tight_layout()
+#
+# import statsmodels.api as sm
+# non_nan = ~np.isnan(Xt[:,var_names=='rad_vel'])
+# model = sm.OLS(Xt[non_nan.flatten(),var_names=='rad_vel'],sm.add_constant(mu[:,non_nan.flatten()].T))
+# res = model.fit()
+# prd = res.predict(sm.add_constant(mu.T))
+#
+# unq_tr = np.unique(trial_idx)
+# plt.figure(figsize=(11,8))
+# for k in range(25):
+#     tr = 300 + k
+#     plt.subplot(5,5,k+1)
+#
+#     X_tr = Xt[trial_idx==unq_tr[tr],var_names=='rad_vel']
+#     plt.plot(X_tr)
+#     plt.plot(prd[trial_idx==unq_tr[tr]])
+#
+# plt.tight_layout()
+#
+#
+#
+#

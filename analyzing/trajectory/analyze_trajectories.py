@@ -118,7 +118,7 @@ def faded_segment_resample(xs, ys, zs=None, color='k', fade_len=20, n_resample=1
 
 
 dat = np.load('/Users/edoardo/Work/Code/GAM_code/analyzing/trajectory/traj_and_info.npz',allow_pickle=True)
-dat_conc = np.load('/Volumes/WD_Edo/firefly_analysis/LFP_band/concatenation_with_accel/m53s113.npz',allow_pickle=True)
+# dat_conc = np.load('/Volumes/WD_Edo/firefly_analysis/LFP_band/concatenation_with_accel/m53s113.npz',allow_pickle=True)
 
 traj = dat['trajectories']
 

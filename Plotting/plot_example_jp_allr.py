@@ -208,8 +208,8 @@ if plot_boolean:
         
             
         plt.tight_layout(rect=[0, 0.03, 1, 0.95])
-        plt.savefig('%s_c%d.png'%(session,unit))
-        plt.close('all')
+        # plt.savefig('%s_c%d.png'%(session,unit))
+        # plt.close('all')
         # plt.legend()
         # plt.savefig('Figs/example_tuning_%s_%d.png'%(session,unit))
         # plt.close('all')

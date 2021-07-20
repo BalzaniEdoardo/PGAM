@@ -10,6 +10,8 @@ import seaborn as sbs
 from scipy.io import savemat
 
 from seaborn.algorithms import bootstrap
+import statsmodels.api as stats
+import statsmodels.formula.api as smf
 
 
 fld = '/Volumes/WD_Edo/firefly_analysis/LFP_band/processed_data/mutual_info/'
@@ -168,7 +170,7 @@ for var in order:
 plt.tight_layout()
 
 
-plt.savefig('mutual_info_compare.png')
+#plt.savefig('mutual_info_compare.png')
 
 order = ['rad_vel','ang_vel','rad_acc','ang_acc','t_move','t_stop','t_flyOFF','rad_target',
          'ang_target','rad_path','ang_path','t_reward','eye_vert','eye_hori']
@@ -208,7 +210,7 @@ for var in order:
 
     plt.tight_layout(rect=[0, 0.03, 1, 0.95])
 
-    plt.savefig('%s_examples/%s.png'%(ba,var))
+    #plt.savefig('%s_examples/%s.png'%(ba,var))
 
 
 
@@ -247,7 +249,7 @@ for var in order:
 
     plt.tight_layout(rect=[0, 0.03, 1, 0.95])
 
-    plt.savefig('%s_examples/%s.png'%(ba,var))
+    #plt.savefig('%s_examples/%s.png'%(ba,var))
 
 ba = 'PFC'
 for var in order:
@@ -283,7 +285,7 @@ for var in order:
 
     plt.tight_layout(rect=[0, 0.03, 1, 0.95])
 
-    plt.savefig('%s_examples/%s.png' % (ba, var))
+    #plt.savefig('%s_examples/%s.png' % (ba, var))
 
 plt.close('all')
 
@@ -320,6 +322,9 @@ savemat('tuning_regression_res.mat',mdict={'regression':regr_res})
 df = pd.DataFrame(regr_res)
 df = df[df['fdr_pval'] < 0.005]
 df = df.rename(columns = {'slope':'gain'}, inplace = False)
+
+df_gain = deepcopy(df)
+df_gain = df_gain[df_gain['brain_area']!='VIP']
 #df['gain'] = 1. / df['gain']
 plt.figure(figsize=(14,4))
 ax = plt.subplot(111)
@@ -333,7 +338,7 @@ plt.xticks(rotation=90)
 plt.tight_layout()
 
 # ax.set_xlim(xlim)
-plt.savefig('rerv_gain_tuning_density.pdf')
+#plt.savefig('rerv_gain_tuning_density.pdf')
 
 df = pd.DataFrame(regr_res)
 df = df[df['fdr_pval'] < 0.005]
@@ -350,7 +355,7 @@ plt.xticks(rotation=90)
 plt.tight_layout()
 
 # ax.set_xlim(xlim)
-plt.savefig('intercept_tuning_density.png')
+#plt.savefig('intercept_tuning_density.png')
 
 
 ## figure S10, examples
@@ -536,4 +541,35 @@ for var in ['rad_vel', 't_stop']:
 
 plt.tight_layout(rect=[0, 0.03, 1, 0.95])
 
-plt.savefig('example_tuning_gain.pdf')
+
+res = smf.ols(formula='gain ~ C(brain_area)*C(variable)', data=df_gain).fit()
+table = stats.stats.anova_lm(res, typ=2)
+
+dtype_dict2 = {'names':('monkey','session','unit','brain_area','slope','intercept','pval','fdr_pval','rsquare','xmin','xmax','mutual_info_hd','mutual_info_ld'),
+              'formats':('U30','U30',int,'U30',float,float,float,float,float,float,float,float,float)}
+
+gain_np = deepcopy(regr_res)
+gain_np = gain_np[gain_np['fdr_pval'] < 0.005]
+sub_gain = np.zeros(0,dtype=dtype_dict2)
+for sess in np.unique(gain_np['session']):
+    gain_sess = gain_np[gain_np['session']==sess]
+    for un in np.unique(gain_sess['unit']):
+         gain_un = gain_sess[gain_sess['unit']==un]
+         tmp = np.zeros(1,dtype=dtype_dict2)
+         tmp['slope'] = np.mean(gain_un['slope'])
+         for name in dtype_dict2['names']:
+             tmp[name] = gain_un[name][0]
+         sub_gain = np.hstack((sub_gain,tmp))
+         #break 
+    #br%ak
+
+eff_mst = (gain_np['slope'][gain_np['brain_area']=='MST'].mean()-1)/np.std(gain_np['slope'][gain_np['brain_area']=='MST'])
+eff_ppc = (gain_np['slope'][gain_np['brain_area']=='PPC'].mean()-1)/np.std(gain_np['slope'][gain_np['brain_area']=='PPC'])
+eff_pfc = (gain_np['slope'][gain_np['brain_area']=='PFC'].mean()-1)/np.std(gain_np['slope'][gain_np['brain_area']=='PFC'])
+
+print('MST',sts.ttest_1samp(gain_np['slope'][gain_np['brain_area']=='MST'],1),eff_mst)
+print('PPC',sts.ttest_1samp(gain_np['slope'][gain_np['brain_area']=='PFC'],1),eff_pfc)
+print('PFC',sts.ttest_1samp(gain_np['slope'][gain_np['brain_area']=='PPC'],1),eff_ppc)
+
+
+#plt.savefig('example_tuning_gain.pdf')
