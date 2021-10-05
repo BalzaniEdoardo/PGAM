@@ -46,6 +46,7 @@ class empty_container(object):
 from rpy2.robjects.packages import importr
 import rpy2.robjects.numpy2ri as numpy2ri
 survey = importr('survey')
+from neg_weights_WLS import robust_WLS
 
 def wSumChisq_cdf(x,df,w):
     numpy2ri.activate()
@@ -651,7 +652,7 @@ class general_additive_model(object):
     def optim_gam(self, var_list, smooth_pen=None,max_iter=10**3,tol=1e-5,conv_criteria='gcv',
                   perform_PQL=True,use_dgcv=False,initial_smooths_guess=True,method='Newton-CG',
                   compute_AIC=False,random_init=False,bounds_rho=None,gcv_sel_tol=1e-10,fit_initial_beta=False,
-                  filter_trials=None,compute_MI=False,saveBetaHist=False):
+                  filter_trials=None,compute_MI=False,saveBetaHist=False, WLS_solver='positive_weights'):
 
         if filter_trials is None:
             filter_trials = np.ones(self.y.shape[0],dtype=bool)
@@ -722,33 +723,40 @@ class general_additive_model(object):
         else:
             beta_hist = None
         while not converged:
-            print('smooth_pen iter %d'%iteration,smooth_pen)
-            z,w = f_weights_and_data.get_params(mu)
-            self.sm_handler.set_smooth_penalties(smooth_pen,var_list)
-            pen_matrix = self.sm_handler.get_penalty_agumented(var_list)
-            Xagu = np.vstack((exog,pen_matrix))
-            yagu = np.zeros(Xagu.shape[0])
-            yagu[:n_obs] = z
-            wagu = np.ones(Xagu.shape[0])
-            wagu[:n_obs] = w
-            model = sm.WLS(yagu,Xagu,wagu)
+            if WLS_solver == 'positive_weights':
+                print('smooth_pen iter %d'%iteration,smooth_pen)
+                z,w = f_weights_and_data.get_params(mu)
+                self.sm_handler.set_smooth_penalties(smooth_pen,var_list)
+                pen_matrix = self.sm_handler.get_penalty_agumented(var_list)
+                Xagu = np.vstack((exog,pen_matrix))
+                yagu = np.zeros(Xagu.shape[0])
+                yagu[:n_obs] = z
+                wagu = np.ones(Xagu.shape[0])
+                wagu[:n_obs] = w
+                model = sm.WLS(yagu,Xagu,wagu)
 
-            #begin STEP HALVINB
-            Slam = create_Slam(np.log(smooth_pen), self.sm_handler, var_list)
-            func = lambda beta:  -(
-                    unpenalized_ll(beta, yfit, exog[:n_obs, :], self.family, 1, omega=1) + penalty_ll_Slam(Slam,
-                                                                                                           beta, 1))
+                #begin STEP HALVINB
+                Slam = create_Slam(np.log(smooth_pen), self.sm_handler, var_list)
+                func = lambda beta:  -(
+                        unpenalized_ll(beta, yfit, exog[:n_obs, :], self.family, 1, omega=1) + penalty_ll_Slam(Slam,
+                                                                                                               beta, 1))
 
-            if not first_itetation:
-                dev0 = np.sum(func(bhat))
+                if not first_itetation:
+                    dev0 = np.sum(func(bhat))
+                else:
+                    dev0 = np.inf
+
+                fit_OLS = model.fit()
+
+                # step halving
+                bnew = fit_OLS.params.copy()
+                bnew_halved = bnew.copy()
             else:
-                dev0 = np.inf
+                bnew, _, _, _, z, w, _ = robust_WLS(yfit, mu, self.family, exog, f_weights_and_data,
+                                                    S_list=compute_Sjs(self.sm_handler, var_list),
+                                                    lambda_list=np.log(smooth_pen), fisher_scoring=self.fisher_scoring)
+                bnew_halved = bnew.copy()
 
-            fit_OLS = model.fit()
-
-            # step halving
-            bnew = fit_OLS.params.copy()
-            bnew_halved = bnew.copy()
             dev1 = np.sum(func(bnew))
 
             halving_max = 10
@@ -886,7 +894,7 @@ class general_additive_model(object):
     def k_fold_crossval(self,k, trial_index, var_list, smooth_pen=None,max_iter=10**3,tol=1e-5,conv_criteria='gcv',
                   perform_PQL=True,use_dgcv=False,initial_smooths_guess=True,method='Newton-CG',
                   compute_AIC=False,random_init=False,bounds_rho=None,gcv_sel_tol=1e-10,fit_initial_beta=False,compute_MI=False,
-                  saveBetaHist=False):
+                  saveBetaHist=False, WLS_solver='positive_weights'):
         # perform a k-fold cross validation
         unq_trials = np.unique(trial_index)
         # get integer num of trials to use
@@ -917,7 +925,7 @@ class general_additive_model(object):
             model_fit = self.optim_gam(var_list, smooth_pen=smooth_pen,max_iter=max_iter,tol=tol,conv_criteria=conv_criteria,
                   perform_PQL=perform_PQL,use_dgcv=use_dgcv,initial_smooths_guess=initial_smooths_guess,method=method,
                   compute_AIC=compute_AIC,random_init=random_init,bounds_rho=bounds_rho,gcv_sel_tol=gcv_sel_tol,
-                                       fit_initial_beta=fit_initial_beta,filter_trials=bool_train,compute_MI=compute_MI,saveBetaHist=saveBetaHist)
+                                       fit_initial_beta=fit_initial_beta,filter_trials=bool_train,compute_MI=compute_MI,saveBetaHist=saveBetaHist,WLS_solver=WLS_solver)
 
             ## compute pr2 on test
             exog, index_var = self.sm_handler.get_exog_mat(model_fit.var_list)
@@ -1078,7 +1086,7 @@ class general_additive_model(object):
                                      use_dgcv=True,smooth_pen=None,initial_smooths_guess=True,fit_initial_beta=False,
                                      pseudoR2_per_variable=False,filter_trials=None,k_fold = False,fold_num=5,
                                         trial_num_vec=None,compute_MI=True, k_fold_reducedOnly=True,bounds_rho=None,
-                             reducedAdaptive=True, ord_AD=3, ad_knots=6,saveBetaHist=False,perform_PQL=True):
+                             reducedAdaptive=True, ord_AD=3, ad_knots=6,saveBetaHist=False,perform_PQL=True,WLS_solver='positive_weights'):
         if smooth_pen is None:
             smooth_pen = []
             for var in var_list:
@@ -1095,7 +1103,7 @@ class general_additive_model(object):
                                         compute_AIC=False,gcv_sel_tol=gcv_sel_tol,random_init=random_init,
                                         use_dgcv=use_dgcv,smooth_pen=smooth_pen,fit_initial_beta=fit_initial_beta,
                                         filter_trials=filter_trials,compute_MI=compute_MI,bounds_rho=bounds_rho,
-                                        saveBetaHist=saveBetaHist)
+                                        saveBetaHist=saveBetaHist,WLS_solver=WLS_solver)
             test_bool = np.ones(self.y.shape[0], dtype=bool)
         else:
             full_model,test_bool = self.k_fold_crossval(fold_num,trial_num_vec,var_list, max_iter=max_iter, tol=tol,
@@ -1103,7 +1111,7 @@ class general_additive_model(object):
                                         perform_PQL=perform_PQL, initial_smooths_guess=initial_smooths_guess, method=method,
                                         compute_AIC=False, gcv_sel_tol=gcv_sel_tol, random_init=random_init,
                                         use_dgcv=use_dgcv, smooth_pen=smooth_pen, fit_initial_beta=fit_initial_beta,compute_MI=compute_MI,
-                                        bounds_rho=bounds_rho,saveBetaHist=saveBetaHist)
+                                        bounds_rho=bounds_rho,saveBetaHist=saveBetaHist,WLS_solver=WLS_solver)
 
         pvals = full_model.covariate_significance['p-val']
         keep_idx = pvals <= th_pval
@@ -1168,7 +1176,7 @@ class general_additive_model(object):
                                     compute_AIC=False, gcv_sel_tol=gcv_sel_tol, random_init=random_init,
                                     use_dgcv=use_dgcv,smooth_pen=smooth_pen,fit_initial_beta=fit_initial_beta,
                                                filter_trials=filter_trials,compute_MI=compute_MI,bounds_rho=bounds_rho,
-                                               saveBetaHist=saveBetaHist)
+                                               saveBetaHist=saveBetaHist,WLS_solver=WLS_solver)
                 test_bool = np.ones(self.y.shape[0],dtype=bool)
             else:
                 reduced_model,test_bool = self.k_fold_crossval(fold_num, trial_num_vec, sub_list, max_iter=max_iter, tol=tol,
@@ -1178,7 +1186,7 @@ class general_additive_model(object):
                                                   compute_AIC=False, gcv_sel_tol=gcv_sel_tol, random_init=random_init,
                                                   use_dgcv=use_dgcv, smooth_pen=smooth_pen,
                                                   fit_initial_beta=fit_initial_beta,compute_MI=compute_MI,bounds_rho=bounds_rho,
-                                                  saveBetaHist=saveBetaHist
+                                                  saveBetaHist=saveBetaHist,WLS_solver=WLS_solver
                                                   )
 
         if pseudoR2_per_variable and (not reduced_model is None):

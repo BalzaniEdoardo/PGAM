@@ -10,6 +10,15 @@ from scipy.io import loadmat,savemat
 from data_handler import *
 #from extract_presence_rate import *
 
+
+def time_stamps_rebin(time_stamps, binwidth_ms=20):
+    rebin = {}
+    for tr in time_stamps.keys():
+        ts = time_stamps[tr]
+        tp_num = np.floor((ts[-1] - ts[0]) * 1000 / (binwidth_ms))
+        rebin[tr] = ts[0] + np.arange(tp_num) * binwidth_ms / 1000.
+    return rebin
+
 user_paths = get_paths_class()
 
 use_server = None#'/Volumes/server2/Monkeys'
@@ -153,25 +162,27 @@ for session in concat_list:
     t_start = np.min(np.vstack((t_move, t_targ)), axis=0) - pre_trial_dur
     t_stop = dict_to_vec(exp_data.behav.events.t_end) + post_trial_dur
 
+    bin_ts = time_stamps_rebin(exp_data.behav.time_stamps, binwidth_ms=20)
+    exp_data.spikes.bin_spikes(bin_ts, t_start=t_start, t_stop=t_stop, select=exp_data.filter)
+
+    var_names = ('rad_vel', 'ang_vel', 'rad_path', 'ang_path', 'rad_target', 'ang_target',
+                 'eye_vert','eye_hori',
+                 'rad_acc','ang_acc')
+
+    time_pts, rate, sm_traj, raw_traj, fly_pos, cov_dict = exp_data.GPFA_YU_preprocessing_noTW( t_start, t_stop, var_list=var_names,binwidth_ms=20)
 
 
-    var_names = ('rad_vel','ang_vel','rad_path','ang_path','rad_target','ang_target',
-                 'lfp_beta','lfp_alpha','lfp_theta','t_move','t_flyOFF','t_stop','t_reward','eye_vert','eye_hori',
-                 'hand_vel1','hand_vel2','rad_acc','ang_acc')
 
-    time_pts, rate, sm_traj, raw_traj, fly_pos, cov_dict = exp_data.GPFA_YU_preprocessing([('t_targ','t_targ_off',15),('t_targ_off','t_stop',50),('t_stop','t_reward',15)],
-                                                                                          var_list=['eye_vert','eye_hori','rad_vel','ang_vel','rad_target','ang_target'])
+    rates_str = {}
+    time_pts_dict = {}
+    trialId = {}
 
-    trial_id = np.arange(rate.shape[0])
-
-    select = exp_data.filter & ((np.diff(time_pts,axis=1) > min_bin_size).prod(axis=1) > 0)
-
-    trial_id = trial_id[select]
-    rate = rate[select]
-    time_pts = time_pts[select]
-
+    for kk in rate.keys():
+        time_pts_dict['tr_%d'%kk] = time_pts[kk]
+        rates_str['tr_%d'%kk] = rate[kk]
+        trialId['tr_%d' % kk] = kk
     print('SAVING')
-    savemat(os.path.join(DIRECT,'test_%s_gpfa.mat'%session), mdict={'dat': {'spikes':rate,'timeDiscr':time_pts,'trialId':trial_id},
+    savemat(os.path.join(DIRECT,'noTW_%s_gpfa.mat'%session), mdict={'dat': {'spikes':rates_str,'timeDiscr':time_pts_dict,'trialId':trialId},
                                                                     'sm_trajectory':sm_traj,'raw_trajectory':raw_traj,
                                                                     'fly_pos':fly_pos,'var_struct':cov_dict,'info_trial':exp_data.info.trial_type})
 

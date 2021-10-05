@@ -223,7 +223,7 @@ class behavior_experiment(object):
             self.continuous.x_monk = creat_dict_from_beahv_stat(behav_stat, 'pos_abs', 'x_monk')
             self.continuous.y_monk = creat_dict_from_beahv_stat(behav_stat, 'pos_abs', 'y_monk')
             self.get_fly_pos(trials_behv)
-            self.continuous.rad_path_from_xy = self.radial_distance_from_position()
+            #self.continuous.rad_path_from_xy = self.radial_distance_from_position()
 
         if extract_cartesian_eye_and_firefly:
             height = dat['prs']['height'][0][0][0][0]

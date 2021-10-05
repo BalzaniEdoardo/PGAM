@@ -5,10 +5,19 @@ from lfp_class import lfp_class
 from copy import deepcopy
 from datetime import datetime
 import matplotlib.pyplot as plt
+import statsmodels.api as sm
+from scipy.interpolate import interp1d
 
 def dict_to_vec(dictionary):
     return np.hstack(list(dictionary.values()))
 
+def time_stamps_rebin(time_stamps, binwidth_ms=20):
+    rebin = {}
+    for tr in time_stamps.keys():
+        ts = time_stamps[tr]
+        tp_num = np.floor((ts[-1] - ts[0]) * 1000 / (binwidth_ms))
+        rebin[tr] = ts[0] + np.arange(tp_num) * binwidth_ms / 1000.
+    return rebin
 
 
 
@@ -65,12 +74,16 @@ class data_handler(object):
 
         return train,test
 
-    def GPFA_YU_preprocessing(self, list_timepoints=None):
+    def GPFA_YU_preprocessing(self, list_timepoints=None, var_list=[], pcaPrep=False, sqrtIfPCA=True,
+                              filt_window=None,smooth=True):
         if list_timepoints is None:
             list_timepoints = [('t_move','t_stop',75),
                                ('t_stop','t_reward',15)
                                ]
-        n_trials = self.spikes.n_trials
+
+
+        trial_use = np.arange(self.spikes.n_trials)[self.filter]#self.spikes.n_trials
+        n_trials = trial_use.shape[0]
 
         # check if the events are consecutive
         check_ev0 = []
@@ -88,20 +101,107 @@ class data_handler(object):
 
 
         rate_tensor = np.zeros((n_trials,self.spikes.num_units, tot_tp)) * np.nan
+        sm_traj = np.zeros((n_trials, 2, tot_tp)) * np.nan # xy position
+        raw_traj = np.zeros((n_trials,2, tot_tp)) * np.nan
+        fly_pos = np.zeros((n_trials, 2)) * np.nan
+
+        tw_correlates = {}
+        for var in var_list:
+            tw_correlates[var] = np.zeros((n_trials, tot_tp)) * np.nan
+
 
 
         check_ev0 = np.array(check_ev0[1:])
         check_ev1 = np.array(check_ev1[:-1])
         assert(all(check_ev0==check_ev1))
 
+        if pcaPrep:
+            # smooth spikes
+            ev0 = list_timepoints[0][0]
+            ev1 = list_timepoints[-1][1]
+            add = 0
+            add_stop = 0
+            if ev0 == 't_flyON':
+                ev0 = 't_targ'
+                add = 0
+
+            elif ev0 == 't_flyOFF' or ev0 == 't_targ_off':
+                ev0 = 't_targ'
+                add = self.behav.flyON_dur
+
+            if ev1 == 't_flyON':
+                ev1 = 't_targ'
+                add_stop = 0
+            elif ev1 == 't_flyOFF' or ev1 == 't_targ_off':
+                ev1 = 't_targ'
+                add_stop = self.behav.flyON_dur
+
+            if smooth:
+                t_start = dict_to_vec(self.behav.events.__dict__[ev0]) + add - self.behav.pre_trial_dur
+                t_stop = dict_to_vec(self.behav.events.__dict__[ev1]) + add_stop + self.behav.pre_trial_dur
+                time_dict = self.spikes.bin_spikes(self.behav.time_stamps, t_start=t_start,t_stop=t_stop)
+                DT = time_dict[0][1] - time_dict[0][0]
+                print('begin smoothing spikes for PCA')
+                sm_spikes = np.zeros(self.spikes.binned_spikes.shape,dtype=object)
+                for tr in range(self.spikes.binned_spikes.shape[1]):
+                    for un in range(self.spikes.binned_spikes.shape[0]):
+                        sm_spikes[un,tr] = np.convolve(self.spikes.binned_spikes[un,tr]/DT,filt_window, mode='same')
+                print('end smoothing spikes for PCA')
+
+        if sqrtIfPCA and pcaPrep:
+            transFun = lambda x:np.sqrt(x)
+        elif pcaPrep:
+            transFun = lambda x:x
         # loop over trials
-        for tr in range(n_trials):
+        for indx_tr in range(n_trials):
+
+            tr = trial_use[indx_tr]
             # spk_times = self.spikes.spike_times[:,tr]
             time_bins = []
+
+            # extract smooth trajectories
+            #trajectory_tr = np.zeros(len(self.behav.time_stamps[tr]))*np.nan
+            traj_sele = (self.behav.time_stamps[tr] > self.behav.events.t_targ[tr]) * (
+                         self.behav.time_stamps[tr] <= self.behav.events.t_stop[tr])
+
+            Num = traj_sele.sum()
+            valid_tr = any(traj_sele) and (Num > 20)
+            if valid_tr:
+                x_fly = self.behav.continuous.x_fly[tr]
+                y_fly = self.behav.continuous.y_fly[tr]
+                ts = self.behav.time_stamps[tr][traj_sele]
+                x_monk = self.behav.continuous.x_monk[tr][traj_sele]
+                y_monk = self.behav.continuous.y_monk[tr][traj_sele]
+
+
+                fr = 20. / Num
+                # print(tr,fr)
+                non_nan = ~np.isnan(x_monk)
+                x_smooth = np.nan * np.zeros((x_monk.shape[0],2))
+                y_smooth = np.nan * np.zeros((x_monk.shape[0], 2))
+                x_smooth[non_nan,:] = sm.nonparametric.lowess(x_monk, np.arange(x_monk.shape[0]), fr)
+                y_smooth[non_nan,:] = sm.nonparametric.lowess(y_monk, np.arange(y_monk.shape[0]), fr)
+                x_smooth = x_smooth[:, 1]
+                y_smooth = y_smooth[:, 1]
+
+                fly_pos[indx_tr, 0] = x_fly
+                fly_pos[indx_tr, 1] = y_fly
 
             skip_trial = False
             cc = 1
             for ev0, ev1, tp in list_timepoints:
+
+                if ev0 == 't_flyON':
+                    ev0 = 't_targ'
+
+                elif ev0 == 't_flyOFF':
+                    ev0 = 't_targ_off'
+
+                if ev1 == 't_flyON':
+                    ev1 = 't_targ'
+
+                elif ev1 == 't_flyOFF':
+                    ev1 = 't_targ_off'
 
                 if ev0 != 't_targ_off':
                     t0 = self.behav.events.__dict__[ev0][tr][0]
@@ -129,15 +229,139 @@ class data_handler(object):
                 cc += 1
 
             if skip_trial:
+                print('skipping trial %d'%tr)
                 continue
 
-            tp_matrix[tr, :] = 0.5*(time_bins[:-1] + time_bins[1:])
+            tp_matrix[indx_tr, :] = 0.5*(time_bins[:-1] + time_bins[1:])
             time_int_dur = np.diff(time_bins)
 
-            for unt in range(self.spikes.num_units):
-                rate_tensor[tr,unt,:] = np.histogram(self.spikes.spike_times[unt, tr], bins=time_bins)[0] / time_int_dur
+            if (not pcaPrep) or (not smooth):
+                for unt in range(self.spikes.num_units):
+                    rate_tensor[indx_tr, unt, :] = np.histogram(self.spikes.spike_times[unt, tr], bins=time_bins)[0] / time_int_dur
+            else:
+                # print('start interp smooth spike for PCA')
+                for unt in range(self.spikes.num_units):
+                    interp = interp1d(time_dict[tr], transFun(sm_spikes[unt,tr]),bounds_error=False)
+                    rate_tensor[indx_tr, unt, :] = interp(tp_matrix[indx_tr, :])
+                # print('end interp smooth spike for PCA')
 
-        return tp_matrix, rate_tensor
+            # compute linearly interp trajectory position
+            sele_tp = (ts >= time_bins[0]) & (ts < time_bins[-1])
+            if not any(sele_tp):
+                continue
+            # smooth interp
+            intrp = interp1d(ts[sele_tp], x_smooth[sele_tp],bounds_error=False)
+            sm_traj[indx_tr, 0] = intrp(tp_matrix[indx_tr, :])
+            intrp = interp1d(ts[sele_tp], y_smooth[sele_tp],bounds_error=False)
+            sm_traj[indx_tr, 1] = intrp(tp_matrix[indx_tr, :])
+
+            # raw interp
+            intrp = interp1d(ts[sele_tp], x_monk[sele_tp],bounds_error=False)
+            raw_traj[indx_tr, 0] = intrp(tp_matrix[indx_tr, :])
+            intrp = interp1d(ts[sele_tp], y_monk[sele_tp],bounds_error=False)
+            raw_traj[indx_tr, 1] = intrp(tp_matrix[indx_tr, :])
+
+            # interp variables
+            for var in var_list:
+                time_pts = self.behav.time_stamps[tr]
+                y_val = self.behav.continuous.__dict__[var][tr]
+                non_nan = ~np.isnan(y_val)
+                intrp = interp1d(time_pts[non_nan], y_val[non_nan], bounds_error=False)
+                tw_correlates[var][indx_tr,:] = intrp(tp_matrix[indx_tr, :])
+
+
+        return tp_matrix, rate_tensor, sm_traj, raw_traj, fly_pos, tw_correlates, trial_use
+
+
+    def GPFA_YU_preprocessing_noTW(self, t_start, t_stop, var_list=[],binwidth_ms=20):
+        if binwidth_ms is None:
+            bin_ts = self.behav.time_stamps
+        else:
+            bin_ts = time_stamps_rebin(self.behav.time_stamps, binwidth_ms=binwidth_ms)
+        bin_list = self.spikes.bin_spikes(bin_ts, t_start=t_start, t_stop=t_stop, select=self.filter)
+        trialId = {}
+        spikes = {}
+        tr_sel = np.array(np.arange(self.spikes.n_trials)[self.filter], dtype=int)
+        ydim = self.spikes.binned_spikes.shape[0]
+
+        sm_traj = np.zeros((tr_sel.shape[0], 2), dtype=object)
+        raw_traj = np.zeros((tr_sel.shape[0], 2), dtype=object)
+        fly_pos = np.zeros((tr_sel.shape[0], 2))*np.nan
+
+        tw_correlates = {}
+        bbin_ts = {}
+
+        for var in var_list:
+            tw_correlates[var] = np.zeros((tr_sel.shape[0],),dtype=object)
+
+        for cc in range(tr_sel.shape[0]):
+
+            tr = tr_sel[cc]
+            # extract smooth trajectories
+            trajectory_tr = np.zeros(len(self.behav.time_stamps[tr])) * np.nan
+            traj_sele = (self.behav.time_stamps[tr] > self.behav.events.t_targ[tr]) * (
+                    self.behav.time_stamps[tr] <= self.behav.events.t_stop[tr])
+
+            Num = traj_sele.sum()
+            valid_tr = any(traj_sele) and (Num > 20)
+            if valid_tr:
+                x_fly = self.behav.continuous.x_fly[tr]
+                y_fly = self.behav.continuous.y_fly[tr]
+                ts = self.behav.time_stamps[tr][traj_sele]
+                x_monk = self.behav.continuous.x_monk[tr][traj_sele]
+                y_monk = self.behav.continuous.y_monk[tr][traj_sele]
+
+                fr = 20. / Num
+                # print(tr,fr)
+                non_nan = ~np.isnan(x_monk)
+                x_smooth = np.nan * np.zeros((x_monk.shape[0], 2))
+                y_smooth = np.nan * np.zeros((x_monk.shape[0], 2))
+                x_smooth[non_nan, :] = sm.nonparametric.lowess(x_monk, np.arange(x_monk.shape[0]), fr)
+                y_smooth[non_nan, :] = sm.nonparametric.lowess(y_monk, np.arange(y_monk.shape[0]), fr)
+                x_smooth = x_smooth[:, 1]
+                y_smooth = y_smooth[:, 1]
+
+                fly_pos[cc, 0] = x_fly
+                fly_pos[cc, 1] = y_fly
+
+
+            tdim = self.spikes.binned_spikes[0, cc].shape[0]
+            spikes[cc] = np.zeros((ydim, tdim))
+            for i in range(ydim):
+                spikes[cc][i, :] = self.spikes.binned_spikes[i, cc]
+            trialId[cc] = tr_sel[cc]
+
+            # smooth interp
+            intrp = interp1d(self.behav.time_stamps[tr][traj_sele], x_smooth, bounds_error=False)
+            sm_traj[cc, 0] = intrp(bin_list[tr])
+            intrp = interp1d(self.behav.time_stamps[tr][traj_sele], y_smooth, bounds_error=False)
+            sm_traj[cc, 1] = intrp(bin_list[tr])
+
+            # raw interp
+            intrp = interp1d(self.behav.time_stamps[tr][traj_sele], x_monk, bounds_error=False)
+            raw_traj[cc, 0] = intrp(bin_list[tr])
+            intrp = interp1d(self.behav.time_stamps[tr][traj_sele], y_monk, bounds_error=False)
+            raw_traj[cc, 1] = intrp(bin_list[tr])
+
+            # interp variables
+            for var in var_list:
+                time_pts = self.behav.time_stamps[tr]
+                y_val = self.behav.continuous.__dict__[var][tr]
+                non_nan = ~np.isnan(y_val)
+                # try:
+                intrp = interp1d(time_pts[non_nan], y_val[non_nan], bounds_error=False)
+                # except:
+                #     ccc=1
+                tw_correlates[var][cc] = intrp(bin_list[tr])
+            bbin_ts[cc] = bin_list[tr]
+            # cc += 1
+        # remove ts of other trials
+        # cc = 1
+        # for tr in tr_sel:
+        #     bbin_ts[cc] = bin_ts[tr]
+        #     cc+=1
+
+        return bbin_ts, spikes, sm_traj, raw_traj, fly_pos, tw_correlates, trialId
 
 
     def concatenate_inputs(self,*varnames,t_start=None,t_stop=None):

@@ -1061,7 +1061,7 @@ class covarate_smooth(object):
 
         return Bx
 
-    def additive_model_preprocessing(self, penal_only=False):
+    def additive_model_preprocessing(self, penal_only=False, sparsebl=True):
         Bx = self.compute_Bx()
 
         if penal_only:
@@ -1070,10 +1070,14 @@ class covarate_smooth(object):
         X = self.X[:, :-1]
 
         Bx = Bx[:, :-1]
-        X = X.toarray() - self.colMean_X
+        if type(X) is sparse.csr_matrix:
+            X = X.toarray() - self.colMean_X
+        else:
+            X = X - self.colMean_X
         # nan time points set to zero so that <X, \beta> do not contribute
         X[self.nan_filter,:] = 0
-        X = sparse.csr_matrix(X, dtype=np.float64)
+        if sparsebl:
+            X = sparse.csr_matrix(X, dtype=np.float64)
         return X, Bx
 
     def mean_center(self, X):
@@ -1305,17 +1309,53 @@ class smooths_handler(object):
         yagu = np.hstack((yagu, np.zeros(fullM.shape[0])))
         return Xagu, yagu, index_cov
 
+    def get_exog_mat_fast(self,name_list):
+        # calculate col number
+        t0 = perf_counter()
+        num_col = 1
+        for name in name_list:
+            num_col += self.smooths_dict[name].X.shape[1] - 1
+        fullX = np.ones((self.smooths_dict[name].X.shape[0], num_col))
+        index_cov = {}
+        count = 1
+        for name in name_list:
+
+            sm_cov = self.smooths_dict[name]
+
+            if len(name_list) > 0:
+                X, _ = sm_cov.additive_model_preprocessing(sparsebl=False)
+            else:
+                X = sm_cov.X
+                X[sm_cov.nan_filter, :] = 0
+
+            # save the indices that will be related to a specific covariate in the full regression
+            index_cov[name] = np.arange(count, count + X.shape[1])
+            # update the starting index
+            count += X.shape[1]
+
+            fullX[:,index_cov[name]] = X
+        t1 = perf_counter()
+        print('hstack:', t1 - t0, 'sec')
+
+        return fullX, index_cov
+
     def get_exog_mat(self, name_list):
         first = True
         index_cov = {}
         count = 1
         t0 = perf_counter()
+        # # calculate col number
+        # num_col = 1
+        # for name in name_list:
+        #     num_col += self.smooths_dict[name].X.shape[1] - 1
+        # X = np.zeros((self.smooths_dict[name].X.shape[1],num_col))
+
         for name in name_list:
             
             sm_cov = self.smooths_dict[name]
 
             if len(name_list) > 0:
-                X, _ = sm_cov.additive_model_preprocessing()
+                X, _ = sm_cov.additive_model_preprocessing(sparsebl=False)
             else:
                 X = sm_cov.X
                 X[sm_cov.nan_filter,:] = 0

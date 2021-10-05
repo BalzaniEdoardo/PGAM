@@ -343,6 +343,7 @@ def extract_presecnce_rate_Uprobe(occupancy_bin_sec,occupancy_rate_th,unit_info,
         sorted_fold = sorted_fold.replace('/Volumes/server/Data/Monkey2_newzdrive',use_server)
     N = unit_info['brain_area'].shape[0]
     unit_info['presence_rate'] = np.zeros(N)
+    unit_info['mean_firing_rate_Hz'] = np.zeros(N)
     # unit_info['dip_pval'] = np.zeros(unit_info['brain_area'].shape[0])
 
 
@@ -377,7 +378,7 @@ def extract_presecnce_rate_Uprobe(occupancy_bin_sec,occupancy_rate_th,unit_info,
         h, b = np.histogram(spike_times[unit_bool], np.linspace(min_time, max_time, num_bins_occ))
         occupancy = np.sum(h>0)/num_bins_occ
         unit_info['presence_rate'][idx_un] = occupancy
-
+        unit_info['mean_firing_rate_Hz'][idx_un] = unit_bool.sum()/(max_time-min_time)
     return unit_info
 
 
@@ -389,6 +390,8 @@ def extract_presecnce_rate(occupancy_bin_sec,occupancy_rate_th,unit_info,session
 
     N = unit_info['brain_area'].shape[0]
     unit_info['presence_rate'] = np.zeros(N)
+    unit_info['mean_firing_rate_Hz'] = np.zeros(N)
+
     # unit_info['dip_pval'] = np.zeros(unit_info['brain_area'].shape[0])
 
 
@@ -425,6 +428,8 @@ def extract_presecnce_rate(occupancy_bin_sec,occupancy_rate_th,unit_info,session
         h, b = np.histogram(spike_times[unit_bool], np.linspace(min_time, max_time, num_bins_occ))
         occupancy = np.sum(h>0)/num_bins_occ
         unit_info['presence_rate'][idx_un] = occupancy
+        unit_info['mean_firing_rate_Hz'][idx_un] = unit_bool.sum()/(max_time-min_time)
+
 
     # second extract linear prove
     sorted_fold = path_user.get_path('cluster_array_data',session)
@@ -460,6 +465,8 @@ def extract_presecnce_rate(occupancy_bin_sec,occupancy_rate_th,unit_info,session
                 h, b = np.histogram(spike_times[unit_bool], np.linspace(min_time, max_time, num_bins_occ))
                 occupancy = np.sum(h>occupancy_rate_th*occupancy_bin_sec)/num_bins_occ
                 unit_info['presence_rate'][idx_un] = occupancy
+                unit_info['mean_firing_rate_Hz'][idx_un] = unit_bool.sum()/(max_time-min_time)
+
         except:
             print('No array data...')
     return unit_info

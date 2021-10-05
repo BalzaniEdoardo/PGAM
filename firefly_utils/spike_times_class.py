@@ -131,11 +131,12 @@ class spike_counts(object):
             edges_sel = np.arange(self.n_trials)
 
         self.binned_spikes = np.zeros((self.num_units,spks_tmp.shape[1]),dtype=object)
-
+        bin_list = {}
         for unt in range(self.num_units):
             for idx in range(spks_tmp.shape[1]):
-
                 tr = edges_sel[idx]
+                # if tr == 1231:
+                #     jumanji=10
                 edges_tr = np.array(edges[tr][1:-1],dtype=float)
                 # if t_start is set to None it means that edges must not be cut
                 if t_start is None:
@@ -157,9 +158,20 @@ class spike_counts(object):
 
                     # keep only the bins in the desired range
                     bins = edges_tr[(edges_tr > t0) * (edges_tr < t1)]
+
+                    # check for empty bins
+                    if len(bins) == 0:
+                        self.binned_spikes[unt, idx] = np.array([])
+                        if unt == 0:
+                            bin_list[tr]  = np.array([])
+                        continue
                     # add the last bin
                     bins = np.hstack((bins, bins[-1] + dt))
                 self.binned_spikes[unt,idx],_ = np.histogram(self.spike_times[unt,tr],bins=bins)
+                if unt == 0:
+                    # might want to change to tr instead of idx...check this out
+                    bin_list[tr] = 0.5*(bins[1:] + bins[:-1])
+        return bin_list
                 
     def select_spike_times(self,t_start,t_stop,select=None):
 
@@ -220,7 +232,7 @@ if __name__ == '__main__':
     from scipy.io import loadmat
     from behav_class import *
 
-    dat = loadmat('/Volumes/WD Edo/firefly_analysis/LFP_band/DATASET/PPC+PFC+MST/m53s133.mat')
+    dat = loadmat('/Volumes/server/Data/Monkey2_newzdrive/Schro/Sim_recordings/Aug 10 2018/neural data/Pre-processing X E/m53s111.mat')
     print(dat.keys())
     behav_stat_keys = 'behv_stats'
     lfps_key = 'lfps'
