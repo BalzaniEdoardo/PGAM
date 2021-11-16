@@ -8,7 +8,7 @@ Created on Tue Dec 29 15:09:13 2020
 import os,inspect,sys,re
 print (inspect.getfile(inspect.currentframe()))
 # thisPath = os.path.dirname(inspect.getfile(inspect.currentframe()))
-
+from scipy.io import savemat
 if os.path.exists('/scratch/ges6/GAM_Repo/GAM_library/'):
     sys.path.append('/scratch/ges6/GAM_Repo/GAM_library/')
     sys.path.append('/scratch/ges6/GAM_Repo/preprocessing_pipeline/util_preproc')
@@ -30,6 +30,7 @@ from path_class import get_paths_class
 from scipy.io import loadmat
 from utils_loading import unpack_preproc_data
 import dill
+from scipy.integrate import simps
 
 def pseudo_r2_compute(spk, family, modelX, params):
 
@@ -47,9 +48,13 @@ def pseudo_r2_compute(spk, family, modelX, params):
     return pseudo_r2
 
 
+# structured array that will contain the reuslts
+dtype_dict = {'names':('monkey','session','condition_type','condition_value','neuron','cluster_id','channel_id',
+                       'electrode_id','unit_type','brain_area','pseudo_r2','variable','pval','mutual_info', 'x',
+                       'model_rate_Hz','raw_rate_Hz','kernel_strength','signed_kernel_strength'),
+              'formats':('U30','U30','U30',float,int,int,int,int,'U30','U30',float,'U30',float,float,object,object,object,float,float)}
 
-user_paths = get_paths_class()
-folder_name = deepcopy(thisPath)
+monkey_dict = {'m53':'Schro','m73':'Jimmy'}
 
 tot_fits = 1
 plot_res = False
@@ -58,10 +63,10 @@ use_k_fold = True
 reducedcoupling = False
 num_folds = 5
 
-print('folder name')
-print(folder_name)
-print(' ')
-main_dir = os.path.dirname(folder_name)
+# print('folder name')
+# print(folder_name)
+# print(' ')
+# main_dir = os.path.dirname(folder_name)
 
 use_fisher_scoring = False
 
@@ -70,7 +75,7 @@ use_fisher_scoring = False
 minSess = 27
 folder_name = ''
 sv_folder_base = ''
-file_loc = '.'
+file_loc = '/Users/edoardo/Downloads/troubleshooting files/'
 for root, dirs, files in os.walk(file_loc, topdown=False):
     
     for name in files:
@@ -126,7 +131,7 @@ for root, dirs, files in os.walk(file_loc, topdown=False):
         except Exception as ex:
         
             JOB = 0
-            list_condition = np.load(os.path.join('','condition_list_%s.npy' % session))
+            list_condition = np.load(os.path.join(file_loc,'condition_list_%s.npy' % session))
             # list_condition = np.load(os.path.join(os.path.join(main_dir,'preprocessing_pipeline', 'util_preproc'),
             #     'condition_list_%s.npy' % session))
             list_condition = list_condition[list_condition['condition']=='all'] # choose conditions
@@ -145,7 +150,8 @@ for root, dirs, files in os.walk(file_loc, topdown=False):
         else:
             cond_knots = None
             # neuron = neuron_list[0]
-            
+        regr_res = np.zeros(0, dtype=dtype_dict)
+
         numfit=0
         for neuron in neuron_list:  # fit units loop
             cond_type = cond_type_list[numfit]
@@ -166,8 +172,7 @@ for root, dirs, files in os.walk(file_loc, topdown=False):
             
             test_trials = idx_subselect[::10]
             train_trials = np.sort(list(set(idx_subselect).difference(set(idx_subselect[::10]))))
-            
-            
+
             # take the train trials
             keep = []
             for ii in train_trials:
@@ -182,7 +187,7 @@ for root, dirs, files in os.walk(file_loc, topdown=False):
             
             keep = np.array(keep, dtype=int)
             trial_idx_train = trial_idx[keep]
-            
+            # trial_idx_train = trial_idx_train[:500]
             keep_test = np.array(keep_test, dtype=int)
             trial_idx_test = trial_idx[keep_test]
              
@@ -257,7 +262,12 @@ for root, dirs, files in os.walk(file_loc, topdown=False):
                         dict_xlims[var] = (xx0, xx1)
                 else:
                     dict_xlims[var] = None
-                        
+                if all(np.isnan(x_trans)):
+                    print('var %s is all NANs!'%var)
+                    continue
+                if is_temporal_kernel and x_trans.sum() == 0:
+                    print('No events present in %s'%var)
+                    continue
                 # print(np.nanmax(np.abs(x_trans)),np.nanmax(np.abs(x_test)))
                 if include_var:
                     if var in sm_handler.smooths_dict.keys():
@@ -287,59 +297,7 @@ for root, dirs, files in os.walk(file_loc, topdown=False):
                                   kernel_length=kernel_len, 
                                   kernel_direction=kernel_direction,ord_AD=3,ad_knots=4,
                                   repeat_extreme_knots=False)
-                    
-            
-            # for other in neuron_keep:     # fit couplings loop
-            #     # break
-            #     if other == neuron:
-            #         continue
-            #     print('adding unit: %d'%other)
-            #     if brain_area[neuron - 1] == brain_area[other - 1]:
-            #         filt_len = 'short'
-            #     else:
-            #         filt_len = 'long'
-                
-            #     tmpy = yt[keep, other - 1]
-            #     x = tmpy
-            #     x_test = yt[keep_test, other - 1]
-                
-            #     knots, x_trans, include_var, is_cyclic, order,\
-            #         kernel_len,kernel_direction,is_temporal_kernel,penalty_type,der =\
-            #             knots_cerate(x,'spike_hist',session,hand_vel_temp=hand_vel_temp,hist_filt_dur=filt_len,
-            #             exclude_eye_position=['m44s213','m53s133','m53s134','m53s105','m53s182'])
-                        
-            #     _, x_test, _, _, _,\
-            #         _,_,_,_,_ =\
-            #             knots_cerate(x_test,'spike_hist',session,hand_vel_temp=hand_vel_temp,hist_filt_dur=filt_len,
-            #             exclude_eye_position=['m44s213','m53s133','m53s134','m53s105','m53s182'])
-            #     var = 'neu_%d'%other
-            #     if include_var:
-            #         if var in sm_handler.smooths_dict.keys():
-            #             sm_handler.smooths_dict.pop(var)
-            #             sm_handler.smooths_var.remove(var)
-            
-            #         sm_handler.add_smooth(var, [x_trans], ord=order, knots=[knots], 
-            #                               knots_num=None, perc_out_range=None,
-            #                       is_cyclic=[is_cyclic], lam=50, 
-            #                       penalty_type=penalty_type,
-            #                       der=der,
-            #                       trial_idx=trial_idx_train, time_bin=time_bin, 
-            #                       is_temporal_kernel=is_temporal_kernel,
-            #                       kernel_length=kernel_len, kernel_direction=kernel_direction,ord_AD=3,ad_knots=4)
-            
-            
-            #         sm_handler_test.add_smooth(var, [x_test], ord=order, knots=[knots], 
-            #                               knots_num=None, perc_out_range=None,
-            #                       is_cyclic=[is_cyclic], lam=50, 
-            #                       penalty_type=penalty_type,
-            #                       der=der,
-            #                       trial_idx=trial_idx_test, time_bin=time_bin, 
-            #                       is_temporal_kernel=is_temporal_kernel,
-            #                       kernel_length=kernel_len, kernel_direction=kernel_direction,ord_AD=3,ad_knots=4)
-                    
-                    
-                    
-                        
+
                         
                 
             link = deriv3_link(sm.genmod.families.links.log())
@@ -358,7 +316,7 @@ for root, dirs, files in os.walk(file_loc, topdown=False):
                                                                 use_dgcv=True, initial_smooths_guess=False,
                                                                 fit_initial_beta=True, pseudoR2_per_variable=True,
                                                                 trial_num_vec=trial_idx_train, k_fold=use_k_fold, fold_num=num_folds,
-                                                                reducedAdaptive=False,compute_MI=False,perform_PQL=True)
+                                                                reducedAdaptive=False,compute_MI=True,perform_PQL=True)
             
             modelX_test, idx_dict_test = sm_handler_test.get_exog_mat(full_coupling.var_list)
             spk = yt[keep_test,neuron-1]
@@ -395,5 +353,58 @@ for root, dirs, files in os.walk(file_loc, topdown=False):
                       'xlim':dict_xlims
                       }
                     fh.write(dill.dumps(data_dict))
-            
-        
+
+            tmp_res = np.zeros(len((full_coupling.var_list)),dtype=dtype_dict)
+            cs_table = full_coupling.covariate_significance
+            for cc in range(len(full_coupling.var_list)):
+
+                var = full_coupling.var_list[cc]
+                cs_var = cs_table[cs_table['covariate'] == var]
+                tmp_res['brain_area'][cc] = brain_area[neuron-1]
+                tmp_res['monkey'][cc] = monkey_dict[session.split('s')[0]]
+                tmp_res['session'][cc] = session
+                tmp_res['neuron'][cc] = neuron
+                tmp_res['variable'][cc] = var
+                tmp_res['condition_type'][cc] = cond_type
+                tmp_res['condition_value'][cc] = cond_value
+                tmp_res['pseudo_r2'][cc] = p_r2_coupling
+                tmp_res['pval'][cc] = cs_var['p-val']
+                tmp_res['channel_id'][cc] = channel_id[neuron-1]
+                tmp_res['electrode_id'][cc] = channel_id[neuron - 1]
+                tmp_res['cluster_id'][cc] = channel_id[neuron - 1]
+                tmp_res['unit_type'][cc] = unit_type[neuron-1]
+                if var in full_coupling.mutual_info.keys():
+                    tmp_res['mutual_info'][cc] = full_coupling.mutual_info[var]
+                else:
+                    tmp_res['mutual_info'][cc] = np.nan
+                if var in full_coupling.tuning_Hz.__dict__.keys():
+                    tmp_res['x'][cc] = full_coupling.tuning_Hz.__dict__[var].x
+                    tmp_res['model_rate_Hz'][cc] = full_coupling.tuning_Hz.__dict__[var].y_model
+                    tmp_res['raw_rate_Hz'][cc] = full_coupling.tuning_Hz.__dict__[var].y_raw
+
+                # compute kernel strength
+                if full_coupling.smooth_info[var]['is_temporal_kernel']:
+                    dim_kern = full_coupling.smooth_info[var]['basis_kernel'].shape[0]
+                    knots_num = full_coupling.smooth_info[var]['knots'][0].shape[0]
+                    x = np.zeros(dim_kern)
+                    x[(dim_kern - 1) // 2] = 1
+                    fX = full_coupling.smooth_compute([x], var, 0.95)[0]
+                    if (var == 'spike_hist') or ('neu_') in var:
+                        fX = fX[(dim_kern - 1) // 2:] - fX[0]
+                    else:
+                        fX = fX - fX[-1]
+                    tmp_res['kernel_strength'][cc] = simps(fX**2, dx=0.006)/(0.006*fX.shape[0])
+                    tmp_res['signed_kernel_strength'][cc] = simps(fX,dx=0.006)/(0.006*fX.shape[0])
+
+                else:
+                    knots = full_coupling.smooth_info[var]['knots']
+                    xmin = knots[0].min()
+                    xmax = knots[0].max()
+                    func = lambda x: (full_coupling.smooth_compute([x],var,0.95)[0] - full_coupling.smooth_compute([x],var,0.95)[0].mean() )**2
+                    xx = np.linspace(xmin,xmax,500)
+                    dx = xx[1] - xx[0]
+                    tmp_res['kernel_strength'][cc] = simps(func(xx),dx=dx)/(xmax-xmin)
+
+            regr_res = np.hstack((regr_res,tmp_res))
+
+            savemat('%s_fit_info_results.mat'%session,mdict={'pgam_results':regr_res})

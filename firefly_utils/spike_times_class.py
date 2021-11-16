@@ -48,7 +48,10 @@ class spike_counts(object):
         if np.dtype(datatype).kind == 'i' or np.dtype(datatype).kind == 'u':
             datatype = np.int64
 
-        shape = units[key][0].shape
+        if len(units[key])>1:
+            shape = units[key][1].shape
+        else:
+            shape = units[key][0].shape
 
         if len(shape) == 2:
 
@@ -66,7 +69,14 @@ class spike_counts(object):
                         unpacked[k,:] = units[key][k].reshape(N,)
                     except ValueError:
                         print('UNIT %d - could not assign %s'%(k,key))
-                        unpacked[k, :] = np.nan
+                        try:
+                            try:
+                                unpacked = np.array(unpacked,dtype=float)
+                                unpacked[k, :] = units[key][k].reshape(N,)
+                            except:
+                                raise ValueError
+                        except ValueError:
+                            unpacked[k, :] = np.nan
                         # raise ValueError('ValueError: cannot reshape array of size 0 into shape (1,)')
 
         # case of a 1 d array of values
@@ -118,7 +128,7 @@ class spike_counts(object):
             for tr in range(ntrials):
                 self.spike_times[unt,tr] = units[key][unt][0,tr][field].flatten()
 
-    def bin_spikes(self,edges,t_start=None,t_stop=None,select=None):
+    def bin_spikes(self,edges,t_start=None,t_stop=None,select=None,cutFirstLastTP=True):
 
         # extract freq in ms, use round to get the theoretical acquisition freq.
         dt = round(edges[0][1] - edges[0][0],3)
@@ -137,7 +147,10 @@ class spike_counts(object):
                 tr = edges_sel[idx]
                 # if tr == 1231:
                 #     jumanji=10
-                edges_tr = np.array(edges[tr][1:-1],dtype=float)
+                if cutFirstLastTP:
+                    edges_tr = np.array(edges[tr][1:-1],dtype=float)
+                else:
+                    edges_tr = np.array(edges[tr],dtype=float)
                 # if t_start is set to None it means that edges must not be cut
                 if t_start is None:
                     bins = np.hstack((edges_tr,np.inf))
@@ -157,7 +170,7 @@ class spike_counts(object):
                     # edges_tr = np.hstack((edges[tr],edges[tr][-1] + dt))
 
                     # keep only the bins in the desired range
-                    bins = edges_tr[(edges_tr > t0) * (edges_tr < t1)]
+                    bins = edges_tr[(edges_tr >= t0) * (edges_tr <= t1)]
 
                     # check for empty bins
                     if len(bins) == 0:

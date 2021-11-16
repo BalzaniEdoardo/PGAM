@@ -185,7 +185,7 @@ def knots_cerate(x,var,session, hand_vel_temp=False,hist_filt_dur='short',
         x_trans[(x_trans > 2) | (x_trans < -2)] = np.nan
     
     elif var in ['lfp_beta', 'lfp_alpha','lfp_theta']:
-        knots = np.linspace(-np.pi,np.pi,8)
+        knots = np.linspace(-np.pi-0.0001,np.pi+0.0001,8)
         # knots = np.hstack(([knots[0]]*3,
         #                         knots,
         #                         [knots[-1]]*3

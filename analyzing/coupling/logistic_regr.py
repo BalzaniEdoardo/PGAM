@@ -172,7 +172,7 @@ ax.spines['right'].set_visible(False)
 plt.ylabel('proba. connection')
 plt.xlabel('$\mu$m')
 plt.legend()
-plt.savefig('logit_pred_prob.pdf')
+# plt.savefig('logit_pred_prob.pdf')
 
 
 logit_spline = Logit(Y[train], modelX[train])
@@ -226,7 +226,7 @@ plt.ylabel('coupling prob.')
 ax.spines['top'].set_visible(False)
 ax.spines['right'].set_visible(False)
 
-plt.savefig('estim_coupling_probability.pdf')
+# plt.savefig('estim_coupling_probability.pdf')
 
 
 sel = np.where(dist <= 500)[0][-1]

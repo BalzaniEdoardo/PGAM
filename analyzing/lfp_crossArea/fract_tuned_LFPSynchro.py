@@ -192,7 +192,7 @@ plt.ylim(0,1.2)
 ax.spines['top'].set_visible(False)
 ax.spines['right'].set_visible(False)
 
-plt.savefig('fract_tuned_pfc.pdf')
+# plt.savefig('fract_tuned_pfc.pdf')
 
 
 
@@ -209,7 +209,7 @@ plt.ylim(0,1.2)
 ax.spines['top'].set_visible(False)
 ax.spines['right'].set_visible(False)
 
-plt.savefig('fract_tuned_ppc.pdf')
+# plt.savefig('fract_tuned_ppc.pdf')
 
 plt.figure()
 ax=plt.subplot(111)
@@ -223,7 +223,7 @@ plt.ylim(0,1.2)
 plt.tight_layout()
 ax.spines['top'].set_visible(False)
 ax.spines['right'].set_visible(False)
-plt.savefig('coupling_fract_tuned_ppc.pdf')
+# plt.savefig('coupling_fract_tuned_ppc.pdf')
 
 
 plt.figure()
@@ -236,7 +236,7 @@ plt.tight_layout()
 ax.spines['top'].set_visible(False)
 ax.spines['right'].set_visible(False)
 
-plt.savefig('coupling_fract_tuned_pfc.pdf')
+# plt.savefig('coupling_fract_tuned_pfc.pdf')
 
 
 #

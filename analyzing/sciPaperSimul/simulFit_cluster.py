@@ -329,6 +329,7 @@ for session,neuron in list_use:
     cc_fit+=1
     cc_fit2+=1
 
+
 np.savez('sim_%d_res_simul.npz'%JOB,table=fit_full_table,tunRes=tunRes,tunResWO=tunResWO,groundTruth=groundTruth,seed=JOB+100)
 
 # cc_plt = 1

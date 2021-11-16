@@ -244,7 +244,10 @@ class GAM_result(object):
                         var_tuning[cc] = np.nanpercentile(sigm2_s[idx], 90)
                         sc_based_tuning[cc] = y[idx].mean()
                         tot_s_vec[cc] = np.sum(idx)
-                        entropy_s[cc] = sts.poisson.entropy(tuning[cc])
+                        try:
+                            entropy_s[cc] = sts.poisson.entropy(tuning[cc])
+                        except:
+                            xxxx = 1
                         cc += 1
                 else:
                     # this gives error for 2d variable
