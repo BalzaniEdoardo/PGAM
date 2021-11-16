@@ -1,3 +1,10 @@
+preprocessing_pipeline/*
+fitting/*
+analyizing/*
+analyzing/de*
+.idea/*
+*.zip
+Akis/*
 *.dill
 *.pdf
 *.jpg
