@@ -1,6 +1,6 @@
 preprocessing_pipeline/*
 fitting/*
-analyizing/*
+analyzing/*
 analyzing/de*
 .idea/*
 *.zip
