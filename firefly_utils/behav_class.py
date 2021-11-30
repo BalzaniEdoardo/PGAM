@@ -702,7 +702,21 @@ class load_trial_types(object):
             self.trial_type['replay'][trialIndx] = flag
         # DON'T check ok trials
 
-
+    
+    def get_controlgain(self, gain ,skip_not_ok=True):
+    
+            if np.isnan(gain):
+                filter = np.isnan(self.trial_type['controlgain'])
+            else:
+                controlgain_levels = list(np.unique(self.trial_type['controlgain'][~np.isnan(self.trial_type['controlgain'])]))
+                if not gain in controlgain_levels:
+                    raise ValueError('Controlgain must be one of the following: ' + (controlgain_levels+[np.nan]).__repr__())
+                filter = self.trial_type['controlgain'] == gain
+                if skip_not_ok:
+                    ok_trials = self.trial_type['all']
+                    filter[~ok_trials] = False
+            return filter
+    
     def get_density(self,density,skip_not_ok=True):
 
         if np.isnan(density):
@@ -830,7 +844,7 @@ if __name__ == '__main__':
     from scipy.io import loadmat
     from spike_times_class import *
     from copy import deepcopy
-    dat = loadmat('/Users/edoardo/Work/Code/Angelaki-Savin/Kaushik/datasets/m51s43.mat')
+    dat = loadmat('/Volumes/server/Data/Monkey2_newzdrive/Schro/Utah Array/Feb 20 2018/neural data/Pre-processing X E/m53s41.mat')
     print(dat.keys())
     behav_stat_keys = 'behv_stats'
     lfps_key = 'lfps'
@@ -838,6 +852,7 @@ if __name__ == '__main__':
     behav_dat_key = 'trials_behv'
 
     beh_all = behavior_experiment(dat,behav_dat_key,behav_stat_keys)
+    info = load_trial_types(dat[behav_stat_keys].flatten(),dat[behav_dat_key].flatten())
     # beh_stat = dat[behav_stat_keys].flatten()
     # trial_type = load_trial_types(beh_stat)
     # idxOther = trial_type.get_all(False)
