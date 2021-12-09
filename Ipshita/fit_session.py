@@ -93,12 +93,7 @@ def construct_knots(dat, varType, varName, neuNum=0, portNum=0, history_filt_len
 
 
     elif varName == 'vel':
-        # is_temporal_kernel = True
-        # knots = np.linspace(-kernel_len, kernel_len, 10)
-        # knots = np.hstack(([knots[0]] * 3,
-        #                    knots,
-        #                    [knots[-1]] * 3
-        #                    ))
+
         
         knots = np.linspace(0, 7, 6)
         knots = np.hstack((
@@ -120,6 +115,78 @@ def construct_knots(dat, varType, varName, neuNum=0, portNum=0, history_filt_len
 
     return knots, x, is_cyclic, order, \
         kernel_len, kernel_direction, is_temporal_kernel, penalty_type, der
+
+
+def plot_results(full_fit , var_list, ax_dict=None):
+    numRows = len(var_list)//5 + 1
+    numCols = 5
+
+    cc = 0
+    if ax_dict is None:
+        fig = plt.figure(figsize=(13.5,5))
+        ax_dict = {}
+    else:
+        fig = None
+
+    for var in var_list:
+        # compute kernel strength
+        if full_fit.smooth_info[var]['is_temporal_kernel']:
+            dim_kern = full_fit.smooth_info[var]['basis_kernel'].shape[0]
+            x = np.zeros(dim_kern)
+            x[(dim_kern - 1) // 2] = 1
+            xx2 = np.arange(x.shape[0]) * 6 - np.where(x)[0][0] * 6
+            fX, fminus, fplus = full_fit.smooth_compute([x], var, 0.99)
+            if (var == 'spike_hist') or ('neu_') in var:
+                fminus = fminus[(dim_kern - 1) // 2:] - fX[0]
+                fplus = fplus[(dim_kern - 1) // 2:] - fX[0]
+                fX = fX[(dim_kern - 1) // 2:] - fX[0]
+                xx2 = xx2[(dim_kern - 1) // 2:]
+            else:
+                fplus = fplus - fX[-1]
+                fminus = fminus - fX[-1]
+                fX = fX - fX[-1]
+        else:
+            knots = full_fit.smooth_info[var]['knots']
+            xmin = knots[0].min()
+            xmax = knots[0].max()
+            xx2 = np.linspace(xmin, xmax, 100)
+            fX, fminus, fplus = full_fit.smooth_compute([xx2], var, 0.99)
+        if not var in ax_dict.keys():
+            ax = plt.subplot(numRows,numCols,cc+1)
+        else:
+            ax = ax_dict[var]
+        p, = ax.plot(xx2,fX)
+        ax.fill_between(xx2,fminus,fplus,color = p.get_color(),alpha=0.5)
+        ax_dict[var] = ax
+        ax.set_title(var)
+        cc += 1
+
+    plt.tight_layout()
+    return ax_dict,fig
+
+def partition_trials(T, tstart, tend):
+
+    trial_idx = np.zeros(T)
+    idx_start = np.where(tstart)[0]
+    idx_end = np.where(tend)[0]
+
+    if idx_start[0] > idx_end[0]:
+        idx_end = idx_end[1:]
+    if idx_start[-1] > idx_end[-1]:
+        idx_start = idx_start[:-1]
+
+    curId = 0
+    for k in range(1, idx_start.shape[0]):
+        prevEnd = idx_end[k-1]
+        trEnd = int((prevEnd + idx_start[k]) * 0.5)
+        curId += 1
+        trial_idx[trEnd: idx_end[k]] = curId
+    trial_idx[idx_end[-1]:] =curId
+    return trial_idx
+
+
+
+
 
 
 
@@ -164,34 +231,6 @@ for varType in var_dict.keys():
 
 
 
-# # plot temporal kernel basis
-# plt.figure(figsize=[11.32,  3.28])
-# plt.subplot(131)
-# time = sm_handler['trialStart'].time_pt_for_kernel * 6
-# basis_dim = sm_handler['trialStart'].basis_kernel.shape[1]
-# xx = np.tile(time,basis_dim).reshape(basis_dim, time.shape[0])
-
-# plt.title('trialStart B-spline')
-# plt.plot(time, sm_handler['trialStart'].basis_kernel.toarray())
-# plt.xlabel('time [ms]')
-
-# plt.subplot(132)
-# time = sm_handler['spike_hist'].time_pt_for_kernel * 6
-# basis_dim = sm_handler['spike_hist'].basis_kernel.shape[1]
-# xx = np.tile(time,basis_dim).reshape(basis_dim, time.shape[0])
-# plt.title('spike history B-spline')
-# plt.plot(time, sm_handler['spike_hist'].basis_kernel.toarray())
-# plt.xlabel('time [ms]')
-
-# plt.subplot(133)
-# xmin,xmax = sm_handler['vel'].knots[0][0], sm_handler['vel'].knots[0][-1]
-# basis = sm_handler['vel'].eval_basis([np.linspace(0,8,100)]).toarray()
-# x = np.tile(np.linspace(xmin, xmax, 100),basis.shape[1]).reshape(basis.shape[1],100)
-# plt.title('vel B-spline')
-# plt.plot(x.T, basis)
-# plt.xlabel('velocity')
-# plt.tight_layout()
-
 
 
 # # fit gam
@@ -204,7 +243,7 @@ family = d2variance_family(poissFam)
 gam_model = general_additive_model(sm_handler, sm_handler.smooths_var, dat['spkMat'][neuNum,:], poissFam,
                                     fisher_scoring=True)
 
-full_coupling, reduced_coupling = gam_model.fit_full_and_reduced(sm_handler.smooths_var, th_pval=0.001,
+full_fit, reduced_fit = gam_model.fit_full_and_reduced(sm_handler.smooths_var, th_pval=0.001,
                                                                   method='L-BFGS-B', tol=1e-8,
                                                                   conv_criteria='gcv',
                                                                   max_iter=1000, gcv_sel_tol=10 ** -13,
@@ -226,34 +265,34 @@ dtype_dict = {'names':('session','trial_type','neuron','pseudo_r2','variable','p
               'formats':('U30','U30',int,float,'U30',float,float, object,object,object,float,float,object,
                         object,object,object)
 }
-results = np.zeros(len((full_coupling.var_list)),dtype=dtype_dict)
-cs_table = full_coupling.covariate_significance
-for cc in range(len(full_coupling.var_list)):
-    var = full_coupling.var_list[cc]
+results = np.zeros(len((full_fit.var_list)),dtype=dtype_dict)
+cs_table = full_fit.covariate_significance
+for cc in range(len(full_fit.var_list)):
+    var = full_fit.var_list[cc]
     cs_var = cs_table[cs_table['covariate'] == var]
     results['session'][cc] = session
     results['neuron'][cc] = neuNum
     results['variable'][cc] = var
     results['trial_type'][cc] = trial_type
-    results['pseudo_r2'][cc] = full_coupling.pseudo_r2
+    results['pseudo_r2'][cc] = full_fit.pseudo_r2
     results['pval'][cc] = cs_var['p-val']
-    if var in full_coupling.mutual_info.keys():
-        results['mutual_info'][cc] = full_coupling.mutual_info[var]
+    if var in full_fit.mutual_info.keys():
+        results['mutual_info'][cc] = full_fit.mutual_info[var]
     else:
         results['mutual_info'][cc] = np.nan
-    if var in full_coupling.tuning_Hz.__dict__.keys():
-        results['x'][cc] = full_coupling.tuning_Hz.__dict__[var].x
-        results['model_rate_Hz'][cc] = full_coupling.tuning_Hz.__dict__[var].y_model
-        results['raw_rate_Hz'][cc] = full_coupling.tuning_Hz.__dict__[var].y_raw
+    if var in full_fit.tuning_Hz.__dict__.keys():
+        results['x'][cc] = full_fit.tuning_Hz.__dict__[var].x
+        results['model_rate_Hz'][cc] = full_fit.tuning_Hz.__dict__[var].y_model
+        results['raw_rate_Hz'][cc] = full_fit.tuning_Hz.__dict__[var].y_raw
 
     # compute kernel strength
-    if full_coupling.smooth_info[var]['is_temporal_kernel']:
-        dim_kern = full_coupling.smooth_info[var]['basis_kernel'].shape[0]
-        knots_num = full_coupling.smooth_info[var]['knots'][0].shape[0]
+    if full_fit.smooth_info[var]['is_temporal_kernel']:
+        dim_kern = full_fit.smooth_info[var]['basis_kernel'].shape[0]
+        knots_num = full_fit.smooth_info[var]['knots'][0].shape[0]
         x = np.zeros(dim_kern)
         x[(dim_kern - 1) // 2] = 1
         xx2 = np.arange(x.shape[0]) * 6 - np.where(x)[0][0] * 6
-        fX, fminus, fplus = full_coupling.smooth_compute([x], var, 0.99)
+        fX, fminus, fplus = full_fit.smooth_compute([x], var, 0.99)
         if (var == 'spike_hist') or ('neu_') in var:
             fminus = fminus[(dim_kern - 1) // 2:] - fX[0]
             fplus = fplus[(dim_kern - 1) // 2:] - fX[0]
@@ -268,20 +307,23 @@ for cc in range(len(full_coupling.var_list)):
         results['signed_kernel_strength'][cc] = simps(fX, dx=0.006) / (0.006 * fX.shape[0])
 
     else:
-        knots = full_coupling.smooth_info[var]['knots']
+        knots = full_fit.smooth_info[var]['knots']
         xmin = knots[0].min()
         xmax = knots[0].max()
-        func = lambda x: (full_coupling.smooth_compute([x], var, 0.99)[0] -
-                          full_coupling.smooth_compute([x], var, 0.95)[0].mean()) ** 2
+        func = lambda x: (full_fit.smooth_compute([x], var, 0.99)[0] -
+                          full_fit.smooth_compute([x], var, 0.95)[0].mean()) ** 2
         xx = np.linspace(xmin, xmax, 500)
         xx2 = np.linspace(xmin, xmax, 100)
         dx = xx[1] - xx[0]
-        fX, fminus, fplus = full_coupling.smooth_compute([xx2], var, 0.99)
+        fX, fminus, fplus = full_fit.smooth_compute([xx2], var, 0.99)
         results['kernel_strength'][cc] = simps(func(xx), dx=dx) / (xmax - xmin)
     results['kernel'][cc] = fX
     results['kernel_pCI'][cc] = fplus
     results['kernel_mCI'][cc] = fminus
     results['kernel_x'][cc] = xx2
+
+ax_dict,fig = plot_results(full_fit,full_fit.var_list)
+ax_dict,fig = plot_results(full_fit,full_fit.var_list)
 
 
 
