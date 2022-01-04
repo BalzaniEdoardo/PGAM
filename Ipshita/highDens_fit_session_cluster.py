@@ -5,13 +5,10 @@ sys.path.append('../GAM_library')
 sys.path.append('../firefly_utils')
 from GAM_library import *
 from data_handler import *
-import scipy.stats as sts
 from copy import deepcopy
 from fit_utils import partition_trials, compute_tuning, pseudo_r2_comp,\
     construct_knots_medSpatialDensity,construct_knots_highSpatialDensity
 
-from plot_utils import plot_results,plot_results_Hz,plot_basis
-plt.close('all')
 # remove the start
 
 """
@@ -35,7 +32,7 @@ trialStart: timestamp of the start of each trial
 trialEnd: timestamp of the end of the forward run of each trial. 
 """
 dat = loadmat('sessionData.mat')
-
+JOB = int(sys.argv[1])-1
 
 
 
@@ -46,22 +43,12 @@ trial_idx =  partition_trials(np.squeeze(dat['eventVar']['trialStart'][0,0]),
 
 
 # create the data_handler object
-neuNum = 214
+neuNum = JOB
 var_dict = {'contVar': ['x','y','vel','freq'],
             'eventVar': ['trialEnd',
-                'licks_0','licks_1','licks_2','licks_3', 'spike_hist'] }
+                'licks_0','licks_1','licks_2','licks_3', 'spike_hist']}
 
-# plot the basis for continuous vars
-subpltNum = 1
-densPlot = 'high'
-plt.figure(figsize=[12.,4.8])
-for k in range(4):
-    varName = var_dict['contVar'][k]
-    ax1 = plt.subplot(2,2,subpltNum)
-    plot_basis(varName, trial_idx, var_dict, dat, ax1=ax1,knotsCons=densPlot)
-    subpltNum += 1
-plt.tight_layout()
-plt.savefig('%sSpatialDens_basis_set.jpg'%densPlot)
+
 
 sm_handler = smooths_handler()
 for varType in var_dict.keys():
@@ -76,7 +63,7 @@ for varType in var_dict.keys():
 
         knots, x, is_cyclic, order, \
         kernel_len, kernel_direction,\
-        is_temporal_kernel, penalty_type, der = construct_knots_medSpatialDensity(dat, varType, varName, neuNum=neuNum, portNum=portNum)
+        is_temporal_kernel, penalty_type, der = construct_knots_highSpatialDensity(dat, varType, varName, neuNum=neuNum, portNum=portNum)
 
 
         sm_handler.add_smooth(varLabel, [x], ord=order, knots=[knots],
@@ -101,7 +88,8 @@ poissFam = sm.genmod.families.family.Poisson(link=link)
 family = d2variance_family(poissFam)
 
 filter_trials = np.ones(trial_idx.shape[0], dtype=bool)
-filter_trials[::10] = False
+filter_trials[np.random.choice(trial_idx.shape[0], 
+                                 size=int(0.1*trial_idx.shape[0]))] = False
 
 gam_model = general_additive_model(sm_handler, sm_handler.smooths_var, dat['spkMat'][neuNum,:], poissFam,
                                     fisher_scoring=True)
@@ -128,7 +116,6 @@ dtype_dict = {'names':('session','trial_type','neuron','full_pseudo_r2_train','f
               'formats':('U30','U30',int,float,float,float,float,'U30',float,float, object,object,object,object,object,float,float,object,
                         object,object,object)
 }
-
 exog, ii = sm_handler.get_exog_mat(sm_handler.smooths_var)
 
 results = np.zeros(len((full_fit.var_list)),dtype=dtype_dict)
@@ -197,13 +184,15 @@ for cc in range(len(full_fit.var_list)):
     results['kernel_mCI'][cc] = fminus
     results['kernel_x'][cc] = xx2
 
+np.savez('highDens_spatial_neuron_%d_fit.npz'%neuNum, results=results, filter_trials=filter_trials)
 
 
 # ax_dict,fig = plot_results(full_fit,full_fit.var_list)
 # ax_dict,fig = plot_results(reduced_fit,reduced_fit.var_list,ax_dict=ax_dict)
 
-plot_results_Hz(dat['spkMat'][neuNum], full_fit, sm_handler , full_fit.var_list, ~filter_trials, ax_dict=None)
-# ax_dict,fig = plot_results_Hz(full_fit,full_fit.var_list)
-# # ax_dict,fig = plot_results(reduced_fit,reduced_fit.var_list,ax_dict=ax_dict)
+# plot_results_Hz(dat['spkMat'][neuNum], full_fit, sm_handler , full_fit.var_list, ~filter_trials, ax_dict=None)
+# ax_dict,fig = plot_results(full_fit,full_fit.var_list)
+# ax_dict,fig = plot_results(reduced_fit,reduced_fit.var_list,ax_dict=ax_dict)
+
 
 

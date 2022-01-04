@@ -1,17 +1,15 @@
 from scipy.io import loadmat
 import numpy as np
 import sys
-sys.path.append('../GAM_library')
+sys.path.append('../GAM_library') # explicit link to eb162 folder on the cluster
 sys.path.append('../firefly_utils')
 from GAM_library import *
 from data_handler import *
-import scipy.stats as sts
 from copy import deepcopy
 from fit_utils import partition_trials, compute_tuning, pseudo_r2_comp,\
     construct_knots_medSpatialDensity,construct_knots_highSpatialDensity
 
-from plot_utils import plot_results,plot_results_Hz,plot_basis
-plt.close('all')
+
 # remove the start
 
 """
@@ -35,6 +33,7 @@ trialStart: timestamp of the start of each trial
 trialEnd: timestamp of the end of the forward run of each trial. 
 """
 dat = loadmat('sessionData.mat')
+JOB = int(sys.argv[1])-1
 
 
 
@@ -46,22 +45,12 @@ trial_idx =  partition_trials(np.squeeze(dat['eventVar']['trialStart'][0,0]),
 
 
 # create the data_handler object
-neuNum = 214
+neuNum = JOB
 var_dict = {'contVar': ['x','y','vel','freq'],
             'eventVar': ['trialEnd',
-                'licks_0','licks_1','licks_2','licks_3', 'spike_hist'] }
+            'licks_0','licks_1','licks_2','licks_3', 'spike_hist']}
 
-# plot the basis for continuous vars
-subpltNum = 1
-densPlot = 'high'
-plt.figure(figsize=[12.,4.8])
-for k in range(4):
-    varName = var_dict['contVar'][k]
-    ax1 = plt.subplot(2,2,subpltNum)
-    plot_basis(varName, trial_idx, var_dict, dat, ax1=ax1,knotsCons=densPlot)
-    subpltNum += 1
-plt.tight_layout()
-plt.savefig('%sSpatialDens_basis_set.jpg'%densPlot)
+
 
 sm_handler = smooths_handler()
 for varType in var_dict.keys():
@@ -76,7 +65,7 @@ for varType in var_dict.keys():
 
         knots, x, is_cyclic, order, \
         kernel_len, kernel_direction,\
-        is_temporal_kernel, penalty_type, der = construct_knots_medSpatialDensity(dat, varType, varName, neuNum=neuNum, portNum=portNum)
+        is_temporal_kernel, penalty_type, der = construct_knots_highSpatialDensity(dat, varType, varName, neuNum=neuNum, portNum=portNum)
 
 
         sm_handler.add_smooth(varLabel, [x], ord=order, knots=[knots],
@@ -101,7 +90,8 @@ poissFam = sm.genmod.families.family.Poisson(link=link)
 family = d2variance_family(poissFam)
 
 filter_trials = np.ones(trial_idx.shape[0], dtype=bool)
-filter_trials[::10] = False
+filter_trials[np.random.choice(trial_idx.shape[0], 
+                                 size=int(0.1*trial_idx.shape[0]))] = False
 
 gam_model = general_additive_model(sm_handler, sm_handler.smooths_var, dat['spkMat'][neuNum,:], poissFam,
                                     fisher_scoring=True)
@@ -123,14 +113,11 @@ full_fit, reduced_fit = gam_model.fit_full_and_reduced(sm_handler.smooths_var, t
 session = 'ssessionID'
 trial_type = 'all'
 dtype_dict = {'names':('session','trial_type','neuron','full_pseudo_r2_train','full_pseudo_r2_eval','reduced_pseudo_r2_train','reduced_pseudo_r2_eval','variable','pval','mutual_info', 'x',
-                        'model_rate_Hz','raw_rate_Hz','model_rate_Hz_eval','raw_rate_Hz_eval','kernel_strength','signed_kernel_strength','kernel_x',
+                        'model_rate_Hz','raw_rate_Hz','kernel_strength','signed_kernel_strength','kernel_x',
                         'kernel','kernel_mCI','kernel_pCI'),
-              'formats':('U30','U30',int,float,float,float,float,'U30',float,float, object,object,object,object,object,float,float,object,
+              'formats':('U30','U30',int,float,float,float,float,'U30',float,float, object,object,object,float,float,object,
                         object,object,object)
 }
-
-exog, ii = sm_handler.get_exog_mat(sm_handler.smooths_var)
-
 results = np.zeros(len((full_fit.var_list)),dtype=dtype_dict)
 cs_table = full_fit.covariate_significance
 for cc in range(len(full_fit.var_list)):
@@ -141,9 +128,9 @@ for cc in range(len(full_fit.var_list)):
     results['variable'][cc] = var
     results['trial_type'][cc] = trial_type
     results['full_pseudo_r2_train'][cc] = full_fit.pseudo_r2
-    results['full_pseudo_r2_eval'][cc] = pseudo_r2_comp(dat['spkMat'][neuNum,:], full_fit, sm_handler, family=family, use_tp = ~(filter_trials))
+    results['full_pseudo_r2_eval'][cc] = pseudo_r2_comp(dat['spkMat'][neuNum,:], full_fit, sm_handler, use_tp = ~(filter_trials))
     results['reduced_pseudo_r2_train'][cc] = reduced_fit.pseudo_r2
-    results['reduced_pseudo_r2_eval'][cc] = pseudo_r2_comp(dat['spkMat'][neuNum,:], reduced_fit, sm_handler,family=family, use_tp = ~(filter_trials))
+    results['reduced_pseudo_r2_eval'][cc] = pseudo_r2_comp(dat['spkMat'][neuNum,:], reduced_fit, sm_handler, use_tp = ~(filter_trials))
     results['pval'][cc] = cs_var['p-val']
     
     results['pval'][cc] = cs_var['p-val']
@@ -155,12 +142,8 @@ for cc in range(len(full_fit.var_list)):
         results['x'][cc] = full_fit.tuning_Hz.__dict__[var].x
         results['model_rate_Hz'][cc] = full_fit.tuning_Hz.__dict__[var].y_model
         results['raw_rate_Hz'][cc] = full_fit.tuning_Hz.__dict__[var].y_raw
-        
-        _, mTun, scTun = compute_tuning(spk =dat['spkMat'][neuNum], fit = full_fit, exog=exog,var='y',filter_trials=~filter_trials,sm_handler=sm_handler)
-        results['model_rate_Hz_eval'][cc] = mTun
-        results['raw_rate_Hz_eval'][cc] = scTun
-    
-# compute kernel strength
+
+    # compute kernel strength
     if full_fit.smooth_info[var]['is_temporal_kernel']:
         dim_kern = full_fit.smooth_info[var]['basis_kernel'].shape[0]
         knots_num = full_fit.smooth_info[var]['knots'][0].shape[0]
@@ -197,13 +180,9 @@ for cc in range(len(full_fit.var_list)):
     results['kernel_mCI'][cc] = fminus
     results['kernel_x'][cc] = xx2
 
-
-
+np.savez('highDens_spatial_neuron_%d_fit.npz'%neuNum, results=results, filter_trials=filter_trials)
 # ax_dict,fig = plot_results(full_fit,full_fit.var_list)
 # ax_dict,fig = plot_results(reduced_fit,reduced_fit.var_list,ax_dict=ax_dict)
 
-plot_results_Hz(dat['spkMat'][neuNum], full_fit, sm_handler , full_fit.var_list, ~filter_trials, ax_dict=None)
-# ax_dict,fig = plot_results_Hz(full_fit,full_fit.var_list)
-# # ax_dict,fig = plot_results(reduced_fit,reduced_fit.var_list,ax_dict=ax_dict)
 
 

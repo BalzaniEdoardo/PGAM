@@ -8,7 +8,8 @@ from data_handler import *
 import scipy.stats as sts
 from copy import deepcopy
 from fit_utils import partition_trials, compute_tuning, pseudo_r2_comp,\
-    construct_knots_medSpatialDensity,construct_knots_highSpatialDensity
+    construct_knots_medSpatialDensity,construct_knots_highSpatialDensity,\
+        construct_knots_lowSpatialDensity
 
 from plot_utils import plot_results,plot_results_Hz,plot_basis
 plt.close('all')
@@ -46,14 +47,14 @@ trial_idx =  partition_trials(np.squeeze(dat['eventVar']['trialStart'][0,0]),
 
 
 # create the data_handler object
-neuNum = 214
+neuNum = 184
 var_dict = {'contVar': ['x','y','vel','freq'],
             'eventVar': ['trialEnd',
                 'licks_0','licks_1','licks_2','licks_3', 'spike_hist'] }
 
 # plot the basis for continuous vars
 subpltNum = 1
-densPlot = 'high'
+densPlot = 'low'
 plt.figure(figsize=[12.,4.8])
 for k in range(4):
     varName = var_dict['contVar'][k]
@@ -202,7 +203,7 @@ for cc in range(len(full_fit.var_list)):
 # ax_dict,fig = plot_results(full_fit,full_fit.var_list)
 # ax_dict,fig = plot_results(reduced_fit,reduced_fit.var_list,ax_dict=ax_dict)
 
-plot_results_Hz(dat['spkMat'][neuNum], full_fit, sm_handler , full_fit.var_list, ~filter_trials, ax_dict=None)
+plot_results_Hz(dat['spkMat'][neuNum], full_fit, sm_handler , full_fit.var_list, filter_trials, ax_dict=None)
 # ax_dict,fig = plot_results_Hz(full_fit,full_fit.var_list)
 # # ax_dict,fig = plot_results(reduced_fit,reduced_fit.var_list,ax_dict=ax_dict)
 
