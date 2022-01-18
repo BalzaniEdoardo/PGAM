@@ -41,6 +41,11 @@ link = deriv3_link(sm.genmod.families.links.log())
 poissFam = sm.genmod.families.family.Poisson(link=link)
 family = d2variance_family(poissFam)
 
+
+filter_trials = np.ones(trial_idx.shape[0], dtype=bool)
+filter_trials[np.random.choice(trial_idx.shape[0],  size=int(0.1*trial_idx.shape[0]))] = False
+
+
 gam_model = general_additive_model(sm_handler,sm_handler.smooths_var,counts,poissFam,fisher_scoring=False)
 full_fit,reduced_fit = gam_model.fit_full_and_reduced(sm_handler.smooths_var,th_pval=0.001,
                                               smooth_pen=None, max_iter=10 ** 3, tol=10 ** (-8),
