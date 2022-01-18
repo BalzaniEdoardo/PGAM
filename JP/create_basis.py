@@ -93,8 +93,11 @@ def construct_knots(gam_raw_inputs, counts, var_names, dict_param):
         kernel_len = pars['kernel_len']
         knots_num = pars['knots_num']
         direction = pars['direction']
-        knots = np.linspace(-kernel_len, kernel_len, knots_num)
-        knots = np.hstack(([knots[0]] * 3, knots, [knots[-1]] * 3))
+        if direction == -1:
+            knots = np.hstack(([(10) ** -6] * 3, np.linspace((knots_num) ** -6, kernel_len // 2, 10), [kernel_len // 2] * 3))
+        else:
+            knots = np.linspace(-kernel_len, kernel_len, knots_num)
+            knots = np.hstack(([knots[0]] * 3, knots, [knots[-1]] * 3))
         if varName != 'spike_hist':
             x = gam_raw_inputs[cc]
         else:
