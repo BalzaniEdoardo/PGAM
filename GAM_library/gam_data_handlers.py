@@ -791,8 +791,6 @@ class covarate_smooth(object):
         self.set_cyclic(is_cyclic)
 
         if is_temporal_kernel:
-            if not knots is None:
-                warnings.warn('knots are not used for temporal kernels, only knot number!')
             self._set_knots_temporal(knots_num, kernel_length, kernel_direction,knots=knots)
 
             self.eval_basis = self._eval_basis_temporal
