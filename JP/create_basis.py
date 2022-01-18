@@ -9,12 +9,22 @@ kernel_len: size in time points of the kenrel (kern_len = 500 are 500ms for 1ms 
 knots_num: number of equispaced knots that defines the family of polynomial interpolators
 ditection: either 0,1,-1, acausal, anticausal, causal
 """
-basis_input = {
+dict_param = {
     'cL': {
         'kernel_len': 501,
         'knots_num': 10,
         'direction':0
     },
+    'cR': {
+            'kernel_len': 501,
+            'knots_num': 10,
+            'direction':0
+        },
+    'c0': {
+            'kernel_len': 501,
+            'knots_num': 10,
+            'direction':0
+        },
     'choice': {
         'kernel_len': 501,
         'knots_num': 10,
@@ -80,34 +90,19 @@ def construct_knots(gam_raw_inputs, var_names, dict_param):
         kernel_len = pars['kernel_len']
         knots_num = pars['knots_num']
         direction = pars['direction']
+        knots = np.linspace(-kernel_len, kernel_len, knots_num)
+        knots = np.hstack(([knots[0]] * 3, knots, [knots[-1]] * 3))
+        x = gam_raw_inputs[cc]
 
+        ## eventual additional pre-processing
         cc+= 1
-        yield 
-
-        #
-        # if varName != 'spike_hist':
-        #     knots = np.linspace(-kernel_len, kernel_len, 6)
-        #     knots = np.hstack(([knots[0]] * 3,
-        #                        knots,
-        #                        [knots[-1]] * 3
-        #                        ))
-        #
-        # elif varName == 'spike_hist':
-        #     if history_filt_len > 20:
-        #         kernel_len = history_filt_len
-        #         knots = np.hstack(([(10) ** -6] * 3, np.linspace((10) ** -6, kernel_len // 2, 10), [kernel_len // 2] * 3))
-        #         penalty_type = 'der'
-        #         der = 2
-        #         is_temporal_kernel = True
-        #     else:
-        #         knots = np.linspace((10) ** -6, kernel_len // 2, 6)
-        #         penalty_type = 'EqSpaced'
-        #         order = 1  # too few time points for a cubic splines
-
-
-
+        yield varName, knots, x, is_cyclic, order, kernel_len, direction, is_temporal_kernel, penalty_type, der
 
 
 
 if __name__ == '__main__':
     gam_raw_inputs, counts, trial_idx, info_dict, var_names = parse_mat('/Users/edoardo/Work/Code/GAM_code/JP/gam_preproc_ACAd_NYU-28_2020-10-21_001.mat')
+
+    for inputs in construct_knots(gam_raw_inputs, var_names, dict_param):
+        varName, knots, x, is_cyclic, order, kernel_len, direction, is_temporal_kernel, penalty_type, der = inputs
+        print(varName)
