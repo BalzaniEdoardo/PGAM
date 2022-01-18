@@ -2,34 +2,26 @@ import numpy as np
 from scipy.io import loadmat,matlab
 import pydot
 
-menu = {'dinner':
-            {'chicken':'good',
-             'beef':'average',
-             'vegetarian':{
-                   'tofu':'good',
-                   'salad':{
-                            'caeser':'bad',
-                            'italian':'average'}
-                   },
-             'pork':'bad'}
-        }
 
-def draw(parent_name, child_name):
+
+def draw(parent_name, child_name,graph=None):
     edge = pydot.Edge(parent_name, child_name)
     graph.add_edge(edge)
 
-def visit(node, parent=None):
-    for k,v in node.iteritems():
+def visit(node, graph=None, parent=None):
+    # print(graph)
+    for k in node.keys():
+        v = node[k]
         if isinstance(v, dict):
             # We start with the root node whose parent is None
             # we don't want to graph the None node
             if parent:
-                draw(parent, k)
-            visit(v, k)
+                draw(parent, k, graph=graph)
+            visit(v, parent=k, graph=graph)
         else:
-            draw(parent, k)
+            draw(parent, k, graph=graph)
             # drawing the label using a distinct name
-            draw(k, k+'_'+v)
+            draw(k, k+'_dat', graph=graph)
 
 
 def unNest_mat_structure(unNest, struc, init = False):
@@ -71,13 +63,15 @@ def parse_mat(filepath):
     info_dict = unNest_mat_structure({}, dat['dat'], init=True)
     var_names = np.hstack(np.squeeze(dat['names']))
 
-
-
     return gam_raw_inputs, counts, trial_idx, info_dict, var_names
 
 
+if __name__ == '__main__':
+    gam_raw_inputs, counts, trial_idx, info_dict, var_names = parse_mat('/Users/edoardo/Work/Code/GAM_code/JP/gam_preproc_ACAd_NYU-28_2020-10-21_001.mat')
+    graph = pydot.Dot(graph_type='graph')
+    visit(info_dict,graph=graph)
+    graph.write_png('jpstruct_graph.png')
+    print('function calls number: %d'%cnt)
 
 
-gam_raw_inputs, counts, trial_idx, info_dict, var_names = parse_mat('/Users/edoardo/Work/Code/GAM_code/JP/gam_preproc_ACAd_NYU-28_2020-10-21_001.mat')
-print('function calls number: %d'%cnt)
 
