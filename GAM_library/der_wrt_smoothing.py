@@ -410,8 +410,8 @@ def mle_gradient_bassed_optim(rho,sm_handler, var_list,y,X,family,phi_est = 1, m
                 res = tmp
                 curr_min = tmp.fun
                 beta_zero = beta0.copy()
-    #else:
-    res = minimize(func, beta_zero, method=method, jac=grad_func, hess=hess_func, tol=tol)
+    else:
+        res = minimize(func, beta_zero, method=method, jac=grad_func, hess=hess_func, tol=tol, options={'disp':True})
 
     return res.x,res,beta_zero
 

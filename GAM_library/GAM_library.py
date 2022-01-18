@@ -690,7 +690,7 @@ class general_additive_model(object):
         if fit_initial_beta:
             rho = np.log(smooth_pen)
             # newton based optim of the likelihood
-            bhat = mle_gradient_bassed_optim(rho, self.sm_handler, var_list, yfit, exog, self.family, phi_est=1, method='Newton-CG',
+            bhat = mle_gradient_bassed_optim(rho, self.sm_handler, var_list, yfit, exog, self.family, phi_est=1, method=method,
                                             num_random_init=1, beta_zero=None, tol=10 ** -8)[0]
             lin_pred = np.dot(exog[:n_obs, :], bhat)
             mu = f_weights_and_data.family.fitted(lin_pred)

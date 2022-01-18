@@ -63,12 +63,12 @@ dict_param = {
     'neuron':{
         'kernel_len': 501,
         'knots_num': 10,
-        'direction': 1
+        'direction': -1
     }
 }
 
 
-def construct_knots(gam_raw_inputs, var_names, dict_param):
+def construct_knots(gam_raw_inputs, counts, var_names, dict_param):
     # Standard params for the B-splines
     is_cyclic = False  # no angles or period variables
     order = 4  # cubic spline
@@ -77,22 +77,28 @@ def construct_knots(gam_raw_inputs, var_names, dict_param):
     is_temporal_kernel = True
 
     cc = 0
-    for varName in var_names:
-        found = False
-        for key in dict_param.keys():
-            if key in varName:
-                found = True
-                break
-        if not found:
-            raise ValueError('Variable %s not present in parameters keys!'%varName)
+    for varName in np.hstack((var_names,['spike_hist'])):
+        if varName != 'spike_hist':
+            found = False
+            for key in dict_param.keys():
+                if key in varName:
+                    found = True
+                    break
 
+            if not found:
+                raise ValueError('Variable %s not present in parameters keys!'%varName)
+        else:
+            key = 'neuron'
         pars = dict_param[key]
         kernel_len = pars['kernel_len']
         knots_num = pars['knots_num']
         direction = pars['direction']
         knots = np.linspace(-kernel_len, kernel_len, knots_num)
         knots = np.hstack(([knots[0]] * 3, knots, [knots[-1]] * 3))
-        x = gam_raw_inputs[cc]
+        if varName != 'spike_hist':
+            x = gam_raw_inputs[cc]
+        else:
+            x = counts
 
         ## eventual additional pre-processing
         cc+= 1
