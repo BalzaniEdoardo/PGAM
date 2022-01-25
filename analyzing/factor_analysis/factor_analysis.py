@@ -5,6 +5,25 @@ from statsmodels.api import OLS
 
 from sklearn.decomposition import FactorAnalysis
 
+def approx_grad(x0, dim, func, epsi):
+    """
+    Numerica gradient approx for testing
+    :param x0: evaluation point for the gradient
+    :param dim: output gradient dimension
+    :param func: function for which you want to compute gradient
+    :param epsi: dx
+    :return:
+    """
+    grad = np.zeros(shape=dim)
+    for j in range(grad.shape[0]):
+        if np.isscalar(x0):
+            ej = epsi
+        else:
+            ej = np.zeros(x0.shape)
+            ej[j] = epsi
+        grad[j] = (func(x0 + ej) - func(x0 - ej)) / (2 * epsi)
+    return grad
+
 def posterior_mean_and_cov(y, C, diagR):
     """
 
@@ -193,5 +212,9 @@ if __name__ == '__main__':
     p, = plt.plot(pred_mu[:40,3],label='fit')
     plt.fill_between(range(40), pred_mu[:40,3]-1.96*pred_sigma[:40,3],pred_mu[:40,3]+1.96*pred_sigma[:40,3],color=p.get_color(),alpha=0.3)
 
+    
 
-# predictioi
+
+
+
+

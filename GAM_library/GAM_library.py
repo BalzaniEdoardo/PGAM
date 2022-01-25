@@ -815,7 +815,8 @@ class general_additive_model(object):
                 if np.sum(np.isnan(gcv_func(rho0))):
                     print('NaN here')
 
-                res = minimize(gcv_func,rho0,method=method,jac=gcv_grad,hess=gcv_hess,tol=gcv_sel_tol,bounds=bounds_rho)
+                res = minimize(gcv_func,rho0,method=method,jac=gcv_grad,hess=gcv_hess,tol=gcv_sel_tol,bounds=bounds_rho,
+                               options={'disp':True})
                 res.x = np.clip(res.x,-25,30)
 
                 if res.success or ((init_score - res.fun) < init_score*np.finfo(float).eps):
@@ -1145,8 +1146,8 @@ class general_additive_model(object):
                 new_smooth = []
                 for var in sub_list:
                     sm_handler = self.sm_handler
-                    if sm_handler[var].penalty_type == 'der':
-                        sm_handler[var].penalty_type = 'adaptive'
+                    # if sm_handler[var].penalty_type == 'der':
+                    #     sm_handler[var].penalty_type = 'adaptive'
                     if sm_handler[var].is_temporal_kernel:
                         xx = np.array([sm_handler[var].time_pt_for_kernel])
                         sm_handler[var].basis_kernel, sm_handler[var].B_list, sm_handler[var].S_list, sm_handler[var].basis_dim = \

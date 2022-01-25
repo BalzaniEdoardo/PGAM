@@ -10,36 +10,91 @@ from gam_data_handlers import smooths_handler
 import numpy as np
 from der_wrt_smoothing import deriv3_link, d2variance_family
 import statsmodels as sm
-from processing_tools import pseudo_r2_comp
+from processing_tools import pseudo_r2_comp, postprocess_results
 from scipy.integrate import simps
-from scipy.io import savemat
+from scipy.io import savemat,loadmat
+import re
 
 try:
     job_id = int(sys.argv[1]) - 1
-    table = np.load('fit_list.npy')
+    table = loadmat('') #np.load('fit_list.npy')
+
 
 except:
-    table = np.zeros(1, dtype={'names':('neuron_id', 'path_file'), 'formats':(int, 'U400')})
-    table['neuron_id'] = 1
-    table['path_file'] = 'gam_preproc_ACAd_NYU-28_2020-10-21_001.mat'
+    import matplotlib.pylab as plt
+    from scipy.stats import zscore
+    table = np.zeros(1, dtype={'names':('neuron_id', 'path_file','use_coupling','use_subjectivePrior',
+                                        'is_done'), 'formats':(int, 'U400',bool,bool,bool)})
+    table['neuron_id'] = 378
+    table['path_file'] = 'gam_preproc_neu378_ACAd_NYU-28_2020-10-21_001.mat'
+    # re.match('__')
+    table['use_coupling']
+    table['use_subjectivePrior']
+    table['is_done']
     job_id = 0
 
 # extract input
 gam_raw_inputs, counts, trial_idx, info_dict, var_names = parse_mat(table['path_file'][job_id])
 
-counts = np.squeeze(gam_raw_inputs[var_names=='neuron_397'])
+# unpack info
+neu_ids = np.vstack((list(info_dict['n']['id'].values()))).flatten()
+neuron_id = table['neuron_id'][job_id]
+idx_info = np.where(neu_ids == neuron_id)[0][0]
+brain_region = info_dict['n']['brain_region']['n%d'%idx_info].all()[0]
+brain_region_id = info_dict['n']['brain_region_id']['n%d'%idx_info][0,0]
+fr = info_dict['n']['fr']['n%d'%idx_info][0,0]
+amp = info_dict['n']['amp']['n%d'%idx_info][0,0]
+depth = info_dict['n']['depth']['n%d'%idx_info][0,0]
+x = info_dict['n']['x']['n%d'%idx_info][0,0]
+y = info_dict['n']['y']['n%d'%idx_info][0,0]
+z = info_dict['n']['z']['n%d'%idx_info][0,0]
 
-# just to test
-keep = np.where(trial_idx<=200)[0][-1] + 1
-gam_raw_inputs = gam_raw_inputs[:,:keep]
-counts = counts[:keep]
-trial_idx = trial_idx[:keep]
+## extract info from the name:
+file_name = os.path.basename(table['path_file'][job_id])
+file_name = file_name.split('.')[0].split('_')
+brain_area_group = file_name[-4]
+animal_name = file_name[-3]
+date = file_name[-2]
+session_num = file_name[-1]
+
+info_save = {
+    'brain_area_group': brain_area_group,
+    'animal_name': animal_name,
+    'date': date,
+    'session_num': session_num,
+    'neuron_id': neuron_id,
+    'brain_region':brain_region,
+    'brain_region_id':brain_region_id,
+    'fr': fr,
+    'amp': amp,
+    'depth': depth,
+    'x':x,
+    'y':y,
+    'z':z
+}
+
+## save paths
+remote_save_path = 'D:\\MOUSE ASD NEURONS\\data\\3step\\data\\%s\\gam_fit_unt%d_%s_%s_%s_%s.mat'%(animal_name[0].upper(),neuron_id,
+                                                                                           brain_area_group,animal_name,date,session_num)
+local_save_path = '%s\\gam_fit_unt%d_%s_%s_%s_%s.mat'%(animal_name[0].upper(),neuron_id,brain_area_group,animal_name,date,session_num)
+if not os.path.exists(local_save_path):
+    os.makedirs(local_save_path)
 
 
+# # just to test
+# keep = np.where(trial_idx<=20)[0][-1] + 1
+# gam_raw_inputs = gam_raw_inputs[:,:keep]
+# counts = counts[:keep]
+# trial_idx = trial_idx[:keep]
+# self_excite = False
+var_zscore_par = {}
 sm_handler = smooths_handler()
 for inputs in construct_knots(gam_raw_inputs,counts, var_names, dict_param):
-    varName, knots, x, is_cyclic, order, kernel_len, direction, is_temporal_kernel, penalty_type, der = inputs
-    if 'neuron' in varName:
+    varName, knots, x, is_cyclic, order, kernel_len, direction, is_temporal_kernel, penalty_type, der, mn, std = inputs
+    var_zscore_par[varName] = {'mn': mn, 'std': std}
+    # if 'neuron' in varName:
+    #     continue
+    if x.sum() == 0:
         continue
     print('adding',varName)
     sm_handler.add_smooth(varName, [x], ord=order, knots=[knots],
@@ -51,104 +106,33 @@ for inputs in construct_knots(gam_raw_inputs,counts, var_names, dict_param):
                               kernel_length=kernel_len,
                               kernel_direction=direction)
 
+# X,idx = sm_handler.get_exog_mat_fast(sm_handler.smooths_var)
+# eig = np.linalg.eigh(np.dot(X.T,X))[0]
+# print(eig.min(),eig.max())
+
+link = deriv3_link(sm.genmod.families.links.log())
+poissFam = sm.genmod.families.family.Poisson(link=link)
+family = d2variance_family(poissFam)
+
+
+filter_trials = np.ones(trial_idx.shape[0], dtype=bool)
+filter_trials[np.random.choice(trial_idx.shape[0],  size=int(0.1*trial_idx.shape[0]))] = False
+
+X, index = sm_handler.get_exog_mat_fast(sm_handler.smooths_var)
+gam_model = general_additive_model(sm_handler,sm_handler.smooths_var,counts,poissFam,fisher_scoring=False)
+full_fit,reduced_fit = gam_model.fit_full_and_reduced(sm_handler.smooths_var,th_pval=0.001,
+                                              smooth_pen=None, max_iter=10 ** 3, tol=10 ** (-8),
+                                              conv_criteria='deviance',
+                                              initial_smooths_guess=False,
+                                              method='L-BFGS-B',
+                                              gcv_sel_tol=10 ** (-10),
+                                              use_dgcv=True,
+                                              fit_initial_beta=True,
+                                              trial_num_vec=trial_idx,
+                                              filter_trials=filter_trials)
+
+results = postprocess_results(counts, full_fit,reduced_fit, info_save, filter_trials, sm_handler, family, var_zscore_par)
+savemat(local_save_path, mdict={'results':results})
+# os.system('scp "%s" "lab@172.22.87.253:%s"'%(local_save_path, remote_save_path))
 #
-#
-# link = deriv3_link(sm.genmod.families.links.log())
-# poissFam = sm.genmod.families.family.Poisson(link=link)
-# family = d2variance_family(poissFam)
-#
-#
-# filter_trials = np.ones(trial_idx.shape[0], dtype=bool)
-# filter_trials[np.random.choice(trial_idx.shape[0],  size=int(0.1*trial_idx.shape[0]))] = False
-#
-#
-# gam_model = general_additive_model(sm_handler,sm_handler.smooths_var,counts,poissFam,fisher_scoring=False)
-# full_fit,reduced_fit = gam_model.fit_full_and_reduced(sm_handler.smooths_var,th_pval=0.001,
-#                                               smooth_pen=None, max_iter=10 ** 3, tol=10 ** (-8),
-#                                               conv_criteria='deviance',
-#                                               initial_smooths_guess=False,
-#                                               method='L-BFGS-B',
-#                                               gcv_sel_tol=10 ** (-13),
-#                                               use_dgcv=True,
-#                                               fit_initial_beta=True,
-#                                               trial_num_vec=trial_idx,
-#                                               filter_trials=filter_trials)
-#
-# session = 'unknown'
-# trial_type = 'all'
-# neuNum = table['neuron_id'][job_id]
-# dtype_dict = {'names': (
-#                     'session', 'trial_type', 'neuron', 'full_pseudo_r2_train', 'full_pseudo_r2_eval',
-#                     'reduced_pseudo_r2_train', 'reduced_pseudo_r2_eval', 'variable', 'pval', 'mutual_info', 'x',
-#                     'model_rate_Hz', 'raw_rate_Hz', 'kernel_strength', 'signed_kernel_strength', 'kernel_x',
-#                     'kernel', 'kernel_mCI', 'kernel_pCI'),
-#               'formats': (
-#               'U30', 'U30', int, float, float, float, float, 'U30', float, float, object, object, object, float, float,
-#               object,
-#               object, object, object)
-#               }
-# results = np.zeros(len((full_fit.var_list)), dtype=dtype_dict)
-# cs_table = full_fit.covariate_significance
-# for cc in range(len(full_fit.var_list)):
-#     var = full_fit.var_list[cc]
-#     cs_var = cs_table[cs_table['covariate'] == var]
-#     results['session'][cc] = session
-#     results['neuron'][cc] = neuNum
-#     results['variable'][cc] = var
-#     results['trial_type'][cc] = trial_type
-#     results['full_pseudo_r2_train'][cc] = full_fit.pseudo_r2
-#     results['full_pseudo_r2_eval'][cc] = pseudo_r2_comp(counts, full_fit, sm_handler,family,
-#                                                         use_tp=~(filter_trials))
-#     results['reduced_pseudo_r2_train'][cc] = reduced_fit.pseudo_r2
-#     results['reduced_pseudo_r2_eval'][cc] = pseudo_r2_comp(counts, reduced_fit, sm_handler,family,
-#                                                            use_tp=~(filter_trials))
-#     results['pval'][cc] = cs_var['p-val']
-#
-#     results['pval'][cc] = cs_var['p-val']
-#     if var in full_fit.mutual_info.keys():
-#         results['mutual_info'][cc] = full_fit.mutual_info[var]
-#     else:
-#         results['mutual_info'][cc] = np.nan
-#     if var in full_fit.tuning_Hz.__dict__.keys():
-#         results['x'][cc] = full_fit.tuning_Hz.__dict__[var].x
-#         results['model_rate_Hz'][cc] = full_fit.tuning_Hz.__dict__[var].y_model
-#         results['raw_rate_Hz'][cc] = full_fit.tuning_Hz.__dict__[var].y_raw
-#
-#     # compute kernel strength
-#     if full_fit.smooth_info[var]['is_temporal_kernel']:
-#         dim_kern = full_fit.smooth_info[var]['basis_kernel'].shape[0]
-#         knots_num = full_fit.smooth_info[var]['knots'][0].shape[0]
-#         x = np.zeros(dim_kern)
-#         x[(dim_kern - 1) // 2] = 1
-#         xx2 = np.arange(x.shape[0]) * 6 - np.where(x)[0][0] * 6
-#         fX, fminus, fplus = full_fit.smooth_compute([x], var, 0.99)
-#         if (var == 'spike_hist') or ('neu_') in var:
-#             fminus = fminus[(dim_kern - 1) // 2:] - fX[0]
-#             fplus = fplus[(dim_kern - 1) // 2:] - fX[0]
-#             fX = fX[(dim_kern - 1) // 2:] - fX[0]
-#             xx2 = xx2[(dim_kern - 1) // 2:]
-#         else:
-#             fplus = fplus - fX[-1]
-#             fminus = fminus - fX[-1]
-#             fX = fX - fX[-1]
-#
-#         results['kernel_strength'][cc] = simps(fX ** 2, dx=0.006) / (0.006 * fX.shape[0])
-#         results['signed_kernel_strength'][cc] = simps(fX, dx=0.006) / (0.006 * fX.shape[0])
-#
-#     else:
-#         knots = full_fit.smooth_info[var]['knots']
-#         xmin = knots[0].min()
-#         xmax = knots[0].max()
-#         func = lambda x: (full_fit.smooth_compute([x], var, 0.99)[0] -
-#                           full_fit.smooth_compute([x], var, 0.95)[0].mean()) ** 2
-#         xx = np.linspace(xmin, xmax, 500)
-#         xx2 = np.linspace(xmin, xmax, 100)
-#         dx = xx[1] - xx[0]
-#         fX, fminus, fplus = full_fit.smooth_compute([xx2], var, 0.99)
-#         results['kernel_strength'][cc] = simps(func(xx), dx=dx) / (xmax - xmin)
-#     results['kernel'][cc] = fX
-#     results['kernel_pCI'][cc] = fplus
-#     results['kernel_mCI'][cc] = fminus
-#     results['kernel_x'][cc] = xx2
-#
-# savemat('%s_u%d.mat'%(session,neuNum),mdict={'results':results})
+
