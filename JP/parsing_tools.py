@@ -1,3 +1,4 @@
+import pdb
 import numpy as np
 from scipy.io import loadmat
 # import pydot
@@ -66,7 +67,8 @@ def parse_mat(filepath):
 
 def parse_mat_remote(filepath, local_path, job_id, neuron_id):
     basename = filepath.split('\\')[-1]
-    basename_local = '%d_' + basename
+    pdb.set_trace()
+    basename_local = '%d_'%job_id + basename
 
     # copy and rename
     scp_file = os.path.join(local_path,basename_local)
