@@ -76,7 +76,7 @@ def parse_mat_remote(filepath, local_path, job_id, neuron_id):
     os.system('scp lab@172.22.87.253:"%s" %s'%(path_change_sep,scp_file))
     # use the copied file to extract the info that will be saved in the local folder of the script
     # JOBID_gam_preproc_neuNEURONID_BRAINAREA_MOUSENAME_DATE_SESSION.mat
-    os.system('matlab -nodesktop -nosplash -r "extract_input(%d)"'%job_id)
+    os.system('matlab -nodesktop -nosplash -r "extract_input(%d)";exit'%job_id)
 
     # parse the file we just saved
     file_name = os.path.basename(filepath)
