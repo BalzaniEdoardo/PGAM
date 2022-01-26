@@ -105,7 +105,7 @@ def parse_fit_list(filepath):
     target_neuron = dat['target_neuron'].flatten()
     use_coupling = dat['use_coupling'].flatten()
     use_subjectivePrior = dat['use_subjectivePrior'].flatten()
-    path_file_raw = dat['pahts_to_fit'].flatten()
+    path_file_raw = dat['paths_to_fit'].flatten()
     # check max len for string
     max_len = 0
 
