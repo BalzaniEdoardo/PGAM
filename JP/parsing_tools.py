@@ -1,26 +1,26 @@
 import numpy as np
 from scipy.io import loadmat
-import pydot
+# import pydot
 import os
-
-def draw(parent_name, child_name,graph=None):
-    edge = pydot.Edge(parent_name, child_name)
-    graph.add_edge(edge)
-
-def visit(node, graph=None, parent=None):
-    # print(graph)
-    for k in node.keys():
-        v = node[k]
-        if isinstance(v, dict):
-            # We start with the root node whose parent is None
-            # we don't want to graph the None node
-            if parent:
-                draw(parent, k, graph=graph)
-            visit(v, parent=k, graph=graph)
-        else:
-            draw(parent, k, graph=graph)
-            # drawing the label using a distinct name
-            draw(k, k+'_dat', graph=graph)
+#
+# def draw(parent_name, child_name,graph=None):
+#     edge = pydot.Edge(parent_name, child_name)
+#     graph.add_edge(edge)
+#
+# def visit(node, graph=None, parent=None):
+#     # print(graph)
+#     for k in node.keys():
+#         v = node[k]
+#         if isinstance(v, dict):
+#             # We start with the root node whose parent is None
+#             # we don't want to graph the None node
+#             if parent:
+#                 draw(parent, k, graph=graph)
+#             visit(v, parent=k, graph=graph)
+#         else:
+#             draw(parent, k, graph=graph)
+#             # drawing the label using a distinct name
+#             draw(k, k+'_dat', graph=graph)
 
 
 def unNest_mat_structure(unNest, struc, init = False):
