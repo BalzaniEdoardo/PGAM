@@ -105,7 +105,7 @@ def compute_tuning(spk, fit, exog, var, sm_handler, filter_trials, dt=0.006):
 
 
 def postprocess_results(counts, full_fit,reduced_fit, info_save, filter_trials,
-                        sm_handler, family,var_zscore_par,use_coupling,use_subjectivePrior):
+                        sm_handler, family,var_zscore_par, use_coupling, use_subjectivePrior):
 
     dtype_dict = {'names': (
         'brain_area_group','animal_name','date','session_num', 'neuron_id', 'brain_region','brain_region_id',
@@ -160,8 +160,8 @@ def postprocess_results(counts, full_fit,reduced_fit, info_save, filter_trials,
         else:
             results['mutual_info'][cc] = np.nan
         if var in full_fit.tuning_Hz.__dict__.keys():
-            if ~np.isnan(var_zscore_par[var]['mn']):
-                xx = full_fit.tuning_Hz.__dict__[var].x * var_zscore_par[var]['std'] + var_zscore_par[var]['mn']
+            if ~np.isnan(var_zscore_par[var]['loc']):
+                xx = full_fit.tuning_Hz.__dict__[var].x * var_zscore_par[var]['scale'] + var_zscore_par[var]['loc']
             else:
                 xx = full_fit.tuning_Hz.__dict__[var].x
             if (full_fit.smooth_info[var]['kernel_direction'] == 1) and (full_fit.smooth_info[var]['is_temporal_kernel']):
@@ -209,8 +209,8 @@ def postprocess_results(counts, full_fit,reduced_fit, info_save, filter_trials,
         results['kernel'][cc] = fX
         results['kernel_pCI'][cc] = fplus
         results['kernel_mCI'][cc] = fminus
-        if ~np.isnan(var_zscore_par[var]['mn']):
-            xx2 = xx2 * var_zscore_par[var]['std'] + var_zscore_par[var]['mn']
+        if ~np.isnan(var_zscore_par[var]['loc']):
+            xx2 = xx2 * var_zscore_par[var]['scale'] + var_zscore_par[var]['loc']
         results['kernel_x'][cc] = xx2
         results['beta_full'][cc] = full_fit.beta[full_fit.index_dict[var]]
         results['intercept_full'][cc] = full_fit.beta[0]

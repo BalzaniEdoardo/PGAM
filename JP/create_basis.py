@@ -109,40 +109,32 @@ def construct_knots(gam_raw_inputs, counts, var_names, dict_param):
         else:
             x = deepcopy(counts)
         if not is_temporal_kernel:
-            mn = np.nanmean(x)
-            std = np.nanstd(x)
-            valid = ~np.isnan(x)
-            x[valid] = zscore(x[valid])
-            if np.nanmax(x) < 2:
-                ub = 1.5
-                print(cc,varName,np.nanmax(x),np.isnan(x).sum())
-                assert(np.nanmax(x) > 1.5)
-            else:
-                ub = 2
-            if np.nanmin(x) > -2:
-                lb = -1.5
-            else:
-                lb = -2
-            x[x>ub] = np.nan
-            x[x<lb] = np.nan
-            knots = np.linspace(lb,ub,8)
-
+            ## x should be already z-scored otherwise do this
+            minx = np.nanpercentile(x,1)
+            maxx = np.nanpercentile(x,99)
+            valid = (x <= maxx) * (x >= minx)
+            x[~valid] = np.nan
+            # scale to (0,1)
+            x = (x - minx) / (maxx - minx)
+            loc = minx
+            scale = (maxx - minx)
+            knots = np.linspace(0,1,8)
             knots = np.hstack(([knots[0]] * 3, knots, [knots[-1]] * 3))
 
         elif direction == 1:
             knots = np.hstack(([(10) ** -6] * 3, np.linspace((knots_num) ** -6, kernel_len // 2, 10), [kernel_len // 2] * 3))
-            mn = np.nan
-            std = np.nan
+            loc = np.nan
+            scale = np.nan
         else:
             knots = np.linspace(-kernel_len, kernel_len, knots_num)
             knots = np.hstack(([knots[0]] * 3, knots, [knots[-1]] * 3))
-            mn = np.nan
-            std = np.nan
+            loc = np.nan
+            scale = np.nan
 
 
         ## eventual additional pre-processing
         # cc+= 1
-        yield varName, knots, x, is_cyclic, order, kernel_len, direction, is_temporal_kernel, penalty_type, der, mn, std
+        yield varName, knots, x, is_cyclic, order, kernel_len, direction, is_temporal_kernel, penalty_type, der, loc, scale
 
 
 

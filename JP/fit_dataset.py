@@ -91,7 +91,7 @@ for job_id in range(JOB,JOB+tot_fits):
     }
 
     ## save paths
-    remote_save_path = 'D:\\MOUSE ASD NEURONS\\data\\3step\\data\\%s\\gam_fit_useCoupling%d_useSubPrior%d_unt%d_%s_%s_%s_%s.mat'%(animal_name[0].upper(),use_coupling,use_subjectivePrior,neuron_id,
+    remote_save_path = 'D:\\MOUSE-ASD-NEURONS\\data\\3step\\data\\%s\\gam_fit_useCoupling%d_useSubPrior%d_unt%d_%s_%s_%s_%s.mat'%(animal_name[0].upper(),use_coupling,use_subjectivePrior,neuron_id,
                                                                                                brain_area_group,animal_name,date,session_num)
     local_save_path = '%s/gam_fit_useCoupling%d_useSubPrior%d_unt%d_%s_%s_%s_%s.mat'%(animal_name[0].upper(),table['use_coupling'][job_id],table['use_subjectivePrior'][job_id],neuron_id,brain_area_group,animal_name,date,session_num)
     if not os.path.exists(os.path.dirname(local_save_path)):
@@ -108,8 +108,8 @@ for job_id in range(JOB,JOB+tot_fits):
     var_zscore_par = {}
     sm_handler = smooths_handler()
     for inputs in construct_knots(gam_raw_inputs,counts, var_names, dict_param):
-        varName, knots, x, is_cyclic, order, kernel_len, direction, is_temporal_kernel, penalty_type, der, mn, std = inputs
-        var_zscore_par[varName] = {'mn': mn, 'std': std}
+        varName, knots, x, is_cyclic, order, kernel_len, direction, is_temporal_kernel, penalty_type, der, loc, scale = inputs
+        var_zscore_par[varName] = {'loc': loc, 'scale': scale}
 
         if (not use_coupling) and (varName.startswith('neuron_')):
             continue
@@ -158,8 +158,10 @@ for job_id in range(JOB,JOB+tot_fits):
                                                   trial_num_vec=trial_idx,
                                                   filter_trials=filter_trials)
 
-    results = postprocess_results(counts, full_fit,reduced_fit, info_save, filter_trials, sm_handler, family, var_zscore_par)
+    results = postprocess_results(counts, full_fit,reduced_fit, info_save, filter_trials, sm_handler, family, var_zscore_par,
+                                  use_coupling,use_subjectivePrior)
     savemat(local_save_path, mdict={'results':results})
-    # os.system('scp "%s" "lab@172.22.87.253:%s"'%(local_save_path, remote_save_path))
-    #
+    remote_save_path = remote_save_path.replace('\\','/')
+    os.system('scp %s lab@172.22.87.253:"%s"'%(local_save_path, remote_save_path))
+
 
