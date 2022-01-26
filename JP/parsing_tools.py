@@ -64,10 +64,25 @@ def parse_mat(filepath):
 
     return gam_raw_inputs, counts, trial_idx, info_dict, var_names
 
-def parse_mat_remote(filepath, local_path):
-    os.system('scp "lab@172.22.87.253:%s" %s'%(filepath,local_path))
+def parse_mat_remote(filepath, local_path, job_id, neuron_id):
     basename = filepath.split('\\')[-1]
-    fhname = os.path.join(local_path, basename)
+    basename_local = '%d_' + basename
+
+    # copy and rename
+    scp_file = os.path.join(local_path,basename_local)
+    os.system('scp "lab@172.22.87.253:%s" %s'%(filepath,scp_file))
+    # use the copied file to extract the info that will be saved in the local folder of the script
+    # JOBID_gam_preproc_neuNEURONID_BRAINAREA_MOUSENAME_DATE_SESSION.mat
+    os.system('matlab -nodesktop -nosplash -r "extract_input(%d)"'%job_id)
+
+    # parse the file we just saved
+    file_name = os.path.basename(filepath)
+    file_name = file_name.split('.')[0].split('_')
+    brain_area_group = file_name[-4]
+    animal_name = file_name[-3]
+    date = file_name[-2]
+    session_num = file_name[-1]
+    fhname = '%d_gam_preproc_neu%d_%s_%s_%s_%s.mat'%(job_id, neuron_id,brain_area_group,animal_name,date,session_num)
     dat = loadmat(fhname)
     gam_raw_inputs = dat['F']
     counts = np.squeeze(dat['N'])
@@ -75,6 +90,9 @@ def parse_mat_remote(filepath, local_path):
     info_dict = unNest_mat_structure({}, dat['dat'], init=True)
     var_names = np.hstack(np.squeeze(dat['names']))
 
+    # remove temporary files
+    os.remove(fhname)
+    os.remove(scp_file)
     return gam_raw_inputs, counts, trial_idx, info_dict, var_names
 
 def parse_fit_list(filepath):

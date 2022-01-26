@@ -31,6 +31,12 @@ except:
 for job_id in range(JOB,JOB+tot_fits):
 
     remote_path = table['path_file'][job_id]
+
+    # unpack fit info
+    use_coupling = table[job_id]['use_coupling']
+    use_subjectivePrior = table[job_id]['use_subjectivePrior']
+    neuron_id = table[job_id]['neuron_id']
+
     name_splits = remote_path.split('\\')
     if not os.path.exists(name_splits[-3]):
         os.makedirs(name_splits[-3])
@@ -40,20 +46,16 @@ for job_id in range(JOB,JOB+tot_fits):
     local_path = os.path.join(*name_splits[-3:-1])
 
     if is_cluster:
-        parse_fun = lambda path_remote:parse_mat_remote(path_remote, local_path)
+        parse_fun = lambda path_remote: parse_mat_remote(path_remote, local_path, job_id, neuron_id)
     else:
         parse_fun = parse_mat
     # extract input
     gam_raw_inputs, counts, trial_idx, info_dict, var_names = parse_fun(table['path_file'][job_id])
 
-    # unpack fit info
-    use_coupling = table[job_id]['use_coupling']
-    use_subjectivePrior = table['job_id']['use_subjectivePrior']
 
 
     # unpack info
     neu_ids = np.vstack((list(info_dict['n']['id'].values()))).flatten()
-    neuron_id = table['neuron_id'][job_id]
     idx_info = np.where(neu_ids == neuron_id)[0][0]
     brain_region = info_dict['n']['brain_region']['n%d'%idx_info].all()[0]
     brain_region_id = info_dict['n']['brain_region_id']['n%d'%idx_info][0,0]
