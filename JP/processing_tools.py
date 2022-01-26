@@ -3,14 +3,16 @@ from copy import deepcopy
 from scipy.integrate import simps
 import matplotlib.pylab as plt
 
-def pseudo_r2_comp(spk, fit, sm_handler, family, use_tp=None):
-    exog, _ = sm_handler.get_exog_mat_fast(fit.var_list)
+def pseudo_r2_comp(spk, fit, sm_handler, family, use_tp=None, exog=None):
+    if exog is None:
+        exog, _ = sm_handler.get_exog_mat_fast(fit.var_list)
+    exog_cut = deepcopy(exog)
     if use_tp is None:
         use_tp = np.ones(exog.shape[0], dtype=bool)
 
-    exog = exog[use_tp]
+    exog_cut = exog_cut[use_tp]
     spk = spk[use_tp]
-    lin_pred = np.dot(exog, fit.beta)
+    lin_pred = np.dot(exog_cut, fit.beta)
     mu = fit.family.fitted(lin_pred)
     res_dev_t = fit.family.resid_dev(spk, mu)
     resid_deviance = np.sum(res_dev_t ** 2)
@@ -21,7 +23,7 @@ def pseudo_r2_comp(spk, fit, sm_handler, family, use_tp=None):
     null_deviance = np.sum(null_dev_t ** 2)
 
     pseudo_r2 = (null_deviance - resid_deviance) / null_deviance
-    return pseudo_r2
+    return pseudo_r2, exog
 
 
 def compute_tuning(spk, fit, exog, var, sm_handler, filter_trials, dt=0.006):
@@ -103,7 +105,7 @@ def compute_tuning(spk, fit, exog, var, sm_handler, filter_trials, dt=0.006):
 
 
 def postprocess_results(counts, full_fit,reduced_fit, info_save, filter_trials,
-                        sm_handler, family,var_zscore_par):
+                        sm_handler, family,var_zscore_par,use_coupling,use_subjectivePrior):
 
     dtype_dict = {'names': (
         'brain_area_group','animal_name','date','session_num', 'neuron_id', 'brain_region','brain_region_id',
@@ -111,14 +113,18 @@ def postprocess_results(counts, full_fit,reduced_fit, info_save, filter_trials,
         'full_pseudo_r2_train', 'full_pseudo_r2_eval',
         'reduced_pseudo_r2_train', 'reduced_pseudo_r2_eval', 'variable', 'pval', 'mutual_info', 'x_rate_Hz',
         'model_rate_Hz', 'raw_rate_Hz', 'kernel_strength', 'signed_kernel_strength', 'kernel_x',
-        'kernel', 'kernel_mCI', 'kernel_pCI','beta_full','beta_reduced','intercept_full','intercept_reduced'),
+        'kernel', 'kernel_mCI', 'kernel_pCI','beta_full','beta_reduced','intercept_full','intercept_reduced','use_coupling',
+        'use_subjectivePrior'),
         'formats': ('U30','U15','U15','U3',int,'U30',int,float,float,float,float,float,float,float,float,float,float,'U40',
-                    float,float,object,object,object,float,float,object,object,object,object,object,object,float,float)
+                    float,float,object,object,object,float,float,object,object,object,object,object,object,float,float,bool,bool)
     }
     results = np.zeros(len((full_fit.var_list)), dtype=dtype_dict)
     cs_table = full_fit.covariate_significance
+    exog_full = None
+    exog_reduced = None
     for cc in range(len(full_fit.var_list)):
         var = full_fit.var_list[cc]
+        print('processing: ',var)
         cs_var = cs_table[cs_table['covariate'] == var]
         results['brain_area_group'][cc] = info_save['brain_area_group']
         results['animal_name'][cc] = info_save['animal_name']
@@ -127,6 +133,8 @@ def postprocess_results(counts, full_fit,reduced_fit, info_save, filter_trials,
         results['neuron_id'][cc] = info_save['neuron_id']
         results['brain_region'][cc] = info_save['brain_region']
         results['brain_region_id'][cc] = info_save['brain_region_id']
+        results['use_coupling'][cc] = use_coupling
+        results['use_subjectivePrior'][cc] = use_subjectivePrior
 
         results['fr'][cc] = info_save['fr']
         results['amp'][cc] = info_save['amp']
@@ -139,11 +147,11 @@ def postprocess_results(counts, full_fit,reduced_fit, info_save, filter_trials,
         results['variable'][cc] = var
         # results['trial_type'][cc] = trial_type
         results['full_pseudo_r2_train'][cc] = full_fit.pseudo_r2
-        results['full_pseudo_r2_eval'][cc] = pseudo_r2_comp(counts, full_fit, sm_handler, family,
-                                                            use_tp=~(filter_trials))
+        results['full_pseudo_r2_eval'][cc],exog_full = pseudo_r2_comp(counts, full_fit, sm_handler, family,
+                                                            use_tp=~(filter_trials),exog=exog_full)
         results['reduced_pseudo_r2_train'][cc] = reduced_fit.pseudo_r2
-        results['reduced_pseudo_r2_eval'][cc] = pseudo_r2_comp(counts, reduced_fit, sm_handler, family,
-                                                               use_tp=~(filter_trials))
+        results['reduced_pseudo_r2_eval'][cc],exog_reduced = pseudo_r2_comp(counts, reduced_fit, sm_handler, family,
+                                                               use_tp=~(filter_trials),exog=exog_reduced)
         results['pval'][cc] = cs_var['p-val']
 
         results['pval'][cc] = cs_var['p-val']
@@ -156,9 +164,15 @@ def postprocess_results(counts, full_fit,reduced_fit, info_save, filter_trials,
                 xx = full_fit.tuning_Hz.__dict__[var].x * var_zscore_par[var]['std'] + var_zscore_par[var]['mn']
             else:
                 xx = full_fit.tuning_Hz.__dict__[var].x
-            results['x_rate_Hz'][cc] = xx
-            results['model_rate_Hz'][cc] = full_fit.tuning_Hz.__dict__[var].y_model
-            results['raw_rate_Hz'][cc] = full_fit.tuning_Hz.__dict__[var].y_raw
+            if (full_fit.smooth_info[var]['kernel_direction'] == 1) and (full_fit.smooth_info[var]['is_temporal_kernel']):
+                sel = xx > 0
+            elif (full_fit.smooth_info[var]['kernel_direction'] == -1) and (full_fit.smooth_info[var]['is_temporal_kernel']):
+                sel = xx < 0
+            else:
+                sel = np.ones(xx.shape,dtype=bool)
+            results['x_rate_Hz'][cc] = xx[sel]
+            results['model_rate_Hz'][cc] = full_fit.tuning_Hz.__dict__[var].y_model[sel]
+            results['raw_rate_Hz'][cc] = full_fit.tuning_Hz.__dict__[var].y_raw[sel]
 
         # compute kernel strength
         if full_fit.smooth_info[var]['is_temporal_kernel']:
@@ -168,7 +182,7 @@ def postprocess_results(counts, full_fit,reduced_fit, info_save, filter_trials,
             x[(dim_kern - 1) // 2] = 1
             xx2 = np.arange(x.shape[0]) * 6 - np.where(x)[0][0] * 6
             fX, fminus, fplus = full_fit.smooth_compute([x], var, 0.99)
-            if (var == 'spike_hist') or ('neu_') in var:
+            if (var == 'spike_hist') or ('neuron_') in var:
                 fminus = fminus[(dim_kern - 1) // 2:] - fX[0]
                 fplus = fplus[(dim_kern - 1) // 2:] - fX[0]
                 fX = fX[(dim_kern - 1) // 2:] - fX[0]

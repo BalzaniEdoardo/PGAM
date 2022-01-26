@@ -1,8 +1,7 @@
 import numpy as np
-from scipy.io import loadmat,matlab
+from scipy.io import loadmat
 import pydot
-
-
+import os
 
 def draw(parent_name, child_name,graph=None):
     edge = pydot.Edge(parent_name, child_name)
@@ -65,13 +64,52 @@ def parse_mat(filepath):
 
     return gam_raw_inputs, counts, trial_idx, info_dict, var_names
 
+def parse_mat_remote(filepath, local_path):
+    os.system('scp "lab@172.22.87.253:%s" %s'%(filepath,local_path))
+    basename = filepath.split('\\')[-1]
+    fhname = os.path.join(local_path, basename)
+    dat = loadmat(fhname)
+    gam_raw_inputs = dat['F']
+    counts = np.squeeze(dat['N'])
+    trial_idx = np.squeeze(dat['T'])
+    info_dict = unNest_mat_structure({}, dat['dat'], init=True)
+    var_names = np.hstack(np.squeeze(dat['names']))
+
+    return gam_raw_inputs, counts, trial_idx, info_dict, var_names
+
+def parse_fit_list(filepath):
+    dat = loadmat(filepath)
+    is_done = dat['is_done'].flatten()
+    neuron_id = dat['neuron_id'].flatten()
+    target_neuron = dat['target_neuron'].flatten()
+    use_coupling = dat['use_coupling'].flatten()
+    use_subjectivePrior = dat['use_subjectivePrior'].flatten()
+    path_file_raw = dat['pahts_to_fit'].flatten()
+    # check max len for string
+    max_len = 0
+
+    for val in path_file_raw:
+        max_len = max(len(val[0]),max_len)
+
+    path_file = np.zeros(len(is_done), dtype='U%d'%max_len)
+    cc = 0
+    for val in path_file_raw:
+        path_file[cc] = val[0]
+        cc += 1
+
+    table = np.zeros(len(is_done),dtype={'names':('neuron_id','target_neuron','path_file','use_coupling','use_subjectivePrior','is_done'),
+                                         'formats':(int,int,'U%d'%max_len,bool,bool,bool)})
+    loc_var = locals()
+    for name in table.dtype.names:
+        table[name] = loc_var[name]
+    return table
 
 if __name__ == '__main__':
-    gam_raw_inputs, counts, trial_idx, info_dict, var_names = parse_mat('/Users/edoardo/Work/Code/GAM_code/JP/gam_preproc_ACAd_NYU-28_2020-10-21_001.mat')
-    graph = pydot.Dot(graph_type='graph')
-    visit(info_dict,graph=graph)
-    graph.write_png('jpstruct_graph.png')
-    print('function calls number: %d'%cnt)
+    # gam_raw_inputs, counts, trial_idx, info_dict, var_names = parse_mat('/Users/edoardo/Work/Code/GAM_code/JP/gam_preproc_neu378_ACAd_NYU-28_2020-10-21_001.mat')
+    # graph = pydot.Dot(graph_type='graph')
+    # visit(info_dict,graph=graph)
+    # graph.write_png('jpstruct_graph.png')
+    # print('function calls number: %d'%cnt)
 
-
+    table = parse_fit_list('/Users/edoardo/Work/Code/GAM_code/JP/list_to_fit_GAM.mat')
 

@@ -1,6 +1,7 @@
 import numpy as np
 from parsing_tools import parse_mat
-
+from scipy.stats import zscore
+from copy import deepcopy
 # gam_raw_inputs, counts, trial_idx, info_dict, var_names = parse_mat(
 #     '/Users/edoardo/Work/Code/GAM_code/JP/gam_preproc_ACAd_NYU-28_2020-10-21_001.mat')
 """
@@ -9,7 +10,7 @@ kernel_len: size in time points of the kenrel (kern_len = 500 are 500ms for 1ms 
 knots_num: number of equispaced knots that defines the family of polynomial interpolators
 ditection: either 0,1,-1, acausal, anticausal, causal
 """
-from scipy.stats import zscore
+
 dict_param = {
     'cL': {
         'kernel_len': 101,
@@ -77,8 +78,13 @@ def construct_knots(gam_raw_inputs, counts, var_names, dict_param):
     der = 2  # degrees of the derivative
 
 
-    cc = 0
-    for varName in np.hstack((var_names,['spike_hist'])):
+    # cc = 0
+    all_vars = np.hstack((var_names,['spike_hist']))
+    for varName in all_vars:
+        cc = np.where(all_vars==varName)[0]
+        if len(cc) != 1:
+            continue
+        cc = cc[0]
         is_temporal_kernel = True
         if varName == 'subjective_prior' or ('movement_PC' in varName):
             is_temporal_kernel = False
@@ -99,9 +105,9 @@ def construct_knots(gam_raw_inputs, counts, var_names, dict_param):
         knots_num = pars['knots_num']
         direction = pars['direction']
         if varName != 'spike_hist':
-            x = gam_raw_inputs[cc]
+            x = deepcopy(gam_raw_inputs[cc])
         else:
-            x = counts
+            x = deepcopy(counts)
         if not is_temporal_kernel:
             mn = np.nanmean(x)
             std = np.nanstd(x)
@@ -109,6 +115,7 @@ def construct_knots(gam_raw_inputs, counts, var_names, dict_param):
             x[valid] = zscore(x[valid])
             if np.nanmax(x) < 2:
                 ub = 1.5
+                print(cc,varName,np.nanmax(x),np.isnan(x).sum())
                 assert(np.nanmax(x) > 1.5)
             else:
                 ub = 2
@@ -134,7 +141,7 @@ def construct_knots(gam_raw_inputs, counts, var_names, dict_param):
 
 
         ## eventual additional pre-processing
-        cc+= 1
+        # cc+= 1
         yield varName, knots, x, is_cyclic, order, kernel_len, direction, is_temporal_kernel, penalty_type, der, mn, std
 
 

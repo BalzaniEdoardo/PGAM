@@ -66,7 +66,7 @@ for k in range(1,len(list_add)+1):
     var_use = deepcopy(use_var_stim)
 
     for inputs in construct_knots(gam_raw_inputs,counts, var_names, dict_param):
-        varName, knots, x, is_cyclic, order, kernel_len, direction, is_temporal_kernel, penalty_type, der = inputs
+        varName, knots, x, is_cyclic, order, kernel_len, direction, is_temporal_kernel, penalty_type, der,_,_ = inputs
         # print(varName)
         if varName.startswith('choice'):
             lst_choice.append(x)

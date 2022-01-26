@@ -62,6 +62,78 @@ def wSumChisq_cdf(x,df,w):
     return np.clip(pval,0,1)
 
 
+def alignRateForMI(y,lam_s, var, sm_handler, smooth_info, time_bin, filter_trials, trial_idx):
+
+    reward = np.squeeze(sm_handler[var]._x)[filter_trials]
+
+    # temp kernel where 161 timepoints long
+    size_kern = smooth_info[var]['time_pt_for_kernel'].shape[0]
+    if size_kern % 2 == 0:
+        size_kern += 1
+    half_size = (size_kern - 1) // 2
+    timept = np.arange(-half_size, half_size + 1) * time_bin
+    if (var.startswith('neu')) or var == 'spike_hist':
+        nbin = timept.shape[0]
+        if nbin % 2 == 0:
+            nbin += 1
+    else:
+        nbin = 15
+    temp_bins = np.linspace(timept[0], timept[-1], nbin)
+    # sum spikes
+    tuning = np.zeros(temp_bins.shape[0])
+    count_bins = np.zeros(temp_bins.shape[0])
+    sc_based_tuning = np.zeros(temp_bins.shape[0])
+    for tr in np.unique(trial_idx):
+        select = trial_idx == tr
+        rwd_tr = reward[select]
+        lam_s_tr = lam_s[select]
+        y_tr = y[select]
+        for ii in np.where(rwd_tr==1)[0]:
+            # tr = trial_idx[ii_big]
+            i0 = max(0, ii-half_size)
+            i1 = min(len(rwd_tr), ii+half_size+1)
+            d0 = ii - i0
+            d1 = i1 - ii
+            tmpmu = lam_s_tr[i0:i1]
+            tmpy = y_tr[i0:i1]
+            iidx = np.round(nbin//2 + (-d0 + np.arange(0,d1+d0))*time_bin / (temp_bins[1]-temp_bins[0]))
+            for cc in np.unique(iidx):
+                tuning[int(cc)] = tuning[int(cc)] + tmpmu[iidx == cc].sum()
+                count_bins[int(cc)] = count_bins[int(cc)] + (iidx == cc).sum()
+                sc_based_tuning[int(cc)] = sc_based_tuning[int(cc)] + tmpy[iidx==cc].sum()
+
+
+    tuning = tuning / count_bins
+    sc_based_tuning = sc_based_tuning / count_bins
+
+    entropy_s = np.zeros(temp_bins.shape[0])*np.nan
+    for cc in range(tuning.shape[0]):
+        try:
+            entropy_s[cc] = sts.poisson.entropy(tuning[cc])
+        except:
+            xxxx = 1
+
+    if (var.startswith('neu')) or var == 'spike_hist':
+        sel = temp_bins > 0
+        temp_bins = temp_bins[sel]
+        count_bins = count_bins[sel]
+        tuning = tuning[sel]
+        sc_based_tuning = sc_based_tuning[sel]
+        entropy_s = entropy_s[sel]
+    prob_s = count_bins / count_bins.sum()
+    mean_lam = np.sum(prob_s * tuning)
+
+    try:
+        mi = (sts.poisson.entropy(mean_lam) - (prob_s * entropy_s).sum()) * np.log2(np.exp(1)) / time_bin
+    except:
+        mi = np.nan
+
+    tmp_val = empty_container()
+    tmp_val.x = temp_bins
+    tmp_val.y_raw = sc_based_tuning / time_bin
+    tmp_val.y_model = tuning / time_bin
+
+    return mi, tmp_val
 
 class GAM_result(object):
     def __init__(self,model,family,fit_OLS,smooth_pen,n_obs,index_var,sm_handler,var_list,y, compute_AIC=True,
@@ -77,7 +149,7 @@ class GAM_result(object):
         self.domain_fun = {}
         for var in sm_handler.smooths_var:
             self.domain_fun[var] = sm_handler[var].domain_fun
-            
+
         if not beta_hist is None:
             self.beta_hist = beta_hist
 
@@ -204,59 +276,22 @@ class GAM_result(object):
             sigm2_s = sigm2_s
 
             for var in self.var_list:
-                if var.startswith('neu') or var == 'spike_hist':
-                    continue
+
                 if self.smooth_info[var]['is_temporal_kernel'] and self.smooth_info[var]['is_event_input']:
-
-                    
-                    reward = np.squeeze(sm_handler[var]._x)[filter_trials]
-                    # set everything to -1
-                    time_kernel = np.ones(reward.shape[0]) * np.inf
-                    rew_idx = np.where(reward == 1)[0]
-                    
-
-                    # temp kernel where 161 timepoints long
-                    size_kern = self.smooth_info[var]['time_pt_for_kernel'].shape[0]
-                    if size_kern %2 == 0:
-                        size_kern += 1
-                    half_size = (size_kern - 1) // 2
-                    timept = np.arange(-half_size,half_size+1) * self.time_bin
-
-                    temp_bins = np.linspace(timept[0], timept[-1], 15)
-                    dt = temp_bins[1] - temp_bins[0]
-
-                    tuning = np.zeros(temp_bins.shape[0])
-                    var_tuning = np.zeros(temp_bins.shape[0])
-                    sc_based_tuning = np.zeros(temp_bins.shape[0])
-                    entropy_s = np.zeros(temp_bins.shape[0])
-                    tot_s_vec = np.zeros(temp_bins.shape[0])
-                    x_axis = deepcopy(temp_bins)
-
-                    for ind in rew_idx:
-                        if (ind < half_size) or (ind >= time_kernel.shape[0] - half_size):
-                            continue
-                        time_kernel[ind - half_size:ind + half_size+1] = timept
-
-                    cc = 0
-                    for t0 in temp_bins:
-                        idx = (time_kernel >= t0) * (time_kernel < t0 + dt)
-                        tuning[cc] = np.mean(lam_s[idx])
-                        var_tuning[cc] = np.nanpercentile(sigm2_s[idx], 90)
-                        sc_based_tuning[cc] = y[idx].mean()
-                        tot_s_vec[cc] = np.sum(idx)
-                        try:
-                            entropy_s[cc] = sts.poisson.entropy(tuning[cc])
-                        except:
-                            xxxx = 1
-                        cc += 1
+                    mi,tv = alignRateForMI(y, lam_s, var, sm_handler, self.smooth_info, self.time_bin, filter_trials,self.trial_idx)
                 else:
                     # this gives error for 2d variable
                     vels = np.squeeze(sm_handler[var]._x)[filter_trials]
                     if len(vels.shape) > 1:
                         print('Mutual info not implemented for multidim variable')
                         continue
-                    knots = self.smooth_info[var]['knots'][0]
-                    vel_bins = np.linspace(knots[0], knots[-2], 16)
+                    if not self.smooth_info[var]['is_temporal_kernel']:
+                        knots = self.smooth_info[var]['knots'][0]
+                        vel_bins = np.linspace(knots[0], knots[-2], 16)
+                    else:
+                        lb = np.nanpercentile(vels,2)
+                        ub = np.nanpercentile(vels, 98)
+                        vel_bins = np.linspace(lb, ub, 16)
                     dv = vel_bins[1] - vel_bins[0]
 
                     tuning = np.zeros(vel_bins.shape[0]-1)
@@ -286,28 +321,26 @@ class GAM_result(object):
                             pass
                         cc += 1
 
-                if any(tuning > 10 ** 4):
+                    prob_s = tot_s_vec / tot_s_vec.sum()
+                    mean_lam = np.sum(prob_s * tuning)
+                    # set attributes for plotting rate
+                    tv = empty_container()
+                    tv.x = x_axis
+                    tv.y_raw = sc_based_tuning / self.time_bin
+                    tv.y_model = tuning / self.time_bin
+                    tv.y_var_model = var_tuning / (self.time_bin ** 2)
+                    try:
+                        mi = (sts.poisson.entropy(mean_lam) - (prob_s * entropy_s).sum()) * np.log2(
+                            np.exp(1)) / self.time_bin
+                    except:
+                        mi = np.nan
+
+                if any(tv.y_model > 10 ** 4):
                     self.mutual_info[var] = np.nan
                     print('\n\nDISCARD NEURON \n\n')
                 else:
-
-                    prob_s = tot_s_vec / tot_s_vec.sum()
-                    mean_lam = np.sum(prob_s * tuning)
-                    # mean_lam_shuffle = np.sum((prob_s*tuning_shuffled.T).T,axis=0)
-                    try:
-                        self.mutual_info[var] = (sts.poisson.entropy(mean_lam) - (prob_s * entropy_s).sum())*np.log2(np.exp(1))/self.time_bin
-
-                        # set attributes for plotting rate
-                        tmp_val = empty_container()
-                        tmp_val.x = x_axis
-                        tmp_val.y_raw = sc_based_tuning / self.time_bin
-                        tmp_val.y_model = tuning / self.time_bin
-                        tmp_val.y_var_model = var_tuning / (self.time_bin ** 2)
-
-                        setattr(self.tuning_Hz, var, tmp_val)
-                    except:
-                        self.mutual_info[var] = np.nan
-
+                    self.mutual_info[var] = mi
+                    setattr(self.tuning_Hz, var, tv)
 
     def get_smooths_info(self,sm_handler):
         self.smooth_info = {}
@@ -549,10 +582,10 @@ class GAM_result(object):
             k = int(np.floor(r))  # consider also the constant term that has been removed forcing the identifiability constraint
             nu = r - k #+ 1
         # k = int(np.floor(r))
-        
+
         rho = np.sqrt((1 - nu) * nu * 0.5)
         nu1 = (nu + 1 + (1 - nu ** 2) ** (0.5)) * 0.5
-       
+
         nu2 = nu + 1 - nu1
         Vb = self.cov_beta[idx, :]
         Vb = Vb[:, idx]
@@ -653,7 +686,7 @@ class general_additive_model(object):
         self.fisher_scoring = fisher_scoring
 
     def optim_gam(self, var_list, smooth_pen=None,max_iter=10**3,tol=1e-5,conv_criteria='gcv',
-                  perform_PQL=True,use_dgcv=False,initial_smooths_guess=True,method='Newton-CG',
+                  perform_PQL=True,use_dgcv=False,initial_smooths_guess=True,method='Newton-CG',methodInit='Newton-CG',
                   compute_AIC=False,random_init=False,bounds_rho=None,gcv_sel_tol=1e-10,fit_initial_beta=False,
                   filter_trials=None,compute_MI=False,saveBetaHist=False, WLS_solver='positive_weights'):
 
@@ -690,7 +723,7 @@ class general_additive_model(object):
         if fit_initial_beta:
             rho = np.log(smooth_pen)
             # newton based optim of the likelihood
-            bhat = mle_gradient_bassed_optim(rho, self.sm_handler, var_list, yfit, exog, self.family, phi_est=1, method=method,
+            bhat = mle_gradient_bassed_optim(rho, self.sm_handler, var_list, yfit, exog, self.family, phi_est=1, method=methodInit,
                                             num_random_init=1, beta_zero=None, tol=10 ** -8)[0]
             lin_pred = np.dot(exog[:n_obs, :], bhat)
             mu = f_weights_and_data.family.fitted(lin_pred)
@@ -774,12 +807,12 @@ class general_additive_model(object):
 
             if decr_dev:
                 bhat = bnew_halved
-                
+
             if saveBetaHist:
                 tmp = np.zeros((1,bhat.shape[0]))
                 tmp[0] = bhat
                 beta_hist = np.vstack((beta_hist,tmp))
-                
+
             if any(bnew != fit_OLS.params):
                 mu = f_weights_and_data.family.fitted(np.dot(exog[:n_obs, :], bhat))
                 z, w = f_weights_and_data.get_params(mu)
@@ -822,7 +855,7 @@ class general_additive_model(object):
                 if res.success or ((init_score - res.fun) < init_score*np.finfo(float).eps):
                     # set the new smooth pen
                     smooth_pen = np.exp(res.x)
-                
+
 
             else:
                 if conv_criteria != 'deviance':
@@ -936,17 +969,17 @@ class general_additive_model(object):
             exog = exog[bool_test, :]
             lin_pred = np.dot(exog, model_fit.beta)
             mu = self.family.fitted(lin_pred)
-    
+
             res_dev_t = self.family.resid_dev(self.y[bool_test], mu)
             resid_deviance = np.sum(res_dev_t ** 2)
-    
+
             null_mu = self.y[bool_test].sum()/self.y[bool_test].shape[0]
             null_dev_t = self.family.resid_dev(self.y[bool_test], [null_mu]*self.y[bool_test].shape[0])
             null_deviance = np.sum(null_dev_t ** 2)
-    
+
             pseudo_r2 = (null_deviance - resid_deviance) / null_deviance
-            
-            
+
+
             kfold_pseudo_r2[test_idx] = pseudo_r2
             model_dict[test_idx] = model_fit
         # select best fit
