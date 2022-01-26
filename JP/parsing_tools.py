@@ -79,7 +79,7 @@ def parse_mat_remote(filepath, local_path, job_id, neuron_id):
     os.system('matlab -nodesktop -nosplash -r "extract_input(%d);exit"'%job_id)
 
     # parse the file we just saved
-    file_name = os.path.basename(filepath)
+    file_name = os.path.basename(scp_file)
     file_name = file_name.split('.')[0].split('_')
     brain_area_group = file_name[-4]
     animal_name = file_name[-3]
