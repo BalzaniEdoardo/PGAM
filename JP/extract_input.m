@@ -1,7 +1,7 @@
 function extract_input(jobid)
     load('list_to_fit_GAM.mat')
-    target_neuron = target_neuron(jobid);
-    path_remote = paths_to_fit{jobid};
+    target_neuron = target_neuron(jobid+1);
+    path_remote = paths_to_fit{jobid+1};
     splits = split(path_remote,'_');
     brain_region = splits{1};
     brain_region = split(brain_region,'\');
