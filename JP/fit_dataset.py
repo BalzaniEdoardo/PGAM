@@ -138,30 +138,34 @@ for job_id in range(JOB,JOB+tot_fits):
     poissFam = sm.genmod.families.family.Poisson(link=link)
     family = d2variance_family(poissFam)
 
-    sel_num = int(np.unique(trial_idx).shape[0]*0.9)
-    choose_trials = np.random.choice(np.arange(trial_idx[0],1+trial_idx[-1]), size=sel_num,replace=False)
-    choose_trials= np.sort(choose_trials)
+    # sel_num = int(np.unique(trial_idx).shape[0]*0.9)
+    unchosen = np.arange(0, np.unique(trial_idx).shape[0])[::10]
+    choose_trials = np.array(list(set(np.arange(0, np.unique(trial_idx).shape[0])).difference(set(unchosen))),dtype=int)
+    choose_trials = np.unique(trial_idx)[np.sort(choose_trials)]
     filter_trials = np.zeros(trial_idx.shape[0], dtype=bool)
     for tr in choose_trials:
         filter_trials[trial_idx==tr] = True
 
     X, index = sm_handler.get_exog_mat_fast(sm_handler.smooths_var)
     gam_model = general_additive_model(sm_handler,sm_handler.smooths_var,counts,poissFam,fisher_scoring=False)
-    full_fit,reduced_fit = gam_model.fit_full_and_reduced(sm_handler.smooths_var,th_pval=0.001,
-                                                  smooth_pen=None, max_iter=10 ** 3, tol=10 ** (-8),
-                                                  conv_criteria='deviance',
-                                                  initial_smooths_guess=False,
-                                                  method='L-BFGS-B',
-                                                  gcv_sel_tol=10 ** (-10),
-                                                  use_dgcv=True,
-                                                  fit_initial_beta=True,
-                                                  trial_num_vec=trial_idx,
-                                                  filter_trials=filter_trials)
+    try:
+        full_fit,reduced_fit = gam_model.fit_full_and_reduced(sm_handler.smooths_var,th_pval=0.001,
+                                                      smooth_pen=None, max_iter=10 ** 3, tol=10 ** (-8),
+                                                      conv_criteria='deviance',
+                                                      initial_smooths_guess=False,
+                                                      method='L-BFGS-B',
+                                                      gcv_sel_tol=10 ** (-10),
+                                                      use_dgcv=True,
+                                                      fit_initial_beta=True,
+                                                      trial_num_vec=trial_idx,
+                                                      filter_trials=filter_trials)
 
-    results = postprocess_results(counts, full_fit,reduced_fit, info_save, filter_trials, sm_handler, family, var_zscore_par,
-                                  use_coupling,use_subjectivePrior)
-    savemat(local_save_path, mdict={'results':results})
-    remote_save_path = remote_save_path.replace('\\','/')
-    os.system('scp %s lab@172.22.87.253:"%s"'%(local_save_path, remote_save_path))
+        results = postprocess_results(counts, full_fit,reduced_fit, info_save, filter_trials, sm_handler, family, var_zscore_par,
+                                      use_coupling,use_subjectivePrior)
+        savemat(local_save_path, mdict={'results':results})
+        remote_save_path = remote_save_path.replace('\\','/')
+        os.system('scp %s lab@172.22.87.253:"%s"'%(local_save_path, remote_save_path))
+    except:
+        continue
 
 
