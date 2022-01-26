@@ -67,7 +67,7 @@ for job_id in range(JOB,JOB+tot_fits):
     z = info_dict['n']['z']['n%d'%idx_info][0,0]
 
     ## extract info from the name:
-    file_name = os.path.basename(table['path_file'][job_id])
+    file_name = table['path_file'][job_id].split('//')[-1]
     file_name = file_name.split('.')[0].split('_')
     brain_area_group = file_name[-4]
     animal_name = file_name[-3]
