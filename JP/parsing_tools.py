@@ -67,7 +67,7 @@ def parse_mat(filepath):
 
 def parse_mat_remote(filepath, local_path, job_id, neuron_id):
     basename = filepath.split('\\')[-1]
-    pdb.set_trace()
+    # pdb.set_trace()
     basename_local = '%d_'%job_id + basename
 
     # copy and rename
