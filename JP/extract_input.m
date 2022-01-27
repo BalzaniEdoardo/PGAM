@@ -13,6 +13,13 @@ function extract_input(jobid)
     %path_local
     %'here'
     [dat, T, N, F, names, target_neuron_id,cumsum_explained] = GAM_Step1(path_local, target_neuron, 0.005);    
+    dat = rmfield(dat,'b');
+    dat = rmfield(dat,'w');
+    dat = rmfield(dat,'c');
+    dat = rmfield(dat,'probe');
+    for kk  = {'stim', 'id', 'st', 'movement', 'metrics', 'feedback'}
+        dat.n = rmfield(dat.n,kk{1});
+    end
     new_file_name = sprintf('%d_gam_preproc_neu%d_%s_%s_%s_%s',...
         jobid,target_neuron_id,brain_region,mouse_id,date,sess_id);
     save(new_file_name,'dat', 'T', 'N', 'F', 'names','cumsum_explained','-v6')
