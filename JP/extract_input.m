@@ -17,7 +17,7 @@ function extract_input(jobid)
     dat = rmfield(dat,'w');
     dat = rmfield(dat,'c');
     dat = rmfield(dat,'probe');
-    for kk  = {'stim', 'id', 'st', 'movement', 'metrics', 'feedback'}
+    for kk  = {'stim', 'st', 'movement', 'metrics', 'feedback'}
         dat.n = rmfield(dat.n,kk{1});
     end
     new_file_name = sprintf('%d_gam_preproc_neu%d_%s_%s_%s_%s',...
