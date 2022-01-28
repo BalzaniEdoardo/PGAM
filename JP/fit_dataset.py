@@ -15,7 +15,7 @@ from scipy.integrate import simps
 from scipy.io import savemat,loadmat
 import re
 table = parse_fit_list('list_to_fit_GAM.mat')
-tot_fits = 10
+tot_fits = 1
 try:
     # if this work try a cluster processing step
     JOB = int(sys.argv[1]) - 1
@@ -23,9 +23,9 @@ try:
 
 except:
     is_cluster = False
-    JOB = 73480
+    JOB = 3
     for jj in range(JOB,JOB+tot_fits):
-        table[jj]['path_file'] = '/Users/edoardo/Work/Code/GAM_code/JP/gam_preproc_neu378_ACAd_NYU-28_2020-10-21_001.mat'
+        table[jj]['path_file'] = 'gam_preproc_neu104_ACAd_CSP011_2020-07-27_001.mat'
 
 
 for job_id in range(JOB,JOB+tot_fits):
@@ -37,21 +37,22 @@ for job_id in range(JOB,JOB+tot_fits):
     use_subjectivePrior = table[job_id]['use_subjectivePrior']
     neuron_id = table[job_id]['neuron_id']
 
-    name_splits = remote_path.split('\\')
-    if not os.path.exists(name_splits[-3]):
-        os.makedirs(name_splits[-3])
-    if not os.path.exists(os.path.join(*name_splits[-3:-1])):
-        os.makedirs(os.path.join(*name_splits[-3:-1]))
-
-    local_path = os.path.join(*name_splits[-3:-1])
-
     if is_cluster:
+        name_splits = remote_path.split('\\')
+        if not os.path.exists(name_splits[-3]):
+            os.makedirs(name_splits[-3])
+        if not os.path.exists(os.path.join(*name_splits[-3:-1])):
+            os.makedirs(os.path.join(*name_splits[-3:-1]))
+        local_path = os.path.join(*name_splits[-3:-1])
         parse_fun = lambda path_remote: parse_mat_remote(path_remote, local_path, job_id, neuron_id)
+
     else:
+        local_path = remote_path
         parse_fun = parse_mat
+
+
     # extract input
     gam_raw_inputs, counts, trial_idx, info_dict, var_names = parse_fun(table['path_file'][job_id])
-
 
 
     # unpack info
@@ -147,6 +148,7 @@ for job_id in range(JOB,JOB+tot_fits):
         filter_trials[trial_idx==tr] = True
 
     X, index = sm_handler.get_exog_mat_fast(sm_handler.smooths_var)
+
     gam_model = general_additive_model(sm_handler,sm_handler.smooths_var,counts,poissFam,fisher_scoring=False)
     try:
         full_fit,reduced_fit = gam_model.fit_full_and_reduced(sm_handler.smooths_var,th_pval=0.001,
