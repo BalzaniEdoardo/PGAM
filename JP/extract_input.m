@@ -12,7 +12,9 @@ function extract_input(jobid)
     path_local = sprintf('%s/%s/%d_%s_%s_%s_%s',mouse_id(1), brain_region, jobid, brain_region, mouse_id, date,sess_id);
     %path_local
     %'here'
-    [dat, T, N, F, names, target_neuron_id,cumsum_explained] = GAM_Step1(path_local, target_neuron, 0.005);    
+    [dat, T, N, F, names, target_neuron_id,cumsum_explained] = GAM_Step1(path_local, target_neuron, 0.005); 
+    new_file_name = sprintf('%d_gam_preproc_neu%d_%s_%s_%s_%s',...
+        jobid,target_neuron_id,brain_region,mouse_id,date,sess_id)
     try
         dat = rmfield(dat,'b');
     catch
@@ -37,7 +39,6 @@ function extract_input(jobid)
             continue
         end
     end
-    new_file_name = sprintf('%d_gam_preproc_neu%d_%s_%s_%s_%s',...
-        jobid,target_neuron_id,brain_region,mouse_id,date,sess_id)
+    
     save(new_file_name,'dat', 'T', 'N', 'F', 'names','cumsum_explained','-v6')
 end
