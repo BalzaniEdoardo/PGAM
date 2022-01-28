@@ -46,11 +46,9 @@ def unNest_mat_structure(unNest, struc, init = False):
                     val[kk] = {}
                     tmp = unNest_mat_structure(val[kk], struc[key][0,k])
                     val[kk] = tmp
-
             else:
                 raise ValueError('Could not access structure key "%s" of shape "%s"'%(key,str(struc.shape)))
             unNest[key] = val
-
     else:
         unNest = struc
     return unNest
