@@ -15,7 +15,7 @@ from scipy.integrate import simps
 from scipy.io import savemat,loadmat
 import re
 table = parse_fit_list('list_to_fit_GAM.mat')
-tot_fits = 1
+tot_fits = 10
 try:
     # if this work try a cluster processing step
     JOB = int(sys.argv[1]) - 1
