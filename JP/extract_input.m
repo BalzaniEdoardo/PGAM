@@ -2,13 +2,13 @@ function extract_input(jobid)
     load('list_to_fit_GAM.mat')
     target_neuron = target_neuron(jobid+1);
     path_remote = paths_to_fit{jobid+1};
-    splits = split(path_remote,'_')
+    splits = split(path_remote,'_');
     brain_region = splits{1};
     brain_region = split(brain_region,'\');
-    brain_region = brain_region{end}
-    mouse_id = splits{2}
-    date = splits{3}
-    sess_id = splits{4}
+    brain_region = brain_region{end};
+    mouse_id = splits{2};
+    date = splits{3};
+    sess_id = splits{4};
     path_local = sprintf('%s/%s/%d_%s_%s_%s_%s',mouse_id(1), brain_region, jobid, brain_region, mouse_id, date,sess_id);
     %path_local
     %'here'
@@ -38,6 +38,6 @@ function extract_input(jobid)
         end
     end
     new_file_name = sprintf('%d_gam_preproc_neu%d_%s_%s_%s_%s',...
-        jobid,target_neuron_id,brain_region,mouse_id,date,sess_id);
+        jobid,target_neuron_id,brain_region,mouse_id,date,sess_id)
     save(new_file_name,'dat', 'T', 'N', 'F', 'names','cumsum_explained','-v6')
 end
