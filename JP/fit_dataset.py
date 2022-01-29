@@ -119,6 +119,9 @@ for job_id in range(JOB,JOB+tot_fits):
         if x.sum() == 0:
             print('\n\n', varName, ' is empty! all values are 0s.')
             continue
+        if all(np.isnan(x)):
+            print('\n\n', varName, ' is all nans!.')
+            continue
         if varName == 'prior50':
             continue
         print('adding',varName)
