@@ -1,3 +1,4 @@
+*.json
 *.zip
 *.xlsx
 select_variables/
