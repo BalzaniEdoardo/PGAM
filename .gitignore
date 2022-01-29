@@ -1,4 +1,7 @@
 *.json
+*.sh
+*fit_dataset_2.py
+*.out
 *.zip
 *.xlsx
 select_variables/
