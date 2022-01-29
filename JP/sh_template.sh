@@ -3,7 +3,7 @@
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=1
 #SBATCH --time=1-14:30:00
-#SBATCH --mem=20GB
+#SBATCH --mem=30GB
 #SBATCH --job-name=TL_pred_from_TD
 #SBATCH --mail-type=END
 #SBATCH --mail-user=jpn5@nyu.edu
