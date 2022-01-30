@@ -20,6 +20,7 @@ from scipy.io import savemat
 import email
 import base64
 import os.path
+from time import perf_counter
 import datetime,pytz
 
 from google.auth.transport.requests import Request
@@ -32,8 +33,16 @@ from httplib2.error import ServerNotFoundError
 
 
 class fit_tree(object):
-    def __init__(self):
-        self.list_path = []
+    def __init__(self,is_mouse=False):
+        if is_mouse:
+            self.list_path = []
+            # self.list_session_num = []
+            # self.list_date = []
+            # self.list_neuron_id = []
+            # self.list_coupling = []
+            # self.list_subj_prior = []
+            self.list_row_idx = []
+            
         return
     
     def add_region(self,region):
@@ -44,7 +53,7 @@ class fit_tree(object):
         if region not in self.__dict__.keys():
             self.add_region(region)
         
-        setattr(self.region, mouse, fit_tree())
+        setattr(self.__dict__[region], mouse, fit_tree(is_mouse=True))
         
     def add_path(self,path,region,mouse):
         if region not in self.__dict__.keys():
@@ -53,6 +62,27 @@ class fit_tree(object):
             self.add_mouse_name(region, mouse)
         
         self.__dict__[region].__dict__[mouse].list_path.append(path)
+        
+    def add_rowIdxs(self, idx, region, mouse):
+        if region not in self.__dict__.keys():
+            self.add_region(region)
+        if mouse not in self.__dict__[region].__dict__.keys():
+            self.add_mouse_name(region, mouse)
+        
+        # self.__dict__[region].__dict__[mouse].list_path.append(row['path_file'])
+        # self.__dict__[region].__dict__[mouse].list_session_num.append(row['session_num'])
+        # self.__dict__[region].__dict__[mouse].list_date.append(row['date'])
+        # self.__dict__[region].__dict__[mouse].list_neuron_id.append(row['neuron_id'])
+        # self.__dict__[region].__dict__[mouse].list_coupling.append(row['use_coupling'])
+        # self.__dict__[region].__dict__[mouse].list_subj_prior.append(row['use_subjectivePrior'])
+        self.__dict__[region].__dict__[mouse].list_row_idx += idx
+       
+    
+    def __getitem__(self, key):
+        if 'list_path' in self.__dict__[key].__dict__.keys():
+            return self.__dict__[key].list_path
+        else:
+            return self.__dict__[key]
         
 
         
@@ -80,6 +110,7 @@ class job_handler(QDialog, Ui_Dialog):
         self.initJob = 1
         self.endJob = fitLast
         self.maxFit = self.endJob - self.initJob
+        self.data_tree = None
 
     def get_password(self):
         self._password, ok = QInputDialog.getText(None, "Attention", "Greene Password for eb162?",
@@ -230,6 +261,7 @@ class job_handler(QDialog, Ui_Dialog):
         except:
             pass
         super(job_handler,self).closeEvent(event)
+        return
 
     def load_fit_list(self):
         self.old_fit_list = []
@@ -259,6 +291,27 @@ class job_handler(QDialog, Ui_Dialog):
         table['animal_name'] = animal_name
         table['date'] = date
         table['session_num'] = sess_num
+        
+        ## create a tree structure
+        t0 = perf_counter()
+        tree_path = fit_tree()
+        for region in np.unique(table['brain_region']):
+            idxs_region = np.where(table['brain_region']==region)[0]
+            table_region = table[idxs_region]
+            for mouse_name in np.unique(table_region['animal_name']):
+                idxs_mouse = np.where(table_region['animal_name']==mouse_name)[0]
+                # table_mouse = table_region[idxs_mouse]
+                tree_path.add_rowIdxs(list(idxs_region[idxs_mouse]),region,mouse_name)
+                # for row in table_mouse:
+                    # tree_path.add_path(row['path_file'], region, mouse_name)
+                    # tree_path.add_properties('date', row['date'], region, mouse)
+                    # tree_path.add_properties('sessoin_num', row['date'], region, mouse)
+
+        t1 = perf_counter()
+        print('data tree created in %f sec'%(t1-t0))
+        self.data_tree = tree_path
+                
+                
         self.updated_fit_list = table
         self.listWidget_Log.addItem('done!')
         self.listWidget_Log.addItem('...loaded fit list')
@@ -435,7 +488,7 @@ if __name__ == '__main__':
     app = QApplication(sys.argv)
     dialog = job_handler(durTimerEmail_sec=3600,fit_dir='D:\\MOUSE-ASD-NEURONS\\data\\3step\\data')
     dialog.show()
-    app.exec_()
+    data_tree = app.exec_()
     print('exited app')
     app.quit()
-
+    
