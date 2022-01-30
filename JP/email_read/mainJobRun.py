@@ -35,7 +35,7 @@ from httplib2.error import ServerNotFoundError
 class fit_tree(object):
     def __init__(self,is_mouse=False):
         if is_mouse:
-            self.list_path = []
+            # self.list_path = []
             # self.list_session_num = []
             # self.list_date = []
             # self.list_neuron_id = []
@@ -79,8 +79,8 @@ class fit_tree(object):
        
     
     def __getitem__(self, key):
-        if 'list_path' in self.__dict__[key].__dict__.keys():
-            return self.__dict__[key].list_path
+        if 'list_row_idx' in self.__dict__[key].__dict__.keys():
+            return self.__dict__[key].list_row_idx
         else:
             return self.__dict__[key]
         
@@ -462,17 +462,19 @@ class job_handler(QDialog, Ui_Dialog):
                 animal_name = splits[6]
                 date = splits[7]
                 sess_num = splits[8]
-                boolean = np.ones(self.updated_fit_list.shape[0], dtype=bool)
 
-                boolean = boolean & (self.updated_fit_list['brain_region']==brain_area_group)
-                boolean = boolean & (self.updated_fit_list['animal_name'] == animal_name)
-                boolean = boolean & (self.updated_fit_list['date'] == date)
-                boolean = boolean & (self.updated_fit_list['session_num'] == sess_num)
-                boolean = boolean & (self.updated_fit_list['use_coupling'] == use_cupling)
-                boolean = boolean & (self.updated_fit_list['use_subjectivePrior'] == use_subPrior)
-                boolean = boolean & (self.updated_fit_list['neuron_id'] == neu_id)
-                assert(boolean.sum()==1), 'Redundant entru found: \n%d'%(pd.DataFrame(self.updated_fit_list[boolean]).head())
-                self.updated_fit_list['is_done'][boolean] = True
+
+                idxs = self.data_tree[brain_area_group][animal_name]
+                sub_table = self.updated_fit_list[idxs]
+                boolean = np.ones(len(idxs), dtype=bool)
+                boolean = boolean & (sub_table['date'] == date)
+                boolean = boolean & (sub_table['session_num'] == sess_num)
+                boolean = boolean & (sub_table['use_coupling'] == use_cupling)
+                boolean = boolean & (sub_table['use_subjectivePrior'] == use_subPrior)
+                boolean = boolean & (sub_table['neuron_id'] == neu_id)
+                assert(boolean.sum() == 1)
+
+                self.updated_fit_list['is_done'][np.array(idxs)[boolean]] = True
 
         return
     
@@ -486,7 +488,7 @@ if __name__ == '__main__':
     import sys
     print('DECOMMENT RUN SBATCH LINE')
     app = QApplication(sys.argv)
-    dialog = job_handler(durTimerEmail_sec=3600,fit_dir='D:\\MOUSE-ASD-NEURONS\\data\\3step\\data')
+    dialog = job_handler(durTimerEmail_sec=3600,fit_dir='/Users/edoardo/Work/Code/GAM_code/JP') # 'D:\\MOUSE-ASD-NEURONS\\data\\3step\\data'
     dialog.show()
     data_tree = app.exec_()
     print('exited app')
