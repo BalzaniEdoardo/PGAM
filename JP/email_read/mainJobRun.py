@@ -28,6 +28,36 @@ from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from httplib2.error import ServerNotFoundError
 
+
+
+class fit_tree(object):
+    def __init__(self):
+        self.list_path = []
+        return
+    
+    def add_region(self,region):
+        if region not in self.__dict__.keys():
+            setattr(self,region,fit_tree())
+    
+    def add_mouse_name(self,region,mouse):
+        if region not in self.__dict__.keys():
+            self.add_region(region)
+        
+        setattr(self.region, mouse, fit_tree())
+        
+    def add_path(self,path,region,mouse):
+        if region not in self.__dict__.keys():
+            self.add_region(region)
+        if mouse not in self.__dict__[region].__dict__.keys():
+            self.add_mouse_name(region, mouse)
+        
+        self.__dict__[region].__dict__[mouse].list_path.append(path)
+        
+
+        
+      
+    
+
 class job_handler(QDialog, Ui_Dialog):
     jobFinished = pyqtSignal(bool)
     def __init__(self, durTimerEmail_sec=3600, fitLast=9990, fitEvery=10, fit_dir='.', parent=None):
@@ -184,6 +214,7 @@ class job_handler(QDialog, Ui_Dialog):
 
 
         self.listWidget_Log.addItem('connected!')
+        self.okButton.setEnabled(False)
 
         self.run_jobs()
         print('job started')
@@ -390,14 +421,18 @@ class job_handler(QDialog, Ui_Dialog):
                 self.updated_fit_list['is_done'][boolean] = True
 
         return
-
+    
+    
+        
+        
 
 
 
 if __name__ == '__main__':
     import sys
+    print('DECOMMENT RUN SBATCH LINE')
     app = QApplication(sys.argv)
-    dialog = job_handler(durTimerEmail_sec=3600,fit_dir='/Users/edoardo/Work/Code/GAM_code/JP')
+    dialog = job_handler(durTimerEmail_sec=3600,fit_dir='D:\\MOUSE-ASD-NEURONS\\data\\3step\\data')
     dialog.show()
     app.exec_()
     print('exited app')
