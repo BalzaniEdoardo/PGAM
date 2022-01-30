@@ -1,5 +1,6 @@
 from __future__ import print_function
-
+import email
+import base64
 import os.path
 
 from google.auth.transport.requests import Request
@@ -37,7 +38,7 @@ def main():
     try:
         # Call the Gmail API
         service = build('gmail', 'v1', credentials=creds)
-        results = service.users().messages().list(userId='me',labelIds=['INBOX']).execute()
+        results = service.users().messages().list(userId='me',labelIds=['INBOX'],).execute()
         messages = results.get('messages',[])
         cc = 0
         for message in messages[:20]:

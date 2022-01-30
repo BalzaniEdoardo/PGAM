@@ -131,5 +131,5 @@ if __name__ == '__main__':
     # graph.write_png('jpstruct_graph.png')
     # print('function calls number: %d'%cnt)
 
-    table = parse_fit_list('/Users/edoardo/Work/Code/GAM_code/JP/list_to_fit_GAM.mat')
+    table = parse_fit_list('/Users/edoardo/Work/Code/GAM_code/JP/email_read/list_to_fit_GAM_auto.mat')
 
