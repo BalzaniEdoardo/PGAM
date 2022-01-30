@@ -1,5 +1,6 @@
 from __future__ import print_function
 
+import pandas as pd
 from PyQt5.QtWidgets import QDialog,QApplication,QInputDialog,QLineEdit
 from PyQt5.QtCore import QTimer, QDateTime, pyqtSignal
 from dialog_jobAPP import Ui_Dialog
@@ -386,7 +387,7 @@ class job_handler(QDialog, Ui_Dialog):
                 boolean = boolean & (self.updated_fit_list['use_coupling'] == use_cupling)
                 boolean = boolean & (self.updated_fit_list['use_subjectivePrior'] == use_subPrior)
                 boolean = boolean & (self.updated_fit_list['neuron_id'] == neu_id)
-                #assert(boolean.sum()==1)
+                assert(boolean.sum()==1), 'Redundant entru found: \n%d'%(pd.DataFrame(self.updated_fit_list[boolean]).head())
                 self.updated_fit_list['is_done'][boolean] = True
 
         return
