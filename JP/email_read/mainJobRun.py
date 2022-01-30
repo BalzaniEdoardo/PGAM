@@ -35,12 +35,6 @@ from httplib2.error import ServerNotFoundError
 class fit_tree(object):
     def __init__(self,is_mouse=False):
         if is_mouse:
-            # self.list_path = []
-            # self.list_session_num = []
-            # self.list_date = []
-            # self.list_neuron_id = []
-            # self.list_coupling = []
-            # self.list_subj_prior = []
             self.list_row_idx = []
             
         return
@@ -68,13 +62,6 @@ class fit_tree(object):
             self.add_region(region)
         if mouse not in self.__dict__[region].__dict__.keys():
             self.add_mouse_name(region, mouse)
-        
-        # self.__dict__[region].__dict__[mouse].list_path.append(row['path_file'])
-        # self.__dict__[region].__dict__[mouse].list_session_num.append(row['session_num'])
-        # self.__dict__[region].__dict__[mouse].list_date.append(row['date'])
-        # self.__dict__[region].__dict__[mouse].list_neuron_id.append(row['neuron_id'])
-        # self.__dict__[region].__dict__[mouse].list_coupling.append(row['use_coupling'])
-        # self.__dict__[region].__dict__[mouse].list_subj_prior.append(row['use_subjectivePrior'])
         self.__dict__[region].__dict__[mouse].list_row_idx += idx
        
     
@@ -343,21 +330,6 @@ class job_handler(QDialog, Ui_Dialog):
         savemat('list_to_fit_GAM_auto.mat',mdict=mdict)
         self.copy_to_server('list_to_fit_GAM_auto.mat', '/scratch/eb162/GAM_Repo/JP')
 
-        # cnt = 1
-        # while bl:
-        #     if cnt > 1:
-        #         self.sshConnect()
-        #     ssh_stdin,ssh_stdout,ssh_stderr = self.sshTypeCommand('cd /scratch/eb162/GAM_Repo/JP \nsbatch --array=1-%d:%d sh_template_auto.sh'%(self.maxFit,self.fitEvery))
-        #     line = ssh_stdout.readlines()[0]
-        #     print('REMOVE BEFORE RUNNING')
-        #     line = 'Submitted batch'
-        #     if line.startswith('Submitted batch'):
-        #         bl = False
-        #     if cnt >= 10:
-        #         print('Unable to start batch job with error line: "%s":'%(line))
-        #         self.close()
-        #     cnt += 1
-
         self.initJob = self.endJob + 1
         self.endJob = self.initJob + totJob
         self.timer.start(self.durTimerEmail)
@@ -381,13 +353,6 @@ class job_handler(QDialog, Ui_Dialog):
         with open('../fit_dataset_auto.py', 'w') as fh:
             fh.write(txt)
         self.listWidget_Log.addItem('..created the "fit_data_auto.py" with updated argument')
-
-    def check_fitResults(self):
-        """
-        Check what fit has been done already
-        :return:
-        """
-        return
 
 
 
