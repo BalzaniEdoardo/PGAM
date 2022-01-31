@@ -1,0 +1,21 @@
+Traceback (most recent call last):
+  File "/Users/edoardo/anaconda3/envs/jpEnv/lib/python3.7/site-packages/scipy/io/matlab/mio.py", line 39, in _open_file
+    return open(file_like, mode), True
+FileNotFoundError: [Errno 2] No such file or directory: 'gam_preproc_neu104_ACAd_CSP011_2020-07-27_001.mat'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/edoardo/Work/Code/GAM_code/JP/fit_dataset.py", line 55, in <module>
+    gam_raw_inputs, counts, trial_idx, info_dict, var_names = parse_fun(table['path_file'][job_id])
+  File "/Users/edoardo/Work/Code/GAM_code/JP/parsing_tools.py", line 57, in parse_mat
+    dat = loadmat(filepath)
+  File "/Users/edoardo/anaconda3/envs/jpEnv/lib/python3.7/site-packages/scipy/io/matlab/mio.py", line 224, in loadmat
+    with _open_file_context(file_name, appendmat) as f:
+  File "/Users/edoardo/anaconda3/envs/jpEnv/lib/python3.7/contextlib.py", line 112, in __enter__
+    return next(self.gen)
+  File "/Users/edoardo/anaconda3/envs/jpEnv/lib/python3.7/site-packages/scipy/io/matlab/mio.py", line 17, in _open_file_context
+    f, opened = _open_file(file_like, appendmat, mode)
+  File "/Users/edoardo/anaconda3/envs/jpEnv/lib/python3.7/site-packages/scipy/io/matlab/mio.py", line 45, in _open_file
+    return open(file_like, mode), True
+FileNotFoundError: [Errno 2] No such file or directory: 'gam_preproc_neu104_ACAd_CSP011_2020-07-27_001.mat'
