@@ -98,6 +98,8 @@ class job_handler(QDialog, Ui_Dialog):
         self.endJob = fitLast
         self.maxFit = self.endJob - self.initJob
         self.data_tree = None
+        self.pushButton_email.setEnabled(False)
+
 
     def get_password(self):
         self._password, ok = QInputDialog.getText(None, "Attention", "Greene Password for eb162?",
@@ -237,6 +239,9 @@ class job_handler(QDialog, Ui_Dialog):
 
         self.run_jobs()
         print('job started')
+        self.pushButton_email.setEnabled(True)
+        self.pushButton_email.clicked.connect(lambda : self.check_emails(isButton=True))
+
 
     def end_job(self):
         print('job end')
@@ -364,7 +369,8 @@ class job_handler(QDialog, Ui_Dialog):
 
 
 
-    def check_emails(self):
+    def check_emails(self,isButton=False):
+        rmt = self.timer.remainingTime()
         self.timer.stop()
         time = QDateTime.currentDateTime()
         str_time = time.toString('yyyy-MM-dd hh:mm:ss')
@@ -388,7 +394,10 @@ class job_handler(QDialog, Ui_Dialog):
                     self.prev_check_time = kwd['datetime']
                     self.jobFinished.emit(True)
                     return
-        self.timer.start(self.durTimerEmail)
+        if not isButton:
+            self.timer.start(self.durTimerEmail)
+        else:
+            self.timer.start(rmt)
         print('\n')
 
         return run_job
