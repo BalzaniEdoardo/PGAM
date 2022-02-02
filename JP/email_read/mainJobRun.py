@@ -333,7 +333,7 @@ class job_handler(QDialog, Ui_Dialog):
         self.listWidget_Log.addItem('running cmd: "sbatch --array=1-%d:%d sh_template_auto.sh"'%(fitMax,self.fitEvery))
 
         #
-        #self.sshTypeCommand('cd /scratch/eb162/GAM_Repo/JP \nsbatch --array=1-%d:%d sh_template_auto.sh'%(fitMax,self.fitEvery))
+        self.sshTypeCommand('cd /scratch/eb162/GAM_Repo/JP \nsbatch --array=1-%d:%d sh_template_auto.sh'%(fitMax,self.fitEvery))
         self.initJob = self.endJob + 1
         self.endJob = self.initJob + totJob
         self.timer.start(self.durTimerEmail)
