@@ -78,7 +78,8 @@ class fit_tree(object):
 
 class job_handler(QDialog, Ui_Dialog):
     jobFinished = pyqtSignal(bool)
-    def __init__(self, durTimerEmail_sec=3600, fitLast=9990, fitEvery=10, fit_dir='.', parent=None):
+    def __init__(self, durTimerEmail_sec=3600, fitLast=9990, fitEvery=10, fit_dir='.',
+                 skipFinished=True, parent=None):
         super(job_handler, self).__init__(parent)
         self.setupUi(self)
         self.parent = parent
@@ -99,6 +100,8 @@ class job_handler(QDialog, Ui_Dialog):
         self.maxFit = self.endJob - self.initJob
         self.data_tree = None
         self.pushButton_email.setEnabled(False)
+        self.skipFinished = skipFinished
+        self.isfirst=True
 
 
     def get_password(self):
@@ -236,8 +239,10 @@ class job_handler(QDialog, Ui_Dialog):
 
         self.listWidget_Log.addItem('connected!')
         self.okButton.setEnabled(False)
-        self.copy_to_server(os.path.join(os.path.dirname(basedir), 'list_to_fit_GAM.mat'), '/scratch/eb162/GAM_Repo/JP/')
 
+        if not self.skipFinished:
+            self.copy_to_server(os.path.join(os.path.dirname(basedir), 'list_to_fit_GAM.mat'), '/scratch/eb162/GAM_Repo/JP/')
+            self.listWidget_Log.addItem('succesfully copied on greene "list_to_fit_GAM.mat" with the completed fits')
 
         self.run_jobs()
         print('job started')
@@ -313,8 +318,24 @@ class job_handler(QDialog, Ui_Dialog):
     def run_jobs(self):
         print('RUNNING JOBS')
         self.timer.stop()
-        #self.listWidget_Log.addItem('...starting job array %d-%d:%d'%(self.initJob,self.endJob, self.fitEvery))
-        self.chcek_finished()
+        self.listWidget_Log.addItem('...starting job array %d-%d:%d'%(self.initJob,self.endJob, self.fitEvery))
+        self.check_finished()
+        if self.isfirst and self.skipFinished:
+            sel = ~self.updated_fit_list['is_done']
+            self.updated_fit_list = self.updated_fit_list[sel]
+            mdict = {'is_done': self.updated_fit_list['is_done'],
+                     'neuron_id': self.updated_fit_list['neuron_id'],
+                     'target_neuron': self.updated_fit_list['target_neuron'],
+                     'use_coupling': self.updated_fit_list['use_coupling'],
+                     'use_subjectivePrior':self.updated_fit_list['use_subjectivePrior'],
+                     'paths_to_fit': self.updated_fit_list['path_file']
+                     }
+            savemat('list_to_fit_GAM.mat',mdict=mdict)
+            self.isfirst = False
+            self.copy_to_server(os.path.join(os.path.dirname(basedir), 'list_to_fit_GAM.mat'), '/scratch/eb162/GAM_Repo/JP/')
+            self.listWidget_Log.addItem('succesfully copied on greene "list_to_fit_GAM.mat" without the completed fits')
+
+            
         self.listWidget_Log.addItem('checked completed jobs...')
         self.refreshStatus()
 
@@ -340,7 +361,7 @@ class job_handler(QDialog, Ui_Dialog):
         self.listWidget_Log.addItem('running cmd: "sbatch --array=1-%d:%d sh_template_auto.sh"'%(fitMax,self.fitEvery))
 
         #
-        self.sshTypeCommand('cd /scratch/eb162/GAM_Repo/JP \nsbatch --array=1-%d:%d sh_template_auto.sh'%(fitMax,self.fitEvery))
+        #self.sshTypeCommand('cd /scratch/eb162/GAM_Repo/JP \nsbatch --array=1-%d:%d sh_template_auto.sh'%(fitMax,self.fitEvery))
         self.initJob = self.endJob + 1
         self.endJob = self.initJob + totJob
         self.timer.start(self.durTimerEmail)
@@ -433,7 +454,7 @@ class job_handler(QDialog, Ui_Dialog):
         decoded_msg = email.message_from_bytes(base64.urlsafe_b64decode(msg['raw'].encode('ASCII')))
         return decoded_msg
 
-    def chcek_finished(self):
+    def check_finished(self):
         for root, dirs, files in os.walk(self.fit_dir, topdown=False):
             for name in files:
                 if not re.match('^gam_fit_useCoupling[0-1]_useSubPrior[0-1]_unt\d+',name):
@@ -473,8 +494,9 @@ if __name__ == '__main__':
     print('DECOMMENT RUN SBATCH LINE')
     app = QApplication(sys.argv)
     dialog = job_handler(durTimerEmail_sec=3600,
-                         fit_dir='/Users/edoardo/Work/Code/GAM_code/JP',
-                         fitEvery=1,fitLast=1000) # 'D:\\MOUSE-ASD-NEURONS\\data\\3step\\data'
+                         fit_dir='D:\\MOUSE-ASD-NEURONS\\data\\3step\\data',
+                         fitEvery=1,fitLast=1000,
+                         skipFinished=True) # ''
     dialog.show()
     data_tree = app.exec_()
     print('exited app')
