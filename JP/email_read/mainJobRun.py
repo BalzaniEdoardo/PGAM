@@ -234,6 +234,8 @@ class job_handler(QDialog, Ui_Dialog):
 
         self.listWidget_Log.addItem('connected!')
         self.okButton.setEnabled(False)
+        self.copy_to_server(os.path.join(os.path.dirname(basedir), 'list_to_fit_GAM.mat'), '/scratch/eb162/GAM_Repo/JP/')
+
 
         self.run_jobs()
         print('job started')
