@@ -1,0 +1,6 @@
+Traceback (most recent call last):
+  File "/scratch/eb162/GAM_Repo/JP/fit_dataset_auto.py", line 169, in <module>
+    use_coupling,use_subjectivePrior)
+  File "/scratch/eb162/GAM_Repo/JP/processing_tools.py", line 284, in postprocess_results
+    results['reduced_model_rate_Hz'][cc] = full_fit.tuning_Hz.__dict__[var].y_model[sel]
+KeyError: 'neuron_247'
