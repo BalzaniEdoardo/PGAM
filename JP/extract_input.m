@@ -9,7 +9,7 @@ function extract_input(jobid)
     mouse_id = splits{2};
     date = splits{3};
     sess_id = splits{4};
-    path_local = sprintf('%s/%s/%d_%s_%s_%s_%s',mouse_id(1), brain_region, jobid, brain_region, mouse_id, date,sess_id)
+    path_local = sprintf('%s/%s/%s_%s_%s_%s',mouse_id(1), brain_region, brain_region, mouse_id, date,sess_id)
     %path_local
     %'here'
     [dat, T, N, F, names, target_neuron_id,cumsum_explained] = GAM_Step1(path_local, target_neuron, 0.005); 

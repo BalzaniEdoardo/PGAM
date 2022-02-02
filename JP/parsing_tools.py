@@ -66,19 +66,19 @@ def parse_mat(filepath):
 def parse_mat_remote(filepath, local_path, job_id, neuron_id):
     basename = filepath.split('\\')[-1]
     # pdb.set_trace()
-    basename_local = '%d_'%job_id + basename
+    #basename_local = basename#'%d_'%job_id + basename
 
     # copy and rename
-    scp_file = os.path.join(local_path,basename_local)
-    path_change_sep = filepath.replace('\\','/')
-    os.system('scp lab@172.22.87.253:"%s" %s'%(path_change_sep,scp_file))
+    #scp_file = os.path.join(local_path,basename_local)
+    #path_change_sep = filepath.replace('\\','/')
+    #os.system('scp lab@172.22.87.253:"%s" %s'%(path_change_sep,scp_file))
     # use the copied file to extract the info that will be saved in the local folder of the script
     # JOBID_gam_preproc_neuNEURONID_BRAINAREA_MOUSENAME_DATE_SESSION.mat
     #pdb.set_trace()
     os.system('matlab -nodesktop -nosplash -r "extract_input(%d);exit"'%job_id)
 
     # parse the file we just saved
-    file_name = os.path.basename(scp_file)
+    file_name = basename#s.path.basename(scp_file)
     file_name = file_name.split('.')[0].split('_')
     brain_area_group = file_name[-4]
     animal_name = file_name[-3]
@@ -94,7 +94,7 @@ def parse_mat_remote(filepath, local_path, job_id, neuron_id):
 
     # remove temporary files
     os.remove(fhname)
-    os.remove(scp_file)
+    #os.remove(scp_file)
     return gam_raw_inputs, counts, trial_idx, info_dict, var_names
 
 def parse_fit_list(filepath):
