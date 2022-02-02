@@ -306,7 +306,7 @@ class job_handler(QDialog, Ui_Dialog):
     def run_jobs(self):
         print('RUNNING JOBS')
         self.timer.stop()
-        self.listWidget_Log.addItem('...starting job array %d-%d:%d'%(self.initJob,self.endJob, self.fitEvery))
+        #self.listWidget_Log.addItem('...starting job array %d-%d:%d'%(self.initJob,self.endJob, self.fitEvery))
         self.chcek_finished()
         self.listWidget_Log.addItem('checked completed jobs...')
         self.refreshStatus()
@@ -317,7 +317,7 @@ class job_handler(QDialog, Ui_Dialog):
         self.copy_fit_data_auto()
 
         bl = True
-        self.updated_fit_list[self.initJob:self.maxFit+self.initJob]['attempted'] = True
+        self.updated_fit_list[self.initJob-1:self.maxFit+self.initJob-1+self.fitEvery]['attempted'] = True
         subFit = (~self.updated_fit_list['attempted']) & (~self.updated_fit_list['is_done'])
         mdict = {'is_done': self.updated_fit_list['is_done'][subFit],
                  'neuron_id': self.updated_fit_list['neuron_id'][subFit],
@@ -354,8 +354,8 @@ class job_handler(QDialog, Ui_Dialog):
         end = start + re.search('\n', txt[start:]).start()
         txt = txt.replace(txt[start:end], '    JOB = int(sys.argv[1]) + %d - 1' % (self.initJob - 1))
         start = re.search('tot_fits = \d+', txt).start()
-        end = re.search('\n', txt[start:]).start()
-        txt.replace(txt[start:end], 'tot_fits = %d'%self.fitEvery)
+        end = start + re.search('\n', txt[start:]).start()
+        txt = txt.replace(txt[start:end], 'tot_fits = %d'%self.fitEvery)
 
         # print(txt[start:end])
         with open('../fit_dataset_auto.py', 'w') as fh:
@@ -461,7 +461,9 @@ if __name__ == '__main__':
     import sys
     print('DECOMMENT RUN SBATCH LINE')
     app = QApplication(sys.argv)
-    dialog = job_handler(durTimerEmail_sec=3600,fit_dir='/Users/edoardo/Work/Code/GAM_code/JP') # 'D:\\MOUSE-ASD-NEURONS\\data\\3step\\data'
+    dialog = job_handler(durTimerEmail_sec=3600,
+                         fit_dir='/Users/edoardo/Work/Code/GAM_code/JP',
+                         fitEvery=1,fitLast=1000) # 'D:\\MOUSE-ASD-NEURONS\\data\\3step\\data'
     dialog.show()
     data_tree = app.exec_()
     print('exited app')
