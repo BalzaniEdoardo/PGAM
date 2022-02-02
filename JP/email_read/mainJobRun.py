@@ -317,7 +317,6 @@ class job_handler(QDialog, Ui_Dialog):
         self.copy_fit_data_auto()
 
         bl = True
-        self.listWidget_Log.addItem('running cmd: "sbatch --array=1-%d:%d sh_template_auto.sh"'%(self.maxFit,self.fitEvery))
         self.updated_fit_list[self.initJob:self.maxFit+self.initJob]['attempted'] = True
         subFit = (~self.updated_fit_list['attempted']) & (~self.updated_fit_list['is_done'])
         mdict = {'is_done': self.updated_fit_list['is_done'][subFit],
@@ -330,6 +329,11 @@ class job_handler(QDialog, Ui_Dialog):
         savemat('list_to_fit_GAM_auto.mat',mdict=mdict)
         self.copy_to_server('list_to_fit_GAM_auto.mat', '/scratch/eb162/GAM_Repo/JP')
 
+        fitMax = min(subFit.sum(), self.maxFit)
+        self.listWidget_Log.addItem('running cmd: "sbatch --array=1-%d:%d sh_template_auto.sh"'%(fitMax,self.fitEvery))
+
+        #
+        #self.sshTypeCommand('cd /scratch/eb162/GAM_Repo/JP \nsbatch --array=1-%d:%d sh_template_auto.sh'%(fitMax,self.fitEvery))
         self.initJob = self.endJob + 1
         self.endJob = self.initJob + totJob
         self.timer.start(self.durTimerEmail)
@@ -349,6 +353,10 @@ class job_handler(QDialog, Ui_Dialog):
         start = re.search('    JOB = int\(sys.argv\[1\]\)', txt).start()
         end = start + re.search('\n', txt[start:]).start()
         txt = txt.replace(txt[start:end], '    JOB = int(sys.argv[1]) + %d - 1' % (self.initJob - 1))
+        start = re.search('tot_fits = \d+', txt).start()
+        end = re.search('\n', txt[start:]).start()
+        txt.replace(txt[start:end], 'tot_fits = %d'%self.fitEvery)
+
         # print(txt[start:end])
         with open('../fit_dataset_auto.py', 'w') as fh:
             fh.write(txt)
