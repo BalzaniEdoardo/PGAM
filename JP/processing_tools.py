@@ -281,8 +281,8 @@ def postprocess_results(counts, full_fit,reduced_fit, info_save, filter_trials,
             else:
                 sel = np.ones(xx.shape,dtype=bool)
             results['reduced_x_rate_Hz'][cc] = xx[sel]
-            results['reduced_model_rate_Hz'][cc] = full_fit.tuning_Hz.__dict__[var].y_model[sel]
-            results['reduced_raw_rate_Hz'][cc] = full_fit.tuning_Hz.__dict__[var].y_raw[sel]
+            results['reduced_model_rate_Hz'][cc] = reduced_fit.tuning_Hz.__dict__[var].y_model[sel]
+            results['reduced_raw_rate_Hz'][cc] = reduced_fit.tuning_Hz.__dict__[var].y_raw[sel]
 
 
     return results
