@@ -11,7 +11,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_Dialog(object):
     def setupUi(self, Dialog):
         Dialog.setObjectName("Dialog")
-        Dialog.resize(666, 293)
+        Dialog.resize(666, 265)
         self.verticalLayout_4 = QtWidgets.QVBoxLayout(Dialog)
         self.verticalLayout_4.setObjectName("verticalLayout_4")
         self.verticalLayout_3 = QtWidgets.QVBoxLayout()
@@ -49,6 +49,9 @@ class Ui_Dialog(object):
         self.verticalLayout_3.addLayout(self.horizontalLayout_4)
         self.horizontalLayout_2 = QtWidgets.QHBoxLayout()
         self.horizontalLayout_2.setObjectName("horizontalLayout_2")
+        self.pushButton_email = QtWidgets.QPushButton(Dialog)
+        self.pushButton_email.setObjectName("pushButton_email")
+        self.horizontalLayout_2.addWidget(self.pushButton_email)
         spacerItem2 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout_2.addItem(spacerItem2)
         self.buttonJobInitiate = QtWidgets.QDialogButtonBox(Dialog)
@@ -69,4 +72,6 @@ class Ui_Dialog(object):
         Dialog.setWindowTitle(_translate("Dialog", "Dialog"))
         self.label.setText(_translate("Dialog", "<html><head/><body><p><span style=\" font-size:18pt; font-weight:600;\">Log:</span></p></body></html>"))
         self.label_2.setText(_translate("Dialog", "<html><head/><body><p><span style=\" font-size:18pt; font-weight:600;\">Job Status:</span></p></body></html>"))
+        self.pushButton_email.setText(_translate("Dialog", "Check Email"))
+        self.pushButton_email.setShortcut(_translate("Dialog", "Ctrl+S"))
 
