@@ -96,10 +96,11 @@ class job_handler(QDialog, Ui_Dialog):
 
         self.fit_dir = fit_dir
         self.initJob = 1
-        self.endJob = fitLast
-        self.maxFit = self.endJob - self.initJob
+        self.endJob = fitLast + fitEvery * (self.fitEvery!=1)
+        self.maxFit = self.endJob - self.initJob + 1 
         self.data_tree = None
         self.pushButton_email.setEnabled(False)
+        self.pushButton_run.setEnabled(False)
         self.skipFinished = skipFinished
         self.isfirst=True
 
@@ -119,68 +120,70 @@ class job_handler(QDialog, Ui_Dialog):
         return bl
 
     def sshTypeCommand(self,cmd_to_execute):
-        bl = True
-        cnt = 1
-        # remove old fit_dataset_auto
-        while bl:
-            if cnt > 1:
-                sleep(0.1)
-            ssh_stdin, ssh_stdout, ssh_stderr = self.ssh.exec_command(cmd_to_execute)
-            err = ssh_stderr.readlines()
-            if len(err) == 0:
-                bl = False
-            if cnt >= 10:
-                print('Unable to copy complete command "%s" with error:'%(cmd_to_execute))
-                for ee in err:
-                    print(ee)
-                self.close()
-            cnt+=1
-        return ssh_stdin,ssh_stdout,ssh_stderr
+        try:
+            bl = True
+            cnt = 1
+            # remove old fit_dataset_auto
+            while bl:
+                if cnt > 1:
+                    sleep(0.1)
+                ssh_stdin, ssh_stdout, ssh_stderr = self.ssh.exec_command(cmd_to_execute)
+                err = ssh_stderr.readlines()
+                if len(err) == 0:
+                    bl = False
+                if cnt >= 10:
+                    print('Unable to copy complete command "%s" with error:'%(cmd_to_execute))
+                    for ee in err:
+                        print(ee)
+                    self.close()
+                cnt+=1
+        except Exception as e:
+            print('could not ssh "%s" with exception'%cmd_to_execute)
+            print(e)
+            sleep(0.2)
+            self.sshConnect()
+            self.sshTypeCommand(cmd_to_execute)
+        #return ssh_stdin,ssh_stdout,ssh_stderr
 
     def copy_to_server(self,src,dst):
-        cnt = 1
-        bl = True
-        while bl:
+        try:
             self.scp.put(src, dst)
-            stdio,stdout,stderr = self.sshTypeCommand('cd %s \nls -lrt'%dst)
-            lines = stdout.readlines()
-            found = False
-            for ln in lines[::-1]:
-                if ln.endswith('%s\n'%os.path.basename(src)):
-                    found = True
-                    break
-            if found:
-                break
-            if cnt >= 10:
-                self.sshConnect()
-                print('Unable to copy file "%s"' % (src))
-                self.close()
-            cnt += 1
+            self.sshTypeCommand('cd %s \nls -lrt'%dst)
+               
+        except Exception as e:
+            print('could not scp "%s" with exception'%src)
+            print(e)
+            sleep(0.2)
+            self.sshConnect()
+            self.copy_to_server(src,dst)
+            
         return
 
     def copy_fit_data_auto(self):
-
+        
         self.sshTypeCommand('cd /scratch/eb162/GAM_Repo/JP \nrm fit_dataset_auto.py')
         self.listWidget_Log.addItem('succesfully deleted old "fit_dataset_auto.py"')
-        cnt = 1
-        bl = True
-        while bl:
-            if cnt > 1:
-                self.sshConnect()
-            #     sleep(0.2)
-            self.scp.put('../fit_dataset_auto.py','/scratch/eb162/GAM_Repo/JP')
-            ssh_stdin,ssh_stdout,ssh_stderr = self.sshTypeCommand('cd /scratch/eb162/GAM_Repo/JP \nls -lrt')
-            lns = ssh_stdout.readlines()
-            lns = lns[::-1]
-            for line in lns:
-                if line.endswith('fit_dataset_auto.py\n'):
-                    bl = False
-            if cnt >= 10:
-                print('Unable to copy script fit_dataset_auto!')
-                self.close()
-                #bl=False
-            cnt += 1
+        self.copy_to_server('../fit_dataset_auto.py','/scratch/eb162/GAM_Repo/JP')
+        # cnt = 1
+        # bl = True
+        # while bl:
+        #     if cnt > 1:
+        #         self.sshConnect()
+        #     #     sleep(0.2)
+        #     self.scp.put('../fit_dataset_auto.py','/scratch/eb162/GAM_Repo/JP')
+        #     ssh_stdin,ssh_stdout,ssh_stderr = self.sshTypeCommand('cd /scratch/eb162/GAM_Repo/JP \nls -lrt')
+        #     lns = ssh_stdout.readlines()
+        #     lns = lns[::-1]
+        #     for line in lns:
+        #         if line.endswith('fit_dataset_auto.py\n'):
+        #             bl = False
+        #     if cnt >= 10:
+        #         print('Unable to copy script fit_dataset_auto!')
+        #         self.close()
+        #         #bl=False
+        #     cnt += 1
         self.listWidget_Log.addItem('successfully copied script "fit_dataset_auto.py" to server')
+           
         return
 
     def setUp_Credentials(self):
@@ -247,7 +250,10 @@ class job_handler(QDialog, Ui_Dialog):
         self.run_jobs()
         print('job started')
         self.pushButton_email.setEnabled(True)
+        self.pushButton_run.setEnabled(True)
         self.pushButton_email.clicked.connect(lambda : self.check_emails(isButton=True))
+        self.pushButton_run.clicked.connect(lambda : self.run_jobs(isButton=True))
+
 
 
     def end_job(self):
@@ -315,10 +321,9 @@ class job_handler(QDialog, Ui_Dialog):
         self.listWidget_Log.addItem('done!')
         self.listWidget_Log.addItem('...loaded fit list')
 
-    def run_jobs(self):
+    def run_jobs(self,isButton=False):
         print('RUNNING JOBS')
         self.timer.stop()
-        self.listWidget_Log.addItem('...starting job array %d-%d:%d'%(self.initJob,self.endJob, self.fitEvery))
         self.check_finished()
         if self.isfirst and self.skipFinished:
             sel = ~self.updated_fit_list['is_done']
@@ -338,11 +343,13 @@ class job_handler(QDialog, Ui_Dialog):
             
         self.listWidget_Log.addItem('checked completed jobs...')
         self.refreshStatus()
-
-        totJob = self.endJob - self.initJob
+        
+        totJob = self.maxFit
         # create the data auto
         self.create_fit_data_auto()
         self.copy_fit_data_auto()
+        self.listWidget_Log.addItem('...starting jos from %d to %d every%d'%(self.initJob,self.endJob, self.fitEvery))
+
 
         bl = True
         self.updated_fit_list[self.initJob-1:self.maxFit+self.initJob-1+self.fitEvery]['attempted'] = True
@@ -357,13 +364,17 @@ class job_handler(QDialog, Ui_Dialog):
         savemat('list_to_fit_GAM_auto.mat',mdict=mdict)
         self.copy_to_server('list_to_fit_GAM_auto.mat', '/scratch/eb162/GAM_Repo/JP')
 
-        fitMax = min(subFit.sum(), self.maxFit)
-        self.listWidget_Log.addItem('running cmd: "sbatch --array=1-%d:%d sh_template_auto.sh"'%(fitMax,self.fitEvery))
+        fitMax = self.maxFit#min(subFit.sum(), self.maxFit)
+        if self.fitEvery > 1:
+            self.listWidget_Log.addItem('running cmd: "sbatch --array=1-%d:%d sh_template_auto.sh"'%(fitMax-1,self.fitEvery))
+            self.sshTypeCommand('cd /scratch/eb162/GAM_Repo/JP \nsbatch --array=1-%d:%d sh_template_auto.sh'%(fitMax-1,self.fitEvery))
+        else:
+            self.listWidget_Log.addItem('running cmd: "sbatch --array=1-%d:%d sh_template_auto.sh"'%(fitMax,self.fitEvery))
+            self.sshTypeCommand('cd /scratch/eb162/GAM_Repo/JP \nsbatch --array=1-%d:%d sh_template_auto.sh'%(fitMax,self.fitEvery))
 
-        #
-        #self.sshTypeCommand('cd /scratch/eb162/GAM_Repo/JP \nsbatch --array=1-%d:%d sh_template_auto.sh'%(fitMax,self.fitEvery))
+            
         self.initJob = self.endJob + 1
-        self.endJob = self.initJob + totJob
+        self.endJob = self.initJob + totJob - 1
         self.timer.start(self.durTimerEmail)
         return
 
@@ -380,7 +391,7 @@ class job_handler(QDialog, Ui_Dialog):
         txt = script_fit.read()
         start = re.search('    JOB = int\(sys.argv\[1\]\)', txt).start()
         end = start + re.search('\n', txt[start:]).start()
-        txt = txt.replace(txt[start:end], '    JOB = int(sys.argv[1]) + %d - 1' % (self.initJob - 1))
+        txt = txt.replace(txt[start:end], '    JOB = int(sys.argv[1]) + %d - 1' % (self.initJob-1))
         start = re.search('tot_fits = \d+', txt).start()
         end = start + re.search('\n', txt[start:]).start()
         txt = txt.replace(txt[start:end], 'tot_fits = %d'%self.fitEvery)
@@ -477,7 +488,7 @@ class job_handler(QDialog, Ui_Dialog):
                 boolean = boolean & (sub_table['use_coupling'] == use_cupling)
                 boolean = boolean & (sub_table['use_subjectivePrior'] == use_subPrior)
                 boolean = boolean & (sub_table['neuron_id'] == neu_id)
-                assert(boolean.sum() == 1)
+                assert(boolean.sum() <= 1)
 
                 self.updated_fit_list['is_done'][np.array(idxs)[boolean]] = True
 
