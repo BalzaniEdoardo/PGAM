@@ -79,7 +79,7 @@ class fit_tree(object):
 class job_handler(QDialog, Ui_Dialog):
     jobFinished = pyqtSignal(bool)
     def __init__(self, durTimerEmail_sec=3600, fitLast=9990, fitEvery=10, fit_dir='.',
-                 skipFinished=True, parent=None):
+                 skipFinished=True,initJob=1, parent=None):
         super(job_handler, self).__init__(parent)
         self.setupUi(self)
         self.parent = parent
@@ -95,14 +95,15 @@ class job_handler(QDialog, Ui_Dialog):
         self.fitEvery = fitEvery
 
         self.fit_dir = fit_dir
-        self.initJob = 1
-        self.endJob = fitLast + fitEvery * (self.fitEvery!=1)
+        self.initJob = initJob
+        self.endJob = fitLast + fitEvery * (self.fitEvery!=1) + self.initJob - 1
         self.maxFit = self.endJob - self.initJob + 1 
         self.data_tree = None
         self.pushButton_email.setEnabled(False)
         self.pushButton_run.setEnabled(False)
         self.skipFinished = skipFinished
         self.isfirst=True
+        
 
 
     def get_password(self):
@@ -120,6 +121,7 @@ class job_handler(QDialog, Ui_Dialog):
         return bl
 
     def sshTypeCommand(self,cmd_to_execute):
+        self.sshConnect()
         try:
             bl = True
             cnt = 1
@@ -129,6 +131,9 @@ class job_handler(QDialog, Ui_Dialog):
                     sleep(0.1)
                 ssh_stdin, ssh_stdout, ssh_stderr = self.ssh.exec_command(cmd_to_execute)
                 err = ssh_stderr.readlines()
+                if len(err) > 0:
+                    if err[0].startswith("rm: cannot remove"):
+                        break
                 if len(err) == 0:
                     bl = False
                 if cnt >= 10:
@@ -140,22 +145,23 @@ class job_handler(QDialog, Ui_Dialog):
         except Exception as e:
             print('could not ssh "%s" with exception'%cmd_to_execute)
             print(e)
-            sleep(0.2)
+            #sleep(0.2)
             self.sshConnect()
-            self.sshTypeCommand(cmd_to_execute)
+            # self.sshTypeCommand(cmd_to_execute)
         #return ssh_stdin,ssh_stdout,ssh_stderr
 
     def copy_to_server(self,src,dst):
         try:
+            self.sshConnect()
             self.scp.put(src, dst)
             self.sshTypeCommand('cd %s \nls -lrt'%dst)
                
         except Exception as e:
             print('could not scp "%s" with exception'%src)
             print(e)
-            sleep(0.2)
-            self.sshConnect()
-            self.copy_to_server(src,dst)
+            #sleep(0.2)
+            #self.sshConnect()
+            # self.copy_to_server(src,dst)
             
         return
 
@@ -209,8 +215,9 @@ class job_handler(QDialog, Ui_Dialog):
         self.creds = creds
 
     def start_job(self):
+        
         self.load_fit_list()
-        self.prev_check_time = datetime.datetime.now(pytz.utc) - datetime.timedelta(days=3)
+        self.prev_check_time = datetime.datetime.now(pytz.utc) #- datetime.timedelta(days=3)
         self.timer.timeout.connect(self.check_emails)
         self.setUp_Credentials()
         self.listWidget_Log.addItem('set up OAuth2 credentials...')
@@ -271,6 +278,7 @@ class job_handler(QDialog, Ui_Dialog):
     def load_fit_list(self):
         self.old_fit_list = []
         self.updated_fit_list = parse_fit_list(os.path.join(os.path.dirname(basedir), 'list_to_fit_GAM.mat'))
+        
         brain_region = np.zeros(self.updated_fit_list.shape[0], 'U20')
         animal_name = np.zeros(self.updated_fit_list.shape[0], 'U20')
         date = np.zeros(self.updated_fit_list.shape[0], 'U10')
@@ -307,10 +315,7 @@ class job_handler(QDialog, Ui_Dialog):
                 idxs_mouse = np.where(table_region['animal_name']==mouse_name)[0]
                 # table_mouse = table_region[idxs_mouse]
                 tree_path.add_rowIdxs(list(idxs_region[idxs_mouse]),region,mouse_name)
-                # for row in table_mouse:
-                    # tree_path.add_path(row['path_file'], region, mouse_name)
-                    # tree_path.add_properties('date', row['date'], region, mouse)
-                    # tree_path.add_properties('sessoin_num', row['date'], region, mouse)
+
 
         t1 = perf_counter()
         print('data tree created in %f sec'%(t1-t0))
@@ -320,10 +325,6 @@ class job_handler(QDialog, Ui_Dialog):
         self.updated_fit_list = table
         self.listWidget_Log.addItem('done!')
         self.listWidget_Log.addItem('...loaded fit list')
-
-    def run_jobs(self,isButton=False):
-        print('RUNNING JOBS')
-        self.timer.stop()
         self.check_finished()
         if self.isfirst and self.skipFinished:
             sel = ~self.updated_fit_list['is_done']
@@ -336,10 +337,34 @@ class job_handler(QDialog, Ui_Dialog):
                      'paths_to_fit': self.updated_fit_list['path_file']
                      }
             savemat('list_to_fit_GAM.mat',mdict=mdict)
-            self.isfirst = False
+           
             self.copy_to_server(os.path.join(os.path.dirname(basedir), 'list_to_fit_GAM.mat'), '/scratch/eb162/GAM_Repo/JP/')
             self.listWidget_Log.addItem('succesfully copied on greene "list_to_fit_GAM.mat" without the completed fits')
+            
+            ## create a tree structure
+            table = self.updated_fit_list 
+            t0 = perf_counter()
+            tree_path = fit_tree()
+            for region in np.unique(table['brain_region']):
+                idxs_region = np.where(table['brain_region']==region)[0]
+                table_region = table[idxs_region]
+                for mouse_name in np.unique(table_region['animal_name']):
+                    idxs_mouse = np.where(table_region['animal_name']==mouse_name)[0]
+                    # table_mouse = table_region[idxs_mouse]
+                    tree_path.add_rowIdxs(list(idxs_region[idxs_mouse]),region,mouse_name)
+                    
+            t1 = perf_counter()
+            print('data tree created in %f sec'%(t1-t0))
+            self.data_tree = tree_path
+            self.isfirst = False
+         
 
+    def run_jobs(self,isButton=False):
+        print('RUNNING JOBS')
+        self.timer.stop()
+        #self.sshConnect()
+        self.check_finished()
+        
             
         self.listWidget_Log.addItem('checked completed jobs...')
         self.refreshStatus()
@@ -348,7 +373,7 @@ class job_handler(QDialog, Ui_Dialog):
         # create the data auto
         self.create_fit_data_auto()
         self.copy_fit_data_auto()
-        self.listWidget_Log.addItem('...starting jos from %d to %d every%d'%(self.initJob,self.endJob, self.fitEvery))
+        self.listWidget_Log.addItem('...starting jos from %d to %d every %d'%(self.initJob,self.endJob, self.fitEvery))
 
 
         bl = True
@@ -404,7 +429,6 @@ class job_handler(QDialog, Ui_Dialog):
 
 
     def check_emails(self,isButton=False):
-        rmt = self.timer.remainingTime()
         self.timer.stop()
         time = QDateTime.currentDateTime()
         str_time = time.toString('yyyy-MM-dd hh:mm:ss')
@@ -428,10 +452,8 @@ class job_handler(QDialog, Ui_Dialog):
                     self.prev_check_time = kwd['datetime']
                     self.jobFinished.emit(True)
                     return
-        if not isButton:
-            self.timer.start(self.durTimerEmail)
-        else:
-            self.timer.start(rmt)
+        self.timer.start(self.durTimerEmail)
+  
         print('\n')
 
         return run_job
@@ -488,6 +510,9 @@ class job_handler(QDialog, Ui_Dialog):
                 boolean = boolean & (sub_table['use_coupling'] == use_cupling)
                 boolean = boolean & (sub_table['use_subjectivePrior'] == use_subPrior)
                 boolean = boolean & (sub_table['neuron_id'] == neu_id)
+                if boolean.sum() > 1:
+                    print(sub_table[boolean])
+                    xxx=1
                 assert(boolean.sum() <= 1)
 
                 self.updated_fit_list['is_done'][np.array(idxs)[boolean]] = True
@@ -504,10 +529,10 @@ if __name__ == '__main__':
     import sys
     print('DECOMMENT RUN SBATCH LINE')
     app = QApplication(sys.argv)
-    dialog = job_handler(durTimerEmail_sec=3600,
+    dialog = job_handler(durTimerEmail_sec=900,
                          fit_dir='D:\\MOUSE-ASD-NEURONS\\data\\3step\\data',
-                         fitEvery=1,fitLast=1000,
-                         skipFinished=True) # ''
+                         fitEvery=1,fitLast=1000,initJob=6001,
+                         skipFinished=False) # ''
     dialog.show()
     data_tree = app.exec_()
     print('exited app')
