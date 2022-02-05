@@ -15,6 +15,7 @@ gam_m*
 *_old.py
 __pycache__/
 preprocessing_pipeline/util_preproc/__pycache__/*
+*state.txt
 .RHistory
 firefly_utils/__pycache__/*
 __pycache__/*
