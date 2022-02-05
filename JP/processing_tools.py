@@ -127,8 +127,9 @@ def postprocess_results(counts, full_fit,reduced_fit, info_save, filter_trials,
         var = full_fit.var_list[cc]
         print('processing: ',var)
         cs_var = cs_table[cs_table['covariate'] == var]
-        if var in reduced_fit.var_list:
-            cs_var_red = cs_table_red[cs_table_red['covariate'] == var]
+        if not reduced_fit is None:
+            if var in reduced_fit.var_list:
+                cs_var_red = cs_table_red[cs_table_red['covariate'] == var]
 
         results['brain_area_group'][cc] = info_save['brain_area_group']
         results['animal_name'][cc] = info_save['animal_name']
@@ -153,14 +154,16 @@ def postprocess_results(counts, full_fit,reduced_fit, info_save, filter_trials,
         results['full_pseudo_r2_train'][cc] = full_fit.pseudo_r2
         results['full_pseudo_r2_eval'][cc],exog_full = pseudo_r2_comp(counts, full_fit, sm_handler, family,
                                                             use_tp=~(filter_trials),exog=exog_full)
-        results['reduced_pseudo_r2_train'][cc] = reduced_fit.pseudo_r2
+        if not reduced_fit is None:
+            results['reduced_pseudo_r2_train'][cc] = reduced_fit.pseudo_r2
         results['reduced_pseudo_r2_eval'][cc],exog_reduced = pseudo_r2_comp(counts, reduced_fit, sm_handler, family,
                                                                use_tp=~(filter_trials),exog=exog_reduced)
         results['pval'][cc] = cs_var['p-val']
-        if var in reduced_fit.var_list:
-            results['reduced_pval'][cc] = cs_var_red['p-val']
-        else:
-            results['reduced_pval'][cc] = np.nan
+        if not reduced_fit is None:
+            if var in reduced_fit.var_list:
+                results['reduced_pval'][cc] = cs_var_red['p-val']
+            else:
+                results['reduced_pval'][cc] = np.nan
 
         if var in full_fit.mutual_info.keys():
             results['mutual_info'][cc] = full_fit.mutual_info[var]
@@ -223,45 +226,47 @@ def postprocess_results(counts, full_fit,reduced_fit, info_save, filter_trials,
         results['kernel_x'][cc] = xx2
         results['beta_full'][cc] = full_fit.beta[full_fit.index_dict[var]]
         results['intercept_full'][cc] = full_fit.beta[0]
-        results['intercept_reduced'][cc] = reduced_fit.beta[0]
-        if var in reduced_fit.var_list:
-            results['beta_reduced'][cc] = reduced_fit.beta[reduced_fit.index_dict[var]]
 
-            # compute kernel strength
-            if reduced_fit.smooth_info[var]['is_temporal_kernel']:
-                dim_kern = reduced_fit.smooth_info[var]['basis_kernel'].shape[0]
-                knots_num = reduced_fit.smooth_info[var]['knots'][0].shape[0]
-                x = np.zeros(dim_kern)
-                x[(dim_kern - 1) // 2] = 1
-                xx2 = np.arange(x.shape[0]) * 6 - np.where(x)[0][0] * 6
-                fX, fminus, fplus = reduced_fit.smooth_compute([x], var, 0.99)
-                if (var == 'spike_hist') or ('neuron_') in var:
-                    fminus = fminus[(dim_kern - 1) // 2:] - fX[0]
-                    fplus = fplus[(dim_kern - 1) // 2:] - fX[0]
-                    fX = fX[(dim_kern - 1) // 2:] - fX[0]
-                    xx2 = xx2[(dim_kern - 1) // 2:]
+        if not reduced_fit is None:
+            results['intercept_reduced'][cc] = reduced_fit.beta[0]
+            if var in reduced_fit.var_list:
+                results['beta_reduced'][cc] = reduced_fit.beta[reduced_fit.index_dict[var]]
+
+                # compute kernel strength
+                if reduced_fit.smooth_info[var]['is_temporal_kernel']:
+                    dim_kern = reduced_fit.smooth_info[var]['basis_kernel'].shape[0]
+                    knots_num = reduced_fit.smooth_info[var]['knots'][0].shape[0]
+                    x = np.zeros(dim_kern)
+                    x[(dim_kern - 1) // 2] = 1
+                    xx2 = np.arange(x.shape[0]) * 6 - np.where(x)[0][0] * 6
+                    fX, fminus, fplus = reduced_fit.smooth_compute([x], var, 0.99)
+                    if (var == 'spike_hist') or ('neuron_') in var:
+                        fminus = fminus[(dim_kern - 1) // 2:] - fX[0]
+                        fplus = fplus[(dim_kern - 1) // 2:] - fX[0]
+                        fX = fX[(dim_kern - 1) // 2:] - fX[0]
+                        xx2 = xx2[(dim_kern - 1) // 2:]
+                    else:
+                        fplus = fplus - fX[-1]
+                        fminus = fminus - fX[-1]
+                        fX = fX - fX[-1]
+
+                    results['reduced_kernel_strength'][cc] = simps(fX ** 2, dx=0.006) / (0.006 * fX.shape[0])
+                    results['reduced_signed_kernel_strength'][cc] = simps(fX, dx=0.006) / (0.006 * fX.shape[0])
+
                 else:
-                    fplus = fplus - fX[-1]
-                    fminus = fminus - fX[-1]
-                    fX = fX - fX[-1]
-
-                results['reduced_kernel_strength'][cc] = simps(fX ** 2, dx=0.006) / (0.006 * fX.shape[0])
-                results['reduced_signed_kernel_strength'][cc] = simps(fX, dx=0.006) / (0.006 * fX.shape[0])
-
-            else:
-                knots = full_fit.smooth_info[var]['knots']
-                xmin = knots[0].min()
-                xmax = knots[0].max()
-                func = lambda x: (reduced_fit.smooth_compute([x], var, 0.99)[0] -
-                                  reduced_fit.smooth_compute([x], var, 0.95)[0].mean()) ** 2
-                xx = np.linspace(xmin, xmax, 500)
-                xx2 = np.linspace(xmin, xmax, 100)
-                dx = xx[1] - xx[0]
-                fX, fminus, fplus = reduced_fit.smooth_compute([xx2], var, 0.99)
-                results['reduced_kernel_strength'][cc] = simps(func(xx), dx=dx) / (xmax - xmin)
-            results['reduced_kernel'][cc] = fX
-            results['reduced_kernel_pCI'][cc] = fplus
-            results['reduced_kernel_mCI'][cc] = fminus
+                    knots = full_fit.smooth_info[var]['knots']
+                    xmin = knots[0].min()
+                    xmax = knots[0].max()
+                    func = lambda x: (reduced_fit.smooth_compute([x], var, 0.99)[0] -
+                                      reduced_fit.smooth_compute([x], var, 0.95)[0].mean()) ** 2
+                    xx = np.linspace(xmin, xmax, 500)
+                    xx2 = np.linspace(xmin, xmax, 100)
+                    dx = xx[1] - xx[0]
+                    fX, fminus, fplus = reduced_fit.smooth_compute([xx2], var, 0.99)
+                    results['reduced_kernel_strength'][cc] = simps(func(xx), dx=dx) / (xmax - xmin)
+                results['reduced_kernel'][cc] = fX
+                results['reduced_kernel_pCI'][cc] = fplus
+                results['reduced_kernel_mCI'][cc] = fminus
 
             if ~np.isnan(var_zscore_par[var]['loc']):
                 xx2 = xx2 * var_zscore_par[var]['scale'] + var_zscore_par[var]['loc']
@@ -269,20 +274,21 @@ def postprocess_results(counts, full_fit,reduced_fit, info_save, filter_trials,
             # results['beta_full'][cc] = full_fit.beta[full_fit.index_dict[var]]
             # results['intercept_full'][cc] = full_fit.beta[0]
             # results['intercept_reduced'][cc] = reduced_fit.beta[0]
-        if var in reduced_fit.tuning_Hz.__dict__.keys():
-            if ~np.isnan(var_zscore_par[var]['loc']):
-                xx = reduced_fit.tuning_Hz.__dict__[var].x * var_zscore_par[var]['scale'] + var_zscore_par[var]['loc']
-            else:
-                xx = reduced_fit.tuning_Hz.__dict__[var].x
-            if (reduced_fit.smooth_info[var]['kernel_direction'] == 1) and (reduced_fit.smooth_info[var]['is_temporal_kernel']):
-                sel = xx > 0
-            elif (reduced_fit.smooth_info[var]['kernel_direction'] == -1) and (reduced_fit.smooth_info[var]['is_temporal_kernel']):
-                sel = xx < 0
-            else:
-                sel = np.ones(xx.shape,dtype=bool)
-            results['reduced_x_rate_Hz'][cc] = xx[sel]
-            results['reduced_model_rate_Hz'][cc] = reduced_fit.tuning_Hz.__dict__[var].y_model[sel]
-            results['reduced_raw_rate_Hz'][cc] = reduced_fit.tuning_Hz.__dict__[var].y_raw[sel]
+        if not reduced_fit is None:
+            if var in reduced_fit.tuning_Hz.__dict__.keys():
+                if ~np.isnan(var_zscore_par[var]['loc']):
+                    xx = reduced_fit.tuning_Hz.__dict__[var].x * var_zscore_par[var]['scale'] + var_zscore_par[var]['loc']
+                else:
+                    xx = reduced_fit.tuning_Hz.__dict__[var].x
+                if (reduced_fit.smooth_info[var]['kernel_direction'] == 1) and (reduced_fit.smooth_info[var]['is_temporal_kernel']):
+                    sel = xx > 0
+                elif (reduced_fit.smooth_info[var]['kernel_direction'] == -1) and (reduced_fit.smooth_info[var]['is_temporal_kernel']):
+                    sel = xx < 0
+                else:
+                    sel = np.ones(xx.shape,dtype=bool)
+                results['reduced_x_rate_Hz'][cc] = xx[sel]
+                results['reduced_model_rate_Hz'][cc] = reduced_fit.tuning_Hz.__dict__[var].y_model[sel]
+                results['reduced_raw_rate_Hz'][cc] = reduced_fit.tuning_Hz.__dict__[var].y_raw[sel]
 
 
     return results
