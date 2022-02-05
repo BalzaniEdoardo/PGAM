@@ -6,6 +6,7 @@
 *.out
 *.zip
 *.xlsx
+*jobstate.txt
 select_variables/
 .idea
 TMP/
