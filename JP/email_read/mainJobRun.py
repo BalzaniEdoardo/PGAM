@@ -329,6 +329,8 @@ class job_handler(QDialog, Ui_Dialog):
         if self.isfirst and self.skipFinished:
             sel = ~self.updated_fit_list['is_done']
             self.updated_fit_list = self.updated_fit_list[sel]
+            
+                    
             mdict = {'is_done': self.updated_fit_list['is_done'],
                      'neuron_id': self.updated_fit_list['neuron_id'],
                      'target_neuron': self.updated_fit_list['target_neuron'],
@@ -493,8 +495,8 @@ class job_handler(QDialog, Ui_Dialog):
                 if not re.match('^gam_fit_useCoupling[0-1]_useSubPrior[0-1]_unt\d+',name):
                     continue
                 splits = name.split('.')[0].split('_')
-                use_cupling = bool(splits[2][-1])
-                use_subPrior = bool(splits[3][-1])
+                use_cupling = bool(int(splits[2][-1]))
+                use_subPrior = bool(int(splits[3][-1]))
                 neu_id = int(splits[4].split('unt')[1])
                 brain_area_group = splits[5]
                 animal_name = splits[6]
@@ -532,8 +534,8 @@ if __name__ == '__main__':
     app = QApplication(sys.argv)
     dialog = job_handler(durTimerEmail_sec=900,
                          fit_dir='D:\\MOUSE-ASD-NEURONS\\data\\3step\\data',
-                         fitEvery=1,fitLast=1000,initJob=14001,
-                         skipFinished=False) # ''
+                         fitEvery=1,fitLast=1000,initJob=1,
+                         skipFinished=True) # ''
     dialog.show()
     data_tree = app.exec_()
     print('exited app')
