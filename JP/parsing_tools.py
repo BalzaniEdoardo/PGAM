@@ -124,8 +124,8 @@ def parse_fit_list(filepath):
     for name in table.dtype.names:
         try:
             table[name] = loc_var[name]
-        except:
-             pass
+        except Exception as e:
+             raise e
     return table
 
 if __name__ == '__main__':
