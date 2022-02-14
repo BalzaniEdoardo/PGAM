@@ -104,18 +104,25 @@ def parse_fit_list(filepath):
     target_neuron = dat['target_neuron'].flatten()
     use_coupling = dat['use_coupling'].flatten()
     use_subjectivePrior = dat['use_subjectivePrior'].flatten()
-    path_file_raw = dat['paths_to_fit'].flatten()
+    path_file_raw = np.squeeze(dat['paths_to_fit'].flatten())
+    path_file_tmp = []
+    for path in path_file_raw:
+        if type(path) is np.ndarray:
+            assert(len(path)==1)
+            path = path[0]
+        path_file_tmp.append(path.rstrip())
+    path_file_raw = np.array(path_file_tmp)  
     x = dat['x'].flatten()
     # check max len for string
     max_len = 0
 
     for val in path_file_raw:
-        max_len = max(len(val[0]),max_len)
+        max_len = max(len(val),max_len)
 
     path_file = np.zeros(len(is_done), dtype='U%d'%max_len)
     cc = 0
     for val in path_file_raw:
-        path_file[cc] = val[0]
+        path_file[cc] = val
         cc += 1
 
     table = np.zeros(len(is_done),dtype={'names':('neuron_id','target_neuron','path_file','use_coupling','use_subjectivePrior','x','is_done'),

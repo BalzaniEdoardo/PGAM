@@ -216,13 +216,6 @@ class job_handler(QDialog, Ui_Dialog):
 
     def start_job(self):
         
-        self.load_fit_list()
-        self.prev_check_time = datetime.datetime.now(pytz.utc) #- datetime.timedelta(days=3)
-        self.timer.timeout.connect(self.check_emails)
-        self.setUp_Credentials()
-        self.listWidget_Log.addItem('set up OAuth2 credentials...')
-        self.timer.start(self.durTimerEmail)
-        self.listWidget_Log.addItem('started email timer: check every %.1f min'%(self.durTimerEmail/(1000*60)))
         bl = True
         self.listWidget_Log.addItem('trying to connect to greene...')
         cnt = 1
@@ -248,6 +241,16 @@ class job_handler(QDialog, Ui_Dialog):
 
 
         self.listWidget_Log.addItem('connected!')
+        
+        
+        self.load_fit_list()
+        self.prev_check_time = datetime.datetime.now(pytz.utc) #- datetime.timedelta(days=3)
+        self.timer.timeout.connect(self.check_emails)
+        self.setUp_Credentials()
+        self.listWidget_Log.addItem('set up OAuth2 credentials...')
+        self.timer.start(self.durTimerEmail)
+        self.listWidget_Log.addItem('started email timer: check every %.1f min'%(self.durTimerEmail/(1000*60)))
+       
         self.okButton.setEnabled(False)
 
         if not self.skipFinished:
@@ -278,7 +281,6 @@ class job_handler(QDialog, Ui_Dialog):
     def load_fit_list(self):
         self.old_fit_list = []
         self.updated_fit_list = parse_fit_list(os.path.join(os.path.dirname(basedir), 'list_to_fit_GAM.mat'))
-        
         brain_region = np.zeros(self.updated_fit_list.shape[0], 'U20')
         animal_name = np.zeros(self.updated_fit_list.shape[0], 'U20')
         date = np.zeros(self.updated_fit_list.shape[0], 'U10')
@@ -286,14 +288,22 @@ class job_handler(QDialog, Ui_Dialog):
         names = self.updated_fit_list.dtype.names + ('brain_region', 'animal_name', 'date', 'session_num','attempted')
         formats = []
         for kk in range(len(self.updated_fit_list.dtype)):
-            formats.append(self.updated_fit_list.dtype[kk].type)
+            if 'U' in self.updated_fit_list.dtype[kk].descr[0][1]:
+                num = int(self.updated_fit_list.dtype[kk].descr[0][1].split('U')[1]) + 100
+                formats.append('U%d'%num)
+            else:
+                formats.append(self.updated_fit_list.dtype[kk].type)
         formats += ['U20', 'U20', 'U10', 'U4', bool]
+        
         for kk in range(self.updated_fit_list.shape[0]):
             fileName = self.updated_fit_list['path_file'][kk]
             fileName = fileName.split('\\')[-1].split('.')[0]
             splits = fileName.split('_')
             brain_region[kk] = splits[0]
-            animal_name[kk] = splits[1]
+            try:
+                animal_name[kk] = splits[1]
+            except:
+                xxxx = 1
             date[kk] = splits[2]
             sess_num[kk] = splits[3]
 
@@ -336,9 +346,11 @@ class job_handler(QDialog, Ui_Dialog):
                      'target_neuron': self.updated_fit_list['target_neuron'],
                      'use_coupling': self.updated_fit_list['use_coupling'],
                      'use_subjectivePrior':self.updated_fit_list['use_subjectivePrior'],
-                     'paths_to_fit': self.updated_fit_list['path_file']
+                     'paths_to_fit': np.ascontiguousarray(self.updated_fit_list['path_file']),
+                     'x': self.updated_fit_list['x']
                      }
-            savemat('list_to_fit_GAM.mat',mdict=mdict)
+            savemat(os.path.join(os.path.dirname(basedir), 'list_to_fit_GAM.mat'),mdict=mdict)
+            
            
             self.copy_to_server(os.path.join(os.path.dirname(basedir), 'list_to_fit_GAM.mat'), '/scratch/eb162/GAM_Repo/JP/')
             self.listWidget_Log.addItem('succesfully copied on greene "list_to_fit_GAM.mat" without the completed fits')
@@ -504,8 +516,12 @@ class job_handler(QDialog, Ui_Dialog):
                 sess_num = splits[8]
                 xx = float(splits[9].split('x')[1].replace(',','.'))
 
-
-                idxs = self.data_tree[brain_area_group][animal_name]
+                try:
+                    idxs = self.data_tree[brain_area_group][animal_name]
+                except Exception as e:
+                    #print(e)
+                    #print(name)
+                    continue
                 sub_table = self.updated_fit_list[idxs]
                 boolean = np.ones(len(idxs), dtype=bool)
                 boolean = boolean & (sub_table['date'] == date)
