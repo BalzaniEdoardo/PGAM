@@ -202,11 +202,11 @@ for i_trial = 1:size(dat.b.t.stimOn, 1)
         for i_int = 1:params.n_dim
             x = (1:size(temp_score, 2))';
             y = temp_score(i_int, :)';
-            xi = (1:size(temp_score, 2)/402:size(temp_score, 2))';
+            xi = linspace(1, size(temp_score, 2), size(time, 2)); 
+            %xi = ( 1:(size(temp_score, 2)/403):size(temp_score, 2))';
             yi = interp1q(x,y,xi);
             temp_score_int(i_int, :) = yi';
         end
-        
         score_vector = horzcat(score_vector, temp_score_int); 
         clear temp_score
     catch

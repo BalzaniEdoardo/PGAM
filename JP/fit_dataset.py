@@ -102,12 +102,13 @@ for job_id in range(JOB,JOB+tot_fits):
             'y':y,
             'z':z
         }
-        signX = -1 * (x < 0) + 1 * (x > 0)
+        signX = '%.16f'%x
+        signX = signX.replace('.',',')
 
         ## save paths
-        remote_save_path = 'D:\\MOUSE-ASD-NEURONS\\data\\3step\\data\\%s\\%s\\gam_fit_useCoupling%d_useSubPrior%d_unt%d_%s_%s_%s_%s_signX%d.mat'%(animal_name[0].upper(),brain_area_group,use_coupling,use_subjectivePrior,neuron_id,
+        remote_save_path = 'D:\\MOUSE-ASD-NEURONS\\data\\3step\\data\\%s\\%s\\gam_fit_useCoupling%d_useSubPrior%d_unt%d_%s_%s_%s_%s_x%s.mat'%(animal_name[0].upper(),brain_area_group,use_coupling,use_subjectivePrior,neuron_id,
                                                                                                    brain_area_group,animal_name,date,session_num,signX)
-        local_save_path = '%s/%s/gam_fit_useCoupling%d_useSubPrior%d_unt%d_%s_%s_%s_%s_signX%d.mat'%(animal_name[0].upper(),brain_area_group,table['use_coupling'][job_id],table['use_subjectivePrior'][job_id],neuron_id,brain_area_group,animal_name,date,session_num,
+        local_save_path = '%s/%s/gam_fit_useCoupling%d_useSubPrior%d_unt%d_%s_%s_%s_%s_x%s.mat'%(animal_name[0].upper(),brain_area_group,table['use_coupling'][job_id],table['use_subjectivePrior'][job_id],neuron_id,brain_area_group,animal_name,date,session_num,
                                                                                              signX)
         if not os.path.exists(os.path.dirname(local_save_path)):
             os.makedirs(os.path.dirname(local_save_path))
@@ -183,8 +184,18 @@ for job_id in range(JOB,JOB+tot_fits):
         results = postprocess_results(counts, full_fit,reduced_fit, info_save, filter_trials, sm_handler, family, var_zscore_par,
                                       use_coupling,use_subjectivePrior)
         savemat(local_save_path, mdict={'results':results})
-        remote_save_path = remote_save_path.replace('\\','/')
-        os.system('scp %s lab@172.22.87.253:"%s"'%(local_save_path, remote_save_path))
+        try:
+            xxx=loadmat(local_save_path)
+            remote_save_path = remote_save_path.replace('\\', '/')
+            os.system('scp %s lab@172.22.87.253:"%s"' % (local_save_path, remote_save_path))
+        except:
+            svpath = local_save_path.replace('.mat','.npy')
+            np.save(svpath, results)
+            os.remove(local_save_path)
+            remote_save_path = remote_save_path.replace('\\', '/')
+            rem_svpath = remote_save_path.replace('.mat', '.npy')
+            os.system('scp %s lab@172.22.87.253:"%s"' % (svpath, rem_svpath))
+
     except:
         var = traceback.format_exc()
         try:
