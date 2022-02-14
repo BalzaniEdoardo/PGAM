@@ -25,7 +25,7 @@ except:
     is_cluster = False
     JOB = 3
     for jj in range(JOB,JOB+tot_fits):
-        table[jj]['path_file'] = 'gam_preproc_neu104_ACAd_CSP011_2020-07-27_001.mat'
+        table[jj]['path_file'] = '/Users/edoardo/Work/Code/GAM_code/JP/C/ACAd/gam_preproc_neu104_ACAd_CSP011_2020-07-27_001.mat'
 
 
 for job_id in range(JOB,JOB+tot_fits):
@@ -111,7 +111,8 @@ for job_id in range(JOB,JOB+tot_fits):
         for inputs in construct_knots(gam_raw_inputs,counts, var_names, dict_param):
             varName, knots, x, is_cyclic, order, kernel_len, direction, is_temporal_kernel, penalty_type, der, loc, scale = inputs
             var_zscore_par[varName] = {'loc': loc, 'scale': scale}
-
+            # if varName != 'spike_hist':
+            #     continue
             if (not use_coupling) and (varName.startswith('neuron_')):
                 continue
             if (not use_subjectivePrior) and (varName == 'subjective_prior'):
