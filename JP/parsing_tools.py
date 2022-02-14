@@ -105,7 +105,7 @@ def parse_fit_list(filepath):
     use_coupling = dat['use_coupling'].flatten()
     use_subjectivePrior = dat['use_subjectivePrior'].flatten()
     path_file_raw = dat['paths_to_fit'].flatten()
-    x_coord = dat['x']
+    x = dat['x'].flatten()
     # check max len for string
     max_len = 0
 
