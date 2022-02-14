@@ -512,8 +512,9 @@ class job_handler(QDialog, Ui_Dialog):
                 boolean = boolean & (sub_table['neuron_id'] == neu_id)
                 if boolean.sum() > 1:
                     print(sub_table[boolean])
+                    print('NOT UNIVOQUE NEURON ID')
                     xxx=1
-                assert(boolean.sum() <= 1)
+                #assert(boolean.sum() <= 1)
 
                 self.updated_fit_list['is_done'][np.array(idxs)[boolean]] = True
 
@@ -531,7 +532,7 @@ if __name__ == '__main__':
     app = QApplication(sys.argv)
     dialog = job_handler(durTimerEmail_sec=900,
                          fit_dir='D:\\MOUSE-ASD-NEURONS\\data\\3step\\data',
-                         fitEvery=1,fitLast=1000,initJob=6001,
+                         fitEvery=1,fitLast=1000,initJob=14001,
                          skipFinished=False) # ''
     dialog.show()
     data_tree = app.exec_()

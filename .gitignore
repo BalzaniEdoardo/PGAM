@@ -8,6 +8,7 @@
 *.xlsx
 *jobstate.txt
 select_variables/
+*count_fit.py
 .idea
 TMP/
 *.jpg
