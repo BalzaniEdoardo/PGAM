@@ -105,7 +105,7 @@ def parse_fit_list(filepath):
     use_coupling = dat['use_coupling'].flatten()
     use_subjectivePrior = dat['use_subjectivePrior'].flatten()
     path_file_raw = dat['paths_to_fit'].flatten()
-    x_coord = dat['x_coord']
+    x_coord = dat['x']
     # check max len for string
     max_len = 0
 
@@ -118,14 +118,14 @@ def parse_fit_list(filepath):
         path_file[cc] = val[0]
         cc += 1
 
-    table = np.zeros(len(is_done),dtype={'names':('neuron_id','target_neuron','path_file','use_coupling','use_subjectivePrior','x_coord','is_done'),
+    table = np.zeros(len(is_done),dtype={'names':('neuron_id','target_neuron','path_file','use_coupling','use_subjectivePrior','x','is_done'),
                                          'formats':(int,int,'U%d'%max_len,bool,bool,float,bool)})
     loc_var = locals()
     for name in table.dtype.names:
-        #try:
-        table[name] = loc_var[name]
-        # except:
-        #     pass
+        try:
+            table[name] = loc_var[name]
+        except:
+             pass
     return table
 
 if __name__ == '__main__':
