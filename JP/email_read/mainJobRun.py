@@ -534,7 +534,7 @@ if __name__ == '__main__':
     import sys
     print('DECOMMENT RUN SBATCH LINE')
     app = QApplication(sys.argv)
-    dialog = job_handler(durTimerEmail_sec=900,
+    dialog = job_handler(durTimerEmail_sec=3600,
                          fit_dir='D:\\MOUSE-ASD-NEURONS\\data\\3step\\data',
                          fitEvery=1,fitLast=1000,initJob=1,
                          skipFinished=True) # ''
