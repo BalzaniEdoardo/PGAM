@@ -9,6 +9,7 @@
 *jobstate.txt
 *.tar.gz
 select_variables/
+*count_fit.py
 .idea
 TMP/
 *.jpg

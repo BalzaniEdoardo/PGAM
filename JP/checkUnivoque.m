@@ -7,6 +7,7 @@ animal_name_list = cell(length(neuron_id),1);
 date_list = cell(length(neuron_id),1);
 session_list = cell(length(neuron_id),1);
 for k =1:length(neuron_id)
+    
     splt = split(paths_to_fit{k},'\');
     path_k =  splt{end};
     path_k = path_k(1:(regexp(path_k,'\.')-1));
@@ -18,6 +19,7 @@ for k =1:length(neuron_id)
 end
 
 for animal = unique(animal_name_list)'
+   
     name = animal{1};
     sel = strcmp(animal_name_list,name);
     brain_area_anim = brain_area_group_list(sel);
