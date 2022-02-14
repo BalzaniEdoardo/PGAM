@@ -18,14 +18,14 @@ table = parse_fit_list('list_to_fit_GAM.mat')
 tot_fits = 10
 try:
     # if this work try a cluster processing step
-    JOB = int(sys.argv[1]) + 7000  - 1
+    JOB = int(sys.argv[1]) + 7000 - 1
     is_cluster = True
 
 except:
     is_cluster = False
     JOB = 3
     for jj in range(JOB,JOB+tot_fits):
-        table[jj]['path_file'] = 'gam_preproc_neu104_ACAd_CSP011_2020-07-27_001.mat'
+        table[jj]['path_file'] = '/Users/edoardo/Work/Code/GAM_code/JP/C/ACAd/gam_preproc_neu104_ACAd_CSP011_2020-07-27_001.mat'
 
 
 for job_id in range(JOB,JOB+tot_fits):
@@ -56,16 +56,28 @@ for job_id in range(JOB,JOB+tot_fits):
 
 
         # unpack info
-        neu_ids = np.vstack((list(info_dict['n']['id'].values()))).flatten()
-        idx_info = np.where(neu_ids == neuron_id)[0][0]
-        brain_region = info_dict['n']['brain_region']['n%d'%idx_info].all()[0]
-        brain_region_id = info_dict['n']['brain_region_id']['n%d'%idx_info][0,0]
-        fr = info_dict['n']['fr']['n%d'%idx_info][0,0]
-        amp = info_dict['n']['amp']['n%d'%idx_info][0,0]
-        depth = info_dict['n']['depth']['n%d'%idx_info][0,0]
-        x = info_dict['n']['x']['n%d'%idx_info][0,0]
-        y = info_dict['n']['y']['n%d'%idx_info][0,0]
-        z = info_dict['n']['z']['n%d'%idx_info][0,0]
+        try:
+            neu_ids = np.vstack((list(info_dict['n']['id'].values()))).flatten()
+            idx_info = np.where(neu_ids == neuron_id)[0][0]
+            brain_region = info_dict['n']['brain_region']['n%d' % idx_info].all()[0]
+            brain_region_id = info_dict['n']['brain_region_id']['n%d' % idx_info][0, 0]
+            fr = info_dict['n']['fr']['n%d' % idx_info][0, 0]
+            amp = info_dict['n']['amp']['n%d' % idx_info][0, 0]
+            depth = info_dict['n']['depth']['n%d' % idx_info][0, 0]
+            x = info_dict['n']['x']['n%d' % idx_info][0, 0]
+            y = info_dict['n']['y']['n%d' % idx_info][0, 0]
+            z = info_dict['n']['z']['n%d' % idx_info][0, 0]
+        except:
+            neu_ids = info_dict['n']['id'][0]
+            brain_region = info_dict['n']['brain_region'][0][0][0]
+            brain_region_id = info_dict['n']['brain_region_id'][0][0]
+            fr = info_dict['n']['fr'][0][0]
+            amp = info_dict['n']['amp'][0, 0]
+            depth = info_dict['n']['depth'][0, 0]
+            x = info_dict['n']['x'][0, 0]
+            y = info_dict['n']['y'][0, 0]
+            z = info_dict['n']['z'][0, 0]
+
 
         ## extract info from the name:
         file_name = table['path_file'][job_id].split('\\')[-1]
@@ -111,7 +123,8 @@ for job_id in range(JOB,JOB+tot_fits):
         for inputs in construct_knots(gam_raw_inputs,counts, var_names, dict_param):
             varName, knots, x, is_cyclic, order, kernel_len, direction, is_temporal_kernel, penalty_type, der, loc, scale = inputs
             var_zscore_par[varName] = {'loc': loc, 'scale': scale}
-
+            # if varName != 'spike_hist':
+            #     continue
             if (not use_coupling) and (varName.startswith('neuron_')):
                 continue
             if (not use_subjectivePrior) and (varName == 'subjective_prior'):

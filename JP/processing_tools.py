@@ -120,7 +120,8 @@ def postprocess_results(counts, full_fit,reduced_fit, info_save, filter_trials,
     }
     results = np.zeros(len((full_fit.var_list)), dtype=dtype_dict)
     cs_table = full_fit.covariate_significance
-    cs_table_red = reduced_fit.covariate_significance
+    if not reduced_fit is None:
+        cs_table_red = reduced_fit.covariate_significance
     exog_full = None
     exog_reduced = None
     for cc in range(len(full_fit.var_list)):
@@ -156,7 +157,7 @@ def postprocess_results(counts, full_fit,reduced_fit, info_save, filter_trials,
                                                             use_tp=~(filter_trials),exog=exog_full)
         if not reduced_fit is None:
             results['reduced_pseudo_r2_train'][cc] = reduced_fit.pseudo_r2
-        results['reduced_pseudo_r2_eval'][cc],exog_reduced = pseudo_r2_comp(counts, reduced_fit, sm_handler, family,
+            results['reduced_pseudo_r2_eval'][cc],exog_reduced = pseudo_r2_comp(counts, reduced_fit, sm_handler, family,
                                                                use_tp=~(filter_trials),exog=exog_reduced)
         results['pval'][cc] = cs_var['p-val']
         if not reduced_fit is None:
