@@ -102,11 +102,13 @@ for job_id in range(JOB,JOB+tot_fits):
             'y':y,
             'z':z
         }
+        signX = -1 * (x < 0) + 1 * (x > 0)
 
         ## save paths
-        remote_save_path = 'D:\\MOUSE-ASD-NEURONS\\data\\3step\\data\\%s\\%s\\gam_fit_useCoupling%d_useSubPrior%d_unt%d_%s_%s_%s_%s.mat'%(animal_name[0].upper(),brain_area_group,use_coupling,use_subjectivePrior,neuron_id,
-                                                                                                   brain_area_group,animal_name,date,session_num)
-        local_save_path = '%s/%s/gam_fit_useCoupling%d_useSubPrior%d_unt%d_%s_%s_%s_%s.mat'%(animal_name[0].upper(),brain_area_group,table['use_coupling'][job_id],table['use_subjectivePrior'][job_id],neuron_id,brain_area_group,animal_name,date,session_num)
+        remote_save_path = 'D:\\MOUSE-ASD-NEURONS\\data\\3step\\data\\%s\\%s\\gam_fit_useCoupling%d_useSubPrior%d_unt%d_%s_%s_%s_%s_signX%d.mat'%(animal_name[0].upper(),brain_area_group,use_coupling,use_subjectivePrior,neuron_id,
+                                                                                                   brain_area_group,animal_name,date,session_num,signX)
+        local_save_path = '%s/%s/gam_fit_useCoupling%d_useSubPrior%d_unt%d_%s_%s_%s_%s_signX%d.mat'%(animal_name[0].upper(),brain_area_group,table['use_coupling'][job_id],table['use_subjectivePrior'][job_id],neuron_id,brain_area_group,animal_name,date,session_num,
+                                                                                             signX)
         if not os.path.exists(os.path.dirname(local_save_path)):
             os.makedirs(os.path.dirname(local_save_path))
 
