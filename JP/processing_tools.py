@@ -25,6 +25,27 @@ def pseudo_r2_comp(spk, fit, sm_handler, family, use_tp=None, exog=None):
     pseudo_r2 = (null_deviance - resid_deviance) / null_deviance
     return pseudo_r2, exog
 
+def pseudo_r2_comp_noFit(spk, var_list, beta, sm_handler, family, use_tp=None, exog=None):
+    if exog is None:
+        exog, _ = sm_handler.get_exog_mat_fast(var_list)
+    exog_cut = deepcopy(exog)
+    if use_tp is None:
+        use_tp = np.ones(exog.shape[0], dtype=bool)
+
+    exog_cut = exog_cut[use_tp]
+    spk = spk[use_tp]
+    lin_pred = np.dot(exog_cut, beta)
+    mu = family.fitted(lin_pred)
+    res_dev_t = family.resid_dev(spk, mu)
+    resid_deviance = np.sum(res_dev_t ** 2)
+
+    null_mu = spk.sum() / spk.shape[0]
+    null_dev_t = family.resid_dev(spk, [null_mu] * spk.shape[0])
+
+    null_deviance = np.sum(null_dev_t ** 2)
+
+    pseudo_r2 = (null_deviance - resid_deviance) / null_deviance
+    return pseudo_r2, exog
 
 def compute_tuning(spk, fit, exog, var, sm_handler, filter_trials, dt=0.006):
     mu = np.dot(exog[filter_trials], fit.beta)
@@ -106,6 +127,28 @@ def compute_tuning(spk, fit, exog, var, sm_handler, filter_trials, dt=0.006):
 
 def postprocess_results(counts, full_fit,reduced_fit, info_save, filter_trials,
                         sm_handler, family,var_zscore_par, use_coupling, use_subjectivePrior):
+    
+    category_vars = {'prior20': ['prior20', 'prior80'],
+                      'prev_feedback_correct': ['prev_feedback_correct', 'prev_feedback_incorrect'],
+                      'prev_choiceL': ['prev_choiceL', 'prev_choice0', 'prev_choiceR']
+                      }
+
+    category_vals = {'prev_choiceL': [-1, 0, 1],
+                      'prev_feedback_correct': [1, 0],
+                      'prior20': [20, 80]}
+    ## compute rate
+    X, _ii = sm_handler.get_exog_mat_fast(sm_handler.smooths_var)
+    mu = np.dot(X, full_fit.beta)
+    sigma2 = np.einsum('ij,jk,ik->i', X, full_fit.cov_beta, X,
+                       optimize=True)
+    lam_s = np.exp(mu + sigma2 * 0.5) / 0.005
+    if not reduced_fit is None:
+        X, _ii = sm_handler.get_exog_mat_fast(reduced_fit.var_list)
+        mu = np.dot(X, reduced_fit.beta)
+        sigma2 = np.einsum('ij,jk,ik->i', X, reduced_fit.cov_beta, X,
+                           optimize=True)
+        lam_s_red = np.exp(mu + sigma2 * 0.5) / 0.005
+
 
     dtype_dict = {'names': (
         'brain_area_group','animal_name','date','session_num', 'neuron_id', 'brain_region','brain_region_id',
@@ -126,6 +169,9 @@ def postprocess_results(counts, full_fit,reduced_fit, info_save, filter_trials,
     exog_reduced = None
     for cc in range(len(full_fit.var_list)):
         var = full_fit.var_list[cc]
+        
+        is_categorical = var in list(np.hstack(list(category_vars.values())))
+
         print('processing: ',var)
         cs_var = cs_table[cs_table['covariate'] == var]
         if not reduced_fit is None:
@@ -170,20 +216,33 @@ def postprocess_results(counts, full_fit,reduced_fit, info_save, filter_trials,
             results['mutual_info'][cc] = full_fit.mutual_info[var]
         else:
             results['mutual_info'][cc] = np.nan
+            
         if var in full_fit.tuning_Hz.__dict__.keys():
             if ~np.isnan(var_zscore_par[var]['loc']):
                 xx = full_fit.tuning_Hz.__dict__[var].x * var_zscore_par[var]['scale'] + var_zscore_par[var]['loc']
             else:
                 xx = full_fit.tuning_Hz.__dict__[var].x
+                
             if (full_fit.smooth_info[var]['kernel_direction'] == 1) and (full_fit.smooth_info[var]['is_temporal_kernel']):
                 sel = xx > 0
             elif (full_fit.smooth_info[var]['kernel_direction'] == -1) and (full_fit.smooth_info[var]['is_temporal_kernel']):
                 sel = xx < 0
             else:
                 sel = np.ones(xx.shape,dtype=bool)
-            results['x_rate_Hz'][cc] = xx[sel]
-            results['model_rate_Hz'][cc] = full_fit.tuning_Hz.__dict__[var].y_model[sel]
-            results['raw_rate_Hz'][cc] = full_fit.tuning_Hz.__dict__[var].y_raw[sel]
+            if not is_categorical:
+                results['x_rate_Hz'][cc] = xx[sel]
+                results['model_rate_Hz'][cc] = full_fit.tuning_Hz.__dict__[var].y_model[sel]
+                results['raw_rate_Hz'][cc] = full_fit.tuning_Hz.__dict__[var].y_raw[sel]
+            else:
+                results['x_rate_Hz'][cc] = np.array(category_vals[var])
+                meanRate = np.zeros(len(category_vals[var]))
+                meanRateRaw = np.zeros(len(category_vals[var]))
+                for k in range(len(category_vals[var])):
+                    x0 = category_vals[var][k]
+                    meanRate[k] = np.average(lam_s, weights=(sm_handler[var]._x[0] == x0))
+                    meanRateRaw[k] = np.average(counts / 0.005, weights=(sm_handler[var]._x[0] == x0))
+                results['model_rate_Hz'][cc] = meanRate
+                results['raw_rate_Hz'][cc] = meanRateRaw
 
         # compute kernel strength
         if full_fit.smooth_info[var]['is_temporal_kernel']:
@@ -287,9 +346,22 @@ def postprocess_results(counts, full_fit,reduced_fit, info_save, filter_trials,
                     sel = xx < 0
                 else:
                     sel = np.ones(xx.shape,dtype=bool)
-                results['reduced_x_rate_Hz'][cc] = xx[sel]
-                results['reduced_model_rate_Hz'][cc] = reduced_fit.tuning_Hz.__dict__[var].y_model[sel]
-                results['reduced_raw_rate_Hz'][cc] = reduced_fit.tuning_Hz.__dict__[var].y_raw[sel]
+
+                if not is_categorical:
+                    results['reduced_x_rate_Hz'][cc] = xx[sel]
+                    results['reduced_model_rate_Hz'][cc] = reduced_fit.tuning_Hz.__dict__[var].y_model[sel]
+                    results['reduced_raw_rate_Hz'][cc] = reduced_fit.tuning_Hz.__dict__[var].y_raw[sel]
+                else:
+                    results['reduced_x_rate_Hz'][cc] = np.array(category_vals[var])
+                    meanRate = np.zeros(len(category_vals[var]))
+                    meanRateRaw = np.zeros(len(category_vals[var]))
+                    for k in range(len(category_vals[var])):
+                        x0 = category_vals[var][k]
+                        meanRate[k] = np.average(lam_s_red, weights=(sm_handler[var]._x[0] == x0))
+                        meanRateRaw[k] = np.average(counts / 0.005, weights=(sm_handler[var]._x[0] == x0))
+                    results['reduced_model_rate_Hz'][cc] = meanRate
+                    results['reduced_raw_rate_Hz'][cc] = meanRateRaw
+
 
 
     return results
