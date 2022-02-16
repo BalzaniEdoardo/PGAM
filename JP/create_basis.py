@@ -70,17 +70,36 @@ dict_param = {
 }
 
 
-def construct_knots(gam_raw_inputs, counts, var_names, dict_param):
+def construct_knots(gam_raw_inputs, counts, var_names, dict_param, trialCathegory_spatial=False, use50Prior=True):
     # Standard params for the B-splines
-    is_cyclic = False  # no angles or period variables
-    order = 4  # cubic spline
-    penalty_type = 'der'  # derivative based penalization
-    der = 2  # degrees of the derivative
 
 
+    base_chategory = ['prev_choiceL','choiceL','feedback_correct','prev_feedback_correct','prior20']
+    # 'choiceL': ['choiceL', 'choice0', 'choiceR'],
+    #
+    # feedback_correct':['feedback_correct', 'feedback_incorrect'],
+    #                  'prev_feedback_correct':['prev_feedback_correct','prev_feedback_incorrect'],
+    cathegory_vars = {'prior20':['prior20','prior50','prior80'],
+                      'prev_feedback_correct': ['prev_feedback_correct', 'prev_feedback_incorrect'],
+                      'prev_choiceL': ['prev_choiceL', 'prev_choice0', 'prev_choiceR']
+                      }
+
+    cathegory_vals = {'prev_choiceL':[-1, 0, 1],
+                      'prev_feedback_correct':[1,0],
+                      'prior20':[20,50,80]}
+    if not use50Prior:
+        cathegory_vars['prior20'] = ['prior20','prior80']
+        cathegory_vals['prior20'] = [20, 80]
     # cc = 0
     all_vars = np.hstack((var_names,['spike_hist']))
     for varName in all_vars:
+
+        is_cyclic = False  # no angles or period variables
+        order = 4  # cubic spline
+        penalty_type = 'der'  # derivative based penalization
+        der = 2  # degrees of the derivative
+
+        is_cathegorical = varName in list(np.hstack(list(cathegory_vars.values())))
         cc = np.where(all_vars==varName)[0]
         if len(cc) != 1:
             continue
@@ -88,6 +107,10 @@ def construct_knots(gam_raw_inputs, counts, var_names, dict_param):
         is_temporal_kernel = True
         if varName == 'subjective_prior' or ('movement_PC' in varName):
             is_temporal_kernel = False
+
+        if is_cathegorical and trialCathegory_spatial:
+            is_temporal_kernel = False
+
 
         if varName != 'spike_hist':
             found = False
@@ -108,7 +131,8 @@ def construct_knots(gam_raw_inputs, counts, var_names, dict_param):
             x = deepcopy(gam_raw_inputs[cc])
         else:
             x = deepcopy(counts)
-        if not is_temporal_kernel:
+
+        if (not is_temporal_kernel) and (not is_cathegorical):
             ## x should be already z-scored otherwise do this
             minx = np.nanpercentile(x,1)
             maxx = np.nanpercentile(x,99)
@@ -120,6 +144,36 @@ def construct_knots(gam_raw_inputs, counts, var_names, dict_param):
             scale = (maxx - minx)
             knots = np.linspace(0,1,8)
             knots = np.hstack(([knots[0]] * 3, knots, [knots[-1]] * 3))
+
+        elif (not is_temporal_kernel) and is_cathegorical:
+            order = 1
+            penalty_type = 'EqSpaced'
+            loc = 0
+            scale = 1
+            if not varName in base_chategory:
+
+                x = np.nan * np.ones(x.shape[0])
+                is_cyclic = False
+                yield varName, knots, x, is_cyclic, order, kernel_len, direction, is_temporal_kernel, penalty_type, der, loc, scale
+
+
+            else:
+                var_list = cathegory_vars[varName]
+                x_out = np.nan * np.ones(x.shape[0])
+                for cat_num in range(len(var_list)):
+                    var = var_list[cat_num]
+                    val = cathegory_vals[varName][cat_num]
+                    cc = np.where(all_vars == var)[0]
+                    assert( len(cc) == 1)
+                    cc = cc[0]
+                    xcat = gam_raw_inputs[cc]
+                    if np.sum(xcat==1) < 10:
+                        continue
+                    x_out[xcat == 1] = val
+                x = x_out
+                unq_x = np.sort(np.unique(x[~np.isnan(x)]))
+                knots = np.hstack((unq_x - 0.01, [unq_x[-1] + 0.01]))
+
 
         elif direction == 1:
             knots = np.hstack(([(10) ** -6] * 3, np.linspace((knots_num) ** -6, kernel_len // 2, 10), [kernel_len // 2] * 3))

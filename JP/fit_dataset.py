@@ -23,9 +23,33 @@ try:
 
 except:
     is_cluster = False
-    JOB = 3
+    JOB = 4
+    session = 'CA3_CSP003_2019-11-20_002.mat'
+    splits = session.split('_')
+    area = splits[0]
+    subject = splits[1]
+    date = splits[2]
+    sess_num = splits[3]
+    paths = table['path_file']
+    func = lambda string: string.split('\\')[-1]
+    vec_func = np.vectorize(func)
+    session_list = vec_func(paths)
+    sel = (session_list == session) * (table['use_coupling'] == False)
+    table = table[sel]
+    dtype_val = []
+    dtype_name = []
+    for k in range(len(table.dtype)):
+        if 'U' in table.dtype[k].descr[0][1]:
+            dtype_val += ['U200']
+        else:
+            dtype_val += [table.dtype[k].descr[0][1]]
+        dtype_name += [table.dtype.names[k]]
+    tmp = np.zeros(table.shape[0],dtype={'names':dtype_name,'formats':dtype_val})
+    for name in table.dtype.names:
+        tmp[name] = table[name]
+    table = tmp
     for jj in range(JOB,JOB+tot_fits):
-        table[jj]['path_file'] = '/Users/edoardo/Work/Code/GAM_code/JP/C/ACAd/gam_preproc_neu104_ACAd_CSP011_2020-07-27_001.mat'
+        table[jj]['path_file'] = '/Volumes/Balsip HD/ASD-MOUSE/CA3/gam_preproc_neu295_CA3_CSP003_2019-11-20_002.mat'
 
 
 for job_id in range(JOB,JOB+tot_fits):
@@ -123,7 +147,7 @@ for job_id in range(JOB,JOB+tot_fits):
 
         var_zscore_par = {}
         sm_handler = smooths_handler()
-        for inputs in construct_knots(gam_raw_inputs,counts, var_names, dict_param):
+        for inputs in construct_knots(gam_raw_inputs,counts, var_names, dict_param,trialCathegory_spatial=True,use50Prior=False):
             varName, knots, x, is_cyclic, order, kernel_len, direction, is_temporal_kernel, penalty_type, der, loc, scale = inputs
             var_zscore_par[varName] = {'loc': loc, 'scale': scale}
             # if varName != 'spike_hist':

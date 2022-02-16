@@ -1,4 +1,7 @@
 *rename_fit.py
+*extractSess.m
+JP/debug/*
+extract_from_path.m
 *error.txt
 *fit_dataset_auto.py
 *.json
