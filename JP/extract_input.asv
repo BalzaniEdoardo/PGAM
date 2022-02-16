@@ -3,11 +3,6 @@ function extract_input(jobid)
     target_neuron = target_neuron(jobid+1);
     try
         path_remote = paths_to_fit{jobid+1};
-    catch
-         path_remote = paths_to_fit(jobid+1,:);
-         path_remote = strtrim(path_remote);
-    end
-    
     splits = split(path_remote,'_');
     brain_region = splits{1};
     brain_region = split(brain_region,'\');
