@@ -33,6 +33,7 @@ trialStart: timestamp of the start of each trial
 trialEnd: timestamp of the end of the forward run of each trial. 
 """
 dat = loadmat('sessionData.mat')
+# this is used to select the unit to fit
 JOB = int(sys.argv[1])-1
 
 
@@ -63,6 +64,7 @@ for varType in var_dict.keys():
             portNum = 0
             varLabel = varName
 
+        # this gets the parameters that are used for creating the basis set
         knots, x, is_cyclic, order, \
         kernel_len, kernel_direction,\
         is_temporal_kernel, penalty_type, der = construct_knots_highSpatialDensity(dat, varType, varName, neuNum=neuNum, portNum=portNum)

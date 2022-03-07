@@ -1,10 +1,13 @@
 from scipy.io import loadmat
 import numpy as np
 import sys
+import matplotlib.pylab as plt
 sys.path.append('../GAM_library')
 sys.path.append('../firefly_utils')
 from GAM_library import *
 from data_handler import *
+import statsmodels.api as sm
+from scipy.integrate import simps
 import scipy.stats as sts
 from copy import deepcopy
 from fit_utils import partition_trials, compute_tuning, pseudo_r2_comp,\
@@ -49,7 +52,7 @@ trial_idx =  partition_trials(np.squeeze(dat['eventVar']['trialStart'][0,0]),
 neuNum = 214
 var_dict = {'contVar': ['x','y','vel','freq'],
             'eventVar': ['trialEnd',
-                'licks_0','licks_1','licks_2','licks_3', 'spike_hist'] }
+            'licks_0','licks_1','licks_2','licks_3', 'spike_hist'] }
 
 # plot the basis for continuous vars
 subpltNum = 1

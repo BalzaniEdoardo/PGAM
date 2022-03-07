@@ -21,11 +21,12 @@ from copy import deepcopy
 def construct_knots_highSpatialDensity(dat, varType, varName, neuNum=0, portNum=0, history_filt_len=199):
     # Standard params for the B-splines
     is_cyclic = False  # no angles or period variables
-    kernel_len = 165  # this is used for event variables
+    kernel_len = 165  # this is used for event variables (number of time point used for the temporal filter)
     order = 4  # cubic spline
     penalty_type = 'der'  # derivative based penalization
     der = 2  # degrees of the derivative
 
+    # this function will compute the knots used for defining the B-spline
     is_temporal_kernel = (varType == 'eventVar') | (varType == 'logVar')
 
     if varName == 'spike_hist':
