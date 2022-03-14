@@ -1,6 +1,7 @@
 *rename_fit.py
 *extractSess.m
 JP/debug/*
+GAM_library/.DS_Store
 extract_from_path.m
 *error.txt
 *fit_dataset_auto.py
