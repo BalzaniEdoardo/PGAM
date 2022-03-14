@@ -337,8 +337,10 @@ class job_handler(QDialog, Ui_Dialog):
         self.listWidget_Log.addItem('...loaded fit list')
         self.check_finished()
         if self.isfirst and self.skipFinished:
-            sel = ~self.updated_fit_list['is_done']
-            self.updated_fit_list = self.updated_fit_list[sel]
+            sel = np.where(~self.updated_fit_list['is_done'])[0]
+            last_done = np.where(self.updated_fit_list['is_done'])[0][-1]
+            idx_keep = sel > last_done
+            self.updated_fit_list = self.updated_fit_list[sel[idx_keep]]
             
                     
             mdict = {'is_done': self.updated_fit_list['is_done'],
