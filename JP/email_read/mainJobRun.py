@@ -338,7 +338,10 @@ class job_handler(QDialog, Ui_Dialog):
         self.check_finished()
         if self.isfirst and self.skipFinished:
             sel = np.where(~self.updated_fit_list['is_done'])[0]
-            last_done = np.where(self.updated_fit_list['is_done'])[0][-1]
+            try:
+                last_done = np.where(self.updated_fit_list['is_done'])[0][-1]
+            except:
+                last_done = -1   
             idx_keep = sel > last_done
             self.updated_fit_list = self.updated_fit_list[sel[idx_keep]]
             
