@@ -14,11 +14,13 @@ from processing_tools import pseudo_r2_comp, postprocess_results
 from scipy.integrate import simps
 from scipy.io import savemat,loadmat
 import re
+import pdb
+
 table = parse_fit_list('list_to_fit_GAM.mat')
 tot_fits = 10
 try:
     # if this work try a cluster processing step
-    JOB = int(sys.argv[1]) + 7000 - 1
+    JOB = int(sys.argv[1]) + 0 - 1
     is_cluster = True
 
 except:
@@ -148,6 +150,7 @@ for job_id in range(JOB,JOB+tot_fits):
         var_zscore_par = {}
         sm_handler = smooths_handler()
         for inputs in construct_knots(gam_raw_inputs,counts, var_names, dict_param,trialCathegory_spatial=True,use50Prior=False):
+            pdb.set_trace()
             varName, knots, x, is_cyclic, order, kernel_len, direction, is_temporal_kernel, penalty_type, der, loc, scale = inputs
             var_zscore_par[varName] = {'loc': loc, 'scale': scale}
             # if varName != 'spike_hist':
