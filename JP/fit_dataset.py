@@ -36,17 +36,17 @@ except:
     func = lambda string: string.split('\\')[-1]
     vec_func = np.vectorize(func)
     session_list = vec_func(paths)
-    type_dict= {'names':[],'formats':[]}
-    for tp in table.dtype.descr:
-        type_dict['names'].append(tp[0])
-        type_dict['formats'].append(tp[1])
-    type_dict['names'].append('exp_prior')
-    type_dict['formats'].append('U20')
-    table2 = np.zeros(table.shape[0],dtype=type_dict)
-    for name,fmt in  table.dtype.descr:
-        table2[name] = table[name]
-    table2['exp_prior'] = 'prior80'
-    table=table2
+    # type_dict= {'names':[],'formats':[]}
+    # for tp in table.dtype.descr:
+    #     type_dict['names'].append(tp[0])
+    #     type_dict['formats'].append(tp[1])
+    # type_dict['names'].append('exp_prior')
+    # type_dict['formats'].append('U20')
+    # table2 = np.zeros(table.shape[0],dtype=type_dict)
+    # for name,fmt in  table.dtype.descr:
+    #     table2[name] = table[name]
+    # table2['exp_prior'] = 'prior80'
+    # table=table2
         
     # sel = (session_list == session) * (table['use_coupling'] == False)
     # table = table[sel]
@@ -149,10 +149,17 @@ for job_id in range(JOB,JOB+tot_fits):
         signX = signX.replace('.',',')
 
         ## save paths
-        remote_save_path = 'D:\\MOUSE-ASD-NEURONS\\data\\3step\\data\\%s\\%s\\gam_fit_useCoupling%d_useSubPrior%d_unt%d_%s_%s_%s_%s_x%s.mat'%(animal_name[0].upper(),brain_area_group,use_coupling,use_subjectivePrior,neuron_id,
-                                                                                                   brain_area_group,animal_name,date,session_num,signX)
-        local_save_path = '%s/%s/gam_fit_useCoupling%d_useSubPrior%d_unt%d_%s_%s_%s_%s_x%s.mat'%(animal_name[0].upper(),brain_area_group,table['use_coupling'][job_id],table['use_subjectivePrior'][job_id],neuron_id,brain_area_group,animal_name,date,session_num,
+        if exp_prior_sele == 'all':
+            remote_save_path = 'D:\\MOUSE-ASD-NEURONS\\data\\3step\\data\\%s\\%s\\gam_fit_useCoupling%d_useSubPrior%d_unt%d_%s_%s_%s_%s_x%s.mat'%(animal_name[0].upper(),brain_area_group,use_coupling,use_subjectivePrior,neuron_id,
+                                                                                                       brain_area_group,animal_name,date,session_num,signX)
+            local_save_path = '%s/%s/gam_fit_useCoupling%d_useSubPrior%d_unt%d_%s_%s_%s_%s_x%s.mat'%(animal_name[0].upper(),brain_area_group,table['use_coupling'][job_id],table['use_subjectivePrior'][job_id],neuron_id,brain_area_group,animal_name,date,session_num,
                                                                                              signX)
+        else:
+            remote_save_path = 'D:\\MOUSE-ASD-NEURONS\\data\\3step\\data\\%s\\%s\\%s_gam_fit_useCoupling%d_useSubPrior%d_unt%d_%s_%s_%s_%s_x%s.mat'%(animal_name[0].upper(),brain_area_group,exp_prior_sele,use_coupling,use_subjectivePrior,neuron_id,
+                                                                                                       brain_area_group,animal_name,date,session_num,signX)
+            local_save_path = '%s/%s/%s_gam_fit_useCoupling%d_useSubPrior%d_unt%d_%s_%s_%s_%s_x%s.mat'%(
+                animal_name[0].upper(),brain_area_group, exp_prior_sele,table['use_coupling'][job_id],table['use_subjectivePrior'][job_id],neuron_id,brain_area_group,animal_name,date,session_num,signX)
+         
         if not os.path.exists(os.path.dirname(local_save_path)):
             os.makedirs(os.path.dirname(local_save_path))
 
