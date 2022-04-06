@@ -1,6 +1,7 @@
 *rename_fit.py
 *extractSess.m
 JP/debug/*
+GAM_library/.DS_Store
 extract_from_path.m
 *error.txt
 *fit_dataset_auto.py
@@ -27,6 +28,8 @@ preprocessing_pipeline/util_preproc/__pycache__/*
 firefly_utils/__pycache__/*
 __pycache__/*
 /GAM_library/__pycache__/*
+JP/debug/*
+*extract_input.asv
 *.h5
 .DS*
 *.pdf

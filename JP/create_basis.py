@@ -70,9 +70,10 @@ dict_param = {
 }
 
 
-def construct_knots(gam_raw_inputs, counts, var_names, dict_param, trialCathegory_spatial=False, use50Prior=True):
+def construct_knots(gam_raw_inputs, counts, var_names, dict_param, trialCathegory_spatial=False, use50Prior=True,
+                    expPrior='all'):
     # Standard params for the B-splines
-
+    
 
     base_chategory = ['prev_choiceL','choiceL','feedback_correct','prev_feedback_correct','prior20']
     # 'choiceL': ['choiceL', 'choice0', 'choiceR'],
@@ -90,6 +91,13 @@ def construct_knots(gam_raw_inputs, counts, var_names, dict_param, trialCathegor
     if not use50Prior:
         cathegory_vars['prior20'] = ['prior20','prior80']
         cathegory_vals['prior20'] = [20, 80]
+    
+    if expPrior != 'all':
+        idx_prior = np.where(np.array(var_names) == expPrior)[0]
+        bl = np.array(gam_raw_inputs[idx_prior], dtype=bool).reshape(-1,)
+        gam_raw_inputs = gam_raw_inputs[:, bl]
+        counts = counts[bl]
+        
     # cc = 0
     all_vars = np.hstack((var_names,['spike_hist']))
     for varName in all_vars:
@@ -193,7 +201,7 @@ def construct_knots(gam_raw_inputs, counts, var_names, dict_param, trialCathegor
 
 
 if __name__ == '__main__':
-    gam_raw_inputs, counts, trial_idx, info_dict, var_names = parse_mat('/Users/edoardo/Work/Code/GAM_code/JP/gam_preproc_neu378_ACAd_NYU-28_2020-10-21_001.mat')
+    gam_raw_inputs, counts, trial_idx, info_dict, var_names = parse_mat('D:\\MOUSE-ASD-NEURONS\\data\\3step\\data\\C\\ACAd\\ACAd_CSP017_2020-11-20_001.mat')
 
     for inputs in construct_knots(gam_raw_inputs, var_names, dict_param):
         varName, knots, x, is_cyclic, order, kernel_len, direction, is_temporal_kernel, penalty_type, der = inputs
