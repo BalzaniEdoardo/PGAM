@@ -235,7 +235,7 @@ for job_id in range(JOB,JOB+tot_fits):
                                                           trial_num_vec=trial_idx,
                                                           filter_trials=filter_trials)
 
-        results = postprocess_results(counts, full_fit,reduced_fit, info_save, filter_trials, sm_handler, family, var_zscore_par,
+        results = postprocess_results(counts[bl], full_fit,reduced_fit, info_save, filter_trials, sm_handler, family, var_zscore_par,
                                       use_coupling,use_subjectivePrior)
         savemat(local_save_path, mdict={'results':results})
         try:

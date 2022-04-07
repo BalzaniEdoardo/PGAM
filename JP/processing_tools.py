@@ -239,8 +239,13 @@ def postprocess_results(counts, full_fit,reduced_fit, info_save, filter_trials,
                 meanRateRaw = np.zeros(len(category_vals[var]))
                 for k in range(len(category_vals[var])):
                     x0 = category_vals[var][k]
-                    meanRate[k] = np.average(lam_s, weights=(sm_handler[var]._x[0] == x0))
-                    meanRateRaw[k] = np.average(counts / 0.005, weights=(sm_handler[var]._x[0] == x0))
+                    try:
+                        meanRate[k] = np.average(lam_s, weights=(sm_handler[var]._x[0] == x0))
+                        meanRateRaw[k] = np.average(counts / 0.005, weights=(sm_handler[var]._x[0] == x0))
+                    except:
+                        meanRate[k] = np.nan
+                        meanRateRaw[k] = np.nan
+                        
                 results['model_rate_Hz'][cc] = meanRate
                 results['raw_rate_Hz'][cc] = meanRateRaw
 
@@ -357,8 +362,13 @@ def postprocess_results(counts, full_fit,reduced_fit, info_save, filter_trials,
                     meanRateRaw = np.zeros(len(category_vals[var]))
                     for k in range(len(category_vals[var])):
                         x0 = category_vals[var][k]
-                        meanRate[k] = np.average(lam_s_red, weights=(sm_handler[var]._x[0] == x0))
-                        meanRateRaw[k] = np.average(counts / 0.005, weights=(sm_handler[var]._x[0] == x0))
+                        try:
+                            meanRate[k] = np.average(lam_s_red, weights=(sm_handler[var]._x[0] == x0))
+                            meanRateRaw[k] = np.average(counts / 0.005, weights=(sm_handler[var]._x[0] == x0))
+                        except:
+                            meanRate[k] = np.nan
+                            meanRateRaw[k] = np.nan
+
                     results['reduced_model_rate_Hz'][cc] = meanRate
                     results['reduced_raw_rate_Hz'][cc] = meanRateRaw
 

@@ -512,6 +512,11 @@ class job_handler(QDialog, Ui_Dialog):
                 if not re.match('^gam_fit_useCoupling[0-1]_useSubPrior[0-1]_unt\d+',name):
                     continue
                 splits = name.split('.')[0].split('_')
+                if len(splits) == 11:
+                    exp_prior = splits[0]
+                    splits = splits[1:]
+                else:
+                    exp_prior = 'all'
                 use_cupling = bool(int(splits[2][-1]))
                 use_subPrior = bool(int(splits[3][-1]))
                 neu_id = int(splits[4].split('unt')[1])
@@ -535,6 +540,7 @@ class job_handler(QDialog, Ui_Dialog):
                 boolean = boolean & (sub_table['use_subjectivePrior'] == use_subPrior)
                 boolean = boolean & (sub_table['neuron_id'] == neu_id)
                 boolean = boolean & (np.abs(sub_table['x'] - xx) < 10**-12)
+                boolean = boolean & (sub_table['exp_prior'] == exp_prior)
                 if boolean.sum() > 1:
                     print(sub_table[boolean])
                     print('NOT UNIVOQUE NEURON ID')
@@ -558,7 +564,7 @@ if __name__ == '__main__':
     dialog = job_handler(durTimerEmail_sec=3600,
                          fit_dir='D:\\MOUSE-ASD-NEURONS\\data\\3step\\data',
                          fitEvery=1,fitLast=1000,initJob=1,
-                         skipFinished=True) # ''
+                         skipFinished=False) # ''
     dialog.show()
     data_tree = app.exec_()
     print('exited app')
