@@ -1,5 +1,5 @@
 import numpy as np
-import matplotlib.pylab as plt
+#import matplotlib.pylab as plt
 
 class spike_counts(object):
     def __init__(self,dat,units_key, time_aligned_to_beh=True):
