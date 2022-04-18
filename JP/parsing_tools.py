@@ -109,7 +109,10 @@ def parse_fit_list(filepath):
     exp_prior_tmp = np.zeros(len(exp_prior),dtype='U20')
     cc = 0
     for nn in exp_prior:
-        exp_prior_tmp[cc] = nn[0]
+        if type(nn) == np.str_:
+            exp_prior_tmp[cc] = nn.strip()
+        else:
+            exp_prior_tmp[cc] = nn[0]
         cc+=1
     exp_prior = exp_prior_tmp
     path_file_tmp = []
