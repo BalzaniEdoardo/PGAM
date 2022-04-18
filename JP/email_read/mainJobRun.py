@@ -352,7 +352,8 @@ class job_handler(QDialog, Ui_Dialog):
                      'use_coupling': self.updated_fit_list['use_coupling'],
                      'use_subjectivePrior':self.updated_fit_list['use_subjectivePrior'],
                      'paths_to_fit': np.ascontiguousarray(self.updated_fit_list['path_file']),
-                     'x': self.updated_fit_list['x']
+                     'x': self.updated_fit_list['x'],
+                     'exp_prior': np.ascontiguousarray(self.updated_fit_list['exp_prior'])
                      }
             savemat(os.path.join(os.path.dirname(basedir), 'list_to_fit_GAM.mat'),mdict=mdict)
             
@@ -403,7 +404,8 @@ class job_handler(QDialog, Ui_Dialog):
                  'target_neuron': self.updated_fit_list['target_neuron'][subFit],
                  'use_coupling': self.updated_fit_list['use_coupling'][subFit],
                  'use_subjectivePrior':self.updated_fit_list['use_subjectivePrior'][subFit],
-                 'paths_to_fit': self.updated_fit_list['path_file'][subFit]
+                 'paths_to_fit': self.updated_fit_list['path_file'][subFit],
+                 'exp_prior': np.ascontiguousarray(self.updated_fit_list['exp_prior'][subFit])
                  }
         savemat('list_to_fit_GAM_auto.mat',mdict=mdict)
         self.copy_to_server('list_to_fit_GAM_auto.mat', '/scratch/eb162/GAM_Repo/JP')
@@ -509,7 +511,7 @@ class job_handler(QDialog, Ui_Dialog):
     def check_finished(self):
         for root, dirs, files in os.walk(self.fit_dir, topdown=False):
             for name in files:
-                if not re.match('^gam_fit_useCoupling[0-1]_useSubPrior[0-1]_unt\d+',name):
+                if not re.search('gam_fit_useCoupling[0-1]_useSubPrior[0-1]_unt\d+',name):
                     continue
                 splits = name.split('.')[0].split('_')
                 if len(splits) == 11:
@@ -564,7 +566,7 @@ if __name__ == '__main__':
     dialog = job_handler(durTimerEmail_sec=3600,
                          fit_dir='D:\\MOUSE-ASD-NEURONS\\data\\3step\\data',
                          fitEvery=1,fitLast=1000,initJob=1,
-                         skipFinished=False) # ''
+                         skipFinished=True) # ''
     dialog.show()
     data_tree = app.exec_()
     print('exited app')
