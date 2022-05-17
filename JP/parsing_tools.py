@@ -105,6 +105,16 @@ def parse_fit_list(filepath):
     use_coupling = dat['use_coupling'].flatten()
     use_subjectivePrior = dat['use_subjectivePrior'].flatten()
     path_file_raw = np.squeeze(dat['paths_to_fit'].flatten())
+    exp_prior = dat['exp_prior'].flatten()
+    exp_prior_tmp = np.zeros(len(exp_prior),dtype='U20')
+    cc = 0
+    for nn in exp_prior:
+        if type(nn) == np.str_:
+            exp_prior_tmp[cc] = nn.strip()
+        else:
+            exp_prior_tmp[cc] = nn[0]
+        cc+=1
+    exp_prior = exp_prior_tmp
     path_file_tmp = []
     for path in path_file_raw:
         if type(path) is np.ndarray:
@@ -125,8 +135,8 @@ def parse_fit_list(filepath):
         path_file[cc] = val
         cc += 1
 
-    table = np.zeros(len(is_done),dtype={'names':('neuron_id','target_neuron','path_file','use_coupling','use_subjectivePrior','x','is_done'),
-                                         'formats':(int,int,'U%d'%max_len,bool,bool,float,bool)})
+    table = np.zeros(len(is_done),dtype={'names':('neuron_id','target_neuron','path_file','use_coupling','use_subjectivePrior','x','is_done','exp_prior'),
+                                         'formats':(int,int,'U%d'%max_len,bool,bool,float,bool,'U20')})
     loc_var = locals()
     for name in table.dtype.names:
         try:

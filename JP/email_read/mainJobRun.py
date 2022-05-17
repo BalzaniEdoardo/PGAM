@@ -337,8 +337,13 @@ class job_handler(QDialog, Ui_Dialog):
         self.listWidget_Log.addItem('...loaded fit list')
         self.check_finished()
         if self.isfirst and self.skipFinished:
-            sel = ~self.updated_fit_list['is_done']
-            self.updated_fit_list = self.updated_fit_list[sel]
+            sel = np.where(~self.updated_fit_list['is_done'])[0]
+            try:
+                last_done = np.where(self.updated_fit_list['is_done'])[0][-1]
+            except:
+                last_done = -1   
+            idx_keep = sel > last_done
+            self.updated_fit_list = self.updated_fit_list[sel[idx_keep]]
             
                     
             mdict = {'is_done': self.updated_fit_list['is_done'],
@@ -347,7 +352,8 @@ class job_handler(QDialog, Ui_Dialog):
                      'use_coupling': self.updated_fit_list['use_coupling'],
                      'use_subjectivePrior':self.updated_fit_list['use_subjectivePrior'],
                      'paths_to_fit': np.ascontiguousarray(self.updated_fit_list['path_file']),
-                     'x': self.updated_fit_list['x']
+                     'x': self.updated_fit_list['x'],
+                     'exp_prior': np.ascontiguousarray(self.updated_fit_list['exp_prior'])
                      }
             savemat(os.path.join(os.path.dirname(basedir), 'list_to_fit_GAM.mat'),mdict=mdict)
             
@@ -398,7 +404,8 @@ class job_handler(QDialog, Ui_Dialog):
                  'target_neuron': self.updated_fit_list['target_neuron'][subFit],
                  'use_coupling': self.updated_fit_list['use_coupling'][subFit],
                  'use_subjectivePrior':self.updated_fit_list['use_subjectivePrior'][subFit],
-                 'paths_to_fit': self.updated_fit_list['path_file'][subFit]
+                 'paths_to_fit': self.updated_fit_list['path_file'][subFit],
+                 'exp_prior': np.ascontiguousarray(self.updated_fit_list['exp_prior'][subFit])
                  }
         savemat('list_to_fit_GAM_auto.mat',mdict=mdict)
         self.copy_to_server('list_to_fit_GAM_auto.mat', '/scratch/eb162/GAM_Repo/JP')
@@ -504,9 +511,14 @@ class job_handler(QDialog, Ui_Dialog):
     def check_finished(self):
         for root, dirs, files in os.walk(self.fit_dir, topdown=False):
             for name in files:
-                if not re.match('^gam_fit_useCoupling[0-1]_useSubPrior[0-1]_unt\d+',name):
+                if not re.search('gam_fit_useCoupling[0-1]_useSubPrior[0-1]_unt\d+',name):
                     continue
                 splits = name.split('.')[0].split('_')
+                if len(splits) == 11:
+                    exp_prior = splits[0]
+                    splits = splits[1:]
+                else:
+                    exp_prior = 'all'
                 use_cupling = bool(int(splits[2][-1]))
                 use_subPrior = bool(int(splits[3][-1]))
                 neu_id = int(splits[4].split('unt')[1])
@@ -530,6 +542,7 @@ class job_handler(QDialog, Ui_Dialog):
                 boolean = boolean & (sub_table['use_subjectivePrior'] == use_subPrior)
                 boolean = boolean & (sub_table['neuron_id'] == neu_id)
                 boolean = boolean & (np.abs(sub_table['x'] - xx) < 10**-12)
+                boolean = boolean & (sub_table['exp_prior'] == exp_prior)
                 if boolean.sum() > 1:
                     print(sub_table[boolean])
                     print('NOT UNIVOQUE NEURON ID')

@@ -14,42 +14,58 @@ from processing_tools import pseudo_r2_comp, postprocess_results
 from scipy.integrate import simps
 from scipy.io import savemat,loadmat
 import re
+import pdb
+
 table = parse_fit_list('list_to_fit_GAM.mat')
-tot_fits = 10
+tot_fits = 1
 try:
     # if this work try a cluster processing step
-    JOB = int(sys.argv[1]) + 7000 - 1
+    JOB = int(sys.argv[1]) + 0 - 1
     is_cluster = True
 
 except:
+    table = parse_fit_list('list_to_fit_GAM.mat')
     is_cluster = False
     JOB = 4
-    session = 'CA3_CSP003_2019-11-20_002.mat'
-    splits = session.split('_')
-    area = splits[0]
-    subject = splits[1]
-    date = splits[2]
-    sess_num = splits[3]
+    #session = 'CA3_CSP003_2019-11-20_002.mat'
+    
+    #splits = session.split('_')
+    # area = splits[0]
+    # subject = splits[1]
+    # date = splits[2]
+    # sess_num = splits[3]
     paths = table['path_file']
     func = lambda string: string.split('\\')[-1]
     vec_func = np.vectorize(func)
     session_list = vec_func(paths)
-    sel = (session_list == session) * (table['use_coupling'] == False)
-    table = table[sel]
-    dtype_val = []
-    dtype_name = []
-    for k in range(len(table.dtype)):
-        if 'U' in table.dtype[k].descr[0][1]:
-            dtype_val += ['U200']
-        else:
-            dtype_val += [table.dtype[k].descr[0][1]]
-        dtype_name += [table.dtype.names[k]]
-    tmp = np.zeros(table.shape[0],dtype={'names':dtype_name,'formats':dtype_val})
-    for name in table.dtype.names:
-        tmp[name] = table[name]
-    table = tmp
-    for jj in range(JOB,JOB+tot_fits):
-        table[jj]['path_file'] = '/Volumes/Balsip HD/ASD-MOUSE/CA3/gam_preproc_neu295_CA3_CSP003_2019-11-20_002.mat'
+    # type_dict= {'names':[],'formats':[]}
+    # for tp in table.dtype.descr:
+    #     type_dict['names'].append(tp[0])
+    #     type_dict['formats'].append(tp[1])
+    # type_dict['names'].append('exp_prior')
+    # type_dict['formats'].append('U20')
+    # table2 = np.zeros(table.shape[0],dtype=type_dict)
+    # for name,fmt in  table.dtype.descr:
+    #     table2[name] = table[name]
+    # table2['exp_prior'] = 'prior80'
+    # table=table2
+        
+    # sel = (session_list == session) * (table['use_coupling'] == False)
+    # table = table[sel]
+    # dtype_val = []
+    # dtype_name = []
+    # for k in range(len(table.dtype)):
+    #     if 'U' in table.dtype[k].descr[0][1]:
+    #         dtype_val += ['U200']
+    #     else:
+    #         dtype_val += [table.dtype[k].descr[0][1]]
+    #     dtype_name += [table.dtype.names[k]]
+    # tmp = np.zeros(table.shape[0],dtype={'names':dtype_name,'formats':dtype_val})
+    # for name in table.dtype.names:
+    #     tmp[name] = table[name]
+    # table = tmp
+    # for jj in range(JOB,JOB+tot_fits):
+        # table[jj]['path_file'] = '/Volumes/Balsip HD/ASD-MOUSE/CA3/gam_preproc_neu295_CA3_CSP003_2019-11-20_002.mat'
 
 
 for job_id in range(JOB,JOB+tot_fits):
@@ -60,6 +76,7 @@ for job_id in range(JOB,JOB+tot_fits):
         use_coupling = table[job_id]['use_coupling']
         use_subjectivePrior = table[job_id]['use_subjectivePrior']
         neuron_id = table[job_id]['neuron_id']
+        exp_prior_sele = table[job_id]['exp_prior']
 
         if is_cluster:
             name_splits = remote_path.split('\\')
@@ -72,12 +89,16 @@ for job_id in range(JOB,JOB+tot_fits):
 
         else:
             local_path = remote_path
-            parse_fun = parse_mat
+            parse_fun = lambda path_remote: parse_mat_remote(remote_path, remote_path, job_id, neuron_id)
 
 
         # extract input
         gam_raw_inputs, counts, trial_idx, info_dict, var_names = parse_fun(table['path_file'][job_id])
-
+            
+        if exp_prior_sele != 'all':
+            idx_prior = np.where(np.array(var_names) == exp_prior_sele)[0]
+            bl = np.array(gam_raw_inputs[idx_prior], dtype=bool).reshape(-1,)
+            trial_idx = trial_idx[bl]
 
         # unpack info
         try:
@@ -130,10 +151,17 @@ for job_id in range(JOB,JOB+tot_fits):
         signX = signX.replace('.',',')
 
         ## save paths
-        remote_save_path = 'D:\\MOUSE-ASD-NEURONS\\data\\3step\\data\\%s\\%s\\gam_fit_useCoupling%d_useSubPrior%d_unt%d_%s_%s_%s_%s_x%s.mat'%(animal_name[0].upper(),brain_area_group,use_coupling,use_subjectivePrior,neuron_id,
-                                                                                                   brain_area_group,animal_name,date,session_num,signX)
-        local_save_path = '%s/%s/gam_fit_useCoupling%d_useSubPrior%d_unt%d_%s_%s_%s_%s_x%s.mat'%(animal_name[0].upper(),brain_area_group,table['use_coupling'][job_id],table['use_subjectivePrior'][job_id],neuron_id,brain_area_group,animal_name,date,session_num,
+        if exp_prior_sele == 'all':
+            remote_save_path = 'D:\\MOUSE-ASD-NEURONS\\data\\3step\\data\\%s\\%s\\gam_fit_useCoupling%d_useSubPrior%d_unt%d_%s_%s_%s_%s_x%s.mat'%(animal_name[0].upper(),brain_area_group,use_coupling,use_subjectivePrior,neuron_id,
+                                                                                                       brain_area_group,animal_name,date,session_num,signX)
+            local_save_path = '%s/%s/gam_fit_useCoupling%d_useSubPrior%d_unt%d_%s_%s_%s_%s_x%s.mat'%(animal_name[0].upper(),brain_area_group,table['use_coupling'][job_id],table['use_subjectivePrior'][job_id],neuron_id,brain_area_group,animal_name,date,session_num,
                                                                                              signX)
+        else:
+            remote_save_path = 'D:\\MOUSE-ASD-NEURONS\\data\\3step\\data\\%s\\%s\\%s_gam_fit_useCoupling%d_useSubPrior%d_unt%d_%s_%s_%s_%s_x%s.mat'%(animal_name[0].upper(),brain_area_group,exp_prior_sele,use_coupling,use_subjectivePrior,neuron_id,
+                                                                                                       brain_area_group,animal_name,date,session_num,signX)
+            local_save_path = '%s/%s/%s_gam_fit_useCoupling%d_useSubPrior%d_unt%d_%s_%s_%s_%s_x%s.mat'%(
+                animal_name[0].upper(),brain_area_group, exp_prior_sele,table['use_coupling'][job_id],table['use_subjectivePrior'][job_id],neuron_id,brain_area_group,animal_name,date,session_num,signX)
+         
         if not os.path.exists(os.path.dirname(local_save_path)):
             os.makedirs(os.path.dirname(local_save_path))
 
@@ -147,7 +175,7 @@ for job_id in range(JOB,JOB+tot_fits):
 
         var_zscore_par = {}
         sm_handler = smooths_handler()
-        for inputs in construct_knots(gam_raw_inputs,counts, var_names, dict_param,trialCathegory_spatial=True,use50Prior=False):
+        for inputs in construct_knots(gam_raw_inputs,counts, var_names, dict_param,trialCathegory_spatial=True,use50Prior=False,expPrior=exp_prior_sele):
             varName, knots, x, is_cyclic, order, kernel_len, direction, is_temporal_kernel, penalty_type, der, loc, scale = inputs
             var_zscore_par[varName] = {'loc': loc, 'scale': scale}
             # if varName != 'spike_hist':
@@ -164,7 +192,9 @@ for job_id in range(JOB,JOB+tot_fits):
                 continue
             if varName == 'prior50':
                 continue
-            print('adding',varName)
+            if (exp_prior_sele != 'all') and (varName in ['prior80','prior20']):
+                continue
+            print('adding',varName,x.shape)
             sm_handler.add_smooth(varName, [x], ord=order, knots=[knots],
                                       is_cyclic=[is_cyclic], lam=50,
                                       penalty_type=penalty_type,
@@ -192,7 +222,7 @@ for job_id in range(JOB,JOB+tot_fits):
 
         X, index = sm_handler.get_exog_mat_fast(sm_handler.smooths_var)
 
-        gam_model = general_additive_model(sm_handler,sm_handler.smooths_var,counts,poissFam,fisher_scoring=False)
+        gam_model = general_additive_model(sm_handler,sm_handler.smooths_var,counts[bl],poissFam,fisher_scoring=False)
 
         full_fit,reduced_fit = gam_model.fit_full_and_reduced(sm_handler.smooths_var,th_pval=0.001,
                                                           smooth_pen=None, max_iter=10 ** 3, tol=10 ** (-8),
@@ -205,7 +235,7 @@ for job_id in range(JOB,JOB+tot_fits):
                                                           trial_num_vec=trial_idx,
                                                           filter_trials=filter_trials)
 
-        results = postprocess_results(counts, full_fit,reduced_fit, info_save, filter_trials, sm_handler, family, var_zscore_par,
+        results = postprocess_results(counts[bl], full_fit,reduced_fit, info_save, filter_trials, sm_handler, family, var_zscore_par,
                                       use_coupling,use_subjectivePrior)
         savemat(local_save_path, mdict={'results':results})
         try:
