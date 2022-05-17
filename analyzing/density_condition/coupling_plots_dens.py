@@ -5,7 +5,7 @@ Created on Fri Jan 29 13:30:42 2021
 
 @author: edoardo
 """
-import pymc3 as pm
+#import pymc3 as pm
 import numpy as np
 import matplotlib.pylab as plt
 import scipy.stats as sts
@@ -15,8 +15,10 @@ from statsmodels.distributions import ECDF
 from scipy.stats import linregress
 from sklearn.linear_model import LinearRegression
 from sklearn.mixture import GaussianMixture
-import arviz as az
-coupl_info = np.load('/Users/edoardo/Work/Code/GAM_code/analyzing/coupling/coupling_info.npy')
+#import arviz as az
+#coupl_info = np.load('/Users/edoardo/Work/Code/GAM_code/analyzing/coupling/coupling_info.npy')
+coupl_info = np.load('/Users/edoardo/Dropbox/gam_firefly_pipeline/1 FF manuscript/coupling_info.npy')
+
 from scipy.io import savemat
 import seaborn as sbs
 # sel monkey
@@ -528,11 +530,11 @@ for area in ['MST','PPC','PFC']:
     k+=1
     print(area, np.std(delt),sts.pearsonr(xx,yy)[0])
 plt.tight_layout()
-plt.savefig('within_area_cs.pdf')
-savemat('coupling_strength_with_density.mat',mdict=dict_res)
+#plt.savefig('within_area_cs.pdf')
+#savemat('coupling_strength_with_density.mat',mdict=dict_res)
 
 
-savemat('paired_coupl_str.mat', mdict={'paired_coupl_str':cs_table_pair})
+#savemat('paired_coupl_str.mat', mdict={'paired_coupl_str':cs_table_pair})
 
 regr_dict = {'names':('monkey','session',
  'sender_brain_area','receiver_brain_area','slope','intercept','r_squared','p_val'),
@@ -572,9 +574,9 @@ df = pd.DataFrame(table)
 
 plt.title('coupling strength regression')
 sbs.pointplot(x='sender_brain_area',y='slope',palette={'MST':'g','PPC':'b','PFC':'r'},data=df)
-plt.savefig('coupling_regr_sem_over_session.png')
-savemat('coupling_strength_regr.mat',mdict={'coupl_regr':table})
-np.save('paired_coupling_strength.npy', cs_table_pair)
+#plt.savefig('coupling_regr_sem_over_session.png')
+#savemat('coupling_strength_regr.mat',mdict={'coupl_regr':table})
+#np.save('paired_coupling_strength.npy', cs_table_pair)
 
 
 for area in ['MST','PPC','PFC']:

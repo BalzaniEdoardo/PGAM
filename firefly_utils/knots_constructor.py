@@ -284,6 +284,16 @@ def knots_cerate(x,var,session, hand_vel_temp=False,hist_filt_dur='short',
                              ))
       
           x_trans[(x_trans > 70) | (x_trans < -70)] = np.nan
+
+      elif var == 'tte_mag':
+          knots = np.linspace(0, 60, 10)
+          knots = np.hstack((
+              [knots[0]] * 3,
+              knots,
+              [knots[-1]] * 3
+          ))
+          x_trans[(x_trans > 60) | (x_trans < 0)] = np.nan
+          
       else:
           kernel_len = 165
           knots = np.linspace(-165,165,10)
