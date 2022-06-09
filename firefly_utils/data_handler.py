@@ -25,9 +25,9 @@ class data_handler(object):
     def __init__(self,dat,beh_key,spike_key,lfp_key,behav_stat_key,time_aligned_to_beh=True,dt=0.006,
                  flyON_dur=0.3,pre_trial_dur=0.25,post_trial_dur=0.25,is_lfp_binned=True, extract_lfp_phase=True,
                  lfp_beta=None,lfp_alpha=None,lfp_theta=None,use_eye=None,extract_fly_and_monkey_xy=False,
-                 extract_cartesian_eye_and_firefly=False,fhLFP=''):
+                 extract_cartesian_eye_and_firefly=False,fhLFP='',skip_not_ok=True):
 
-        self.info = load_trial_types(dat[behav_stat_key].flatten(),dat[beh_key].flatten())
+        self.info = load_trial_types(dat[behav_stat_key].flatten(),dat[beh_key].flatten(),skip_not_ok=skip_not_ok)
         # import all data and trial info
         self.spikes = spike_counts(dat,spike_key,time_aligned_to_beh=time_aligned_to_beh)
         if lfp_key is None:
