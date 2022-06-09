@@ -523,7 +523,7 @@ class load_trial_types(object):
     ===========
         This function create an array with the trial types that can be used for filtering the required trial
     """
-    def __init__(self,beh_stats,trials_behv):
+    def __init__(self,beh_stats,trials_behv,skip_not_ok=True):
         ttype = beh_stats['trialtype'].all()
         # extract trial number from a nested matlab struct
         n_trials = ttype['all'].all()['trlindx'].all().flatten().shape[0]
@@ -547,7 +547,7 @@ class load_trial_types(object):
             except:
                 print('UNABLE TO PAIR REPLAY AND ACTIVE')
         if 'density' in list(ttype.dtype.names):
-            self.set_trial_type_density(ttype)
+            self.set_trial_type_density(ttype,trials_behv,skip_not_ok=skip_not_ok)
         if 'reward' in list(ttype.dtype.names):
             self.set_trial_type_reward(ttype)
         if 'ptb' in list(ttype.dtype.names):
@@ -597,20 +597,26 @@ class load_trial_types(object):
         # ok_trials = self.trial_type['all']
         # self.trial_type['landmark'][~ok_trials] = -1
 
-    def set_trial_type_density(self,ttype):
+    def set_trial_type_density(self,ttype, trials_behv, skip_not_ok=True):
         ok_trials = self.trial_type['all']
         struc_array = ttype['density'].all()
         self.trial_type['density'] = np.nan
-        for k in range(struc_array.shape[1]):
-            descr = struc_array[0,k]['val'][0]
-            try:
-                density = float('0.'+descr.split('0.')[1])
-            except IndexError:
-                density = float(descr.split('=')[1])
-            # density = float(descr.split('=')[1].rstrip().lstrip())
-            trialIndx = np.array(struc_array[0,k]['trlindx'].flatten(),dtype=bool)
-            self.trial_type['density'][trialIndx] = density
-        self.trial_type['density'][~ok_trials] = np.nan
+        try:
+            for k in range(self.trial_type.shape[0]):
+                self.trial_type['density'][k] = float(np.squeeze(trials_behv['prs'][k]['floordensity'][0][0]))
+        except:
+            for k in range(struc_array.shape[1]):
+                descr = struc_array[0,k]['val'][0]
+                try:
+                    density = float('0.'+descr.split('0.')[1])
+                except IndexError:
+                    density = float(descr.split('=')[1])
+                # density = float(descr.split('=')[1].rstrip().lstrip())
+                trialIndx = np.array(struc_array[0,k]['trlindx'].flatten(),dtype=bool)
+                self.trial_type['density'][trialIndx] = density
+
+        if skip_not_ok:
+            self.trial_type['density'][~ok_trials] = np.nan
         if np.prod(np.isnan(self.trial_type['density'])):
             raise Warning('some trial was not classified for the density of texture elements')
 
