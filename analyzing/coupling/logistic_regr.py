@@ -17,6 +17,7 @@ import statsmodels.api as sm
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import make_scorer
+from scipy.io import savemat
 
 def pseudo_r2_compute(spk, family, modelX, params):#trans=False,vec=None,knots=None):
     
@@ -42,7 +43,7 @@ moonkey='Schro'
 keep_area = ['MST','PPC','PFC']
 
 
-coupling_data = np.load('coupling_info.npy')
+coupling_data = np.load('/Volumes/Balsip HD/FF Monkey/Coupling_info_monkey/coupling_info.npy',allow_pickle=True)
 
 bruno_ppc_map = np.hstack(([np.nan],np.arange(1,9),[np.nan], np.arange(9,89), [np.nan], np.arange(89,97),[np.nan])).reshape((10,10))
 
@@ -225,7 +226,8 @@ plt.ylabel('coupling prob.')
 
 ax.spines['top'].set_visible(False)
 ax.spines['right'].set_visible(False)
-
+mdict = {'dist':dist[dist<mx],'prob_mst':prob_mst[dist<mx],'prob_ppc':prob_ppc[dist<mx],'prob_pfc':prob_pfc[dist<mx]}
+savemat('/Users/edoardo/Dropbox/NoelBalzani_breifComm/Noise correlations as a function of distance',mdict=mdict)
 # plt.savefig('estim_coupling_probability.pdf')
 
 

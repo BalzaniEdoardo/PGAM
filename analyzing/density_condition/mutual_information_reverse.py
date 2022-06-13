@@ -8,7 +8,7 @@ from statsmodels.stats.multitest import fdrcorrection
 import pandas as pd
 import seaborn as sbs
 
-fld = '/Volumes/WD_Edo/firefly_analysis/LFP_band/processed_data/mutual_info/'
+fld = '/Volumes/WD_Edo 1/firefly_analysis/LFP_band/processed_data/mutual_info'
 ##
 # load MI
 ##
@@ -204,7 +204,7 @@ for var in order:
 
     plt.tight_layout(rect=[0, 0.03, 1, 0.95])
 
-    plt.savefig('%s_examples/%s.png'%(ba,var))
+    # plt.savefig('%s_examples/%s.png'%(ba,var))
 
 
 
@@ -243,7 +243,7 @@ for var in order:
 
     plt.tight_layout(rect=[0, 0.03, 1, 0.95])
 
-    plt.savefig('%s_examples/%s.png'%(ba,var))
+    # plt.savefig('%s_examples/%s.png'%(ba,var))
 
 ba = 'PFC'
 for var in order:
@@ -253,6 +253,7 @@ for var in order:
     tun_ld = tuning_ld[idx]
     tun_hd = tuning_hd[idx]
     srt = np.argsort(mi_ld['mutual_info'] - mi_hd['mutual_info'])
+
     plt_num = 1
     plt.figure(figsize=(10, 6))
     plt.suptitle(var)
@@ -279,7 +280,7 @@ for var in order:
 
     plt.tight_layout(rect=[0, 0.03, 1, 0.95])
 
-    plt.savefig('%s_examples/%s.png' % (ba, var))
+    # plt.savefig('%s_examples/%s.png' % (ba, var))
 
 plt.close('all')
 
@@ -308,7 +309,7 @@ for cc in range(mutual_info_hd.shape[0]):
     regr_res['xmax'][cc] = tuning_ld['x'][cc][-1]
 
 regr_res['fdr_pval'] = fdrcorrection(regr_res['pval'],alpha=0.05)[1]
-np.save('tuning_regression_res.npy',regr_res)
+# np.save('tuning_regression_res.npy',regr_res)
 
 ## plot results regression
 
@@ -318,7 +319,7 @@ df = df.rename(columns = {'slope':'gain'}, inplace = False)
 
 plt.figure(figsize=(14,4))
 ax = plt.subplot(111)
-sbs.pointplot(x='variable',y='gain',hue='brain_area',order=order,hue_order=['MST','PPC','PFC'],data=df,
+aa = sbs.pointplot(x='variable',y='gain',hue='brain_area',order=order,hue_order=['MST','PPC','PFC'],data=df,
               dodge=0.2,palette={'MST':'g','PPC':'b','PFC':'r'},linestyles='none',ax=ax)
 ax.spines['top'].set_visible(False)
 ax.spines['right'].set_visible(False)
@@ -328,7 +329,7 @@ plt.xticks(rotation=90)
 plt.tight_layout()
 
 # ax.set_xlim(xlim)
-plt.savefig('gain_tuning_density.png')
+# plt.savefig('gain_tuning_density.png')
 
 df = pd.DataFrame(regr_res)
 df = df[df['fdr_pval'] < 0.005]
@@ -345,4 +346,4 @@ plt.xticks(rotation=90)
 plt.tight_layout()
 
 # ax.set_xlim(xlim)
-plt.savefig('intercept_tuning_density.png')
+# plt.savefig('intercept_tuning_density.png')
