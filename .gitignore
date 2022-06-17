@@ -1,6 +1,9 @@
+JP/
+Ipshita/
 preprocessing_pipeline/*
 fitting/*
 analyzing/*
+.idea
 analyzing/de*
 .idea/*
 *.zip
