@@ -451,6 +451,10 @@ def basisAndPenalty(x, knots,xmin=None,xmax=None, penalty_type='EqSpaced', der=1
                     prercomp_SandB=None):
     if penalty_type == 'EqSpaced':
         return basisAndPenalty_EqSpaced(x, knots, is_cyclic=None, ord=ord,sparseX=sparseX,split_range=None)
+    
+    elif penalty_type == 'diff':
+        return basisAndPenalty_diff(x, knots, is_cyclic=is_cyclic,outer_ok=True, order=ord,sparseX=sparseX,split_range=None)
+    
     elif penalty_type=='der':
         return basisAndPenalty_deriv(x,knots, xmin, xmax, n_points, ord=ord, der=der, outer_ok=True,is_cyclic=is_cyclic,sparseX=sparseX,
                                      measure=measure)
@@ -654,7 +658,7 @@ def basisAndPenalty_Adaptive(x, knots, xmin, xmax, n_points,ord_AD=3, ad_smooth_
 
     return X, B_list, S_list, basis_dim
 
-def basisAndPenalty_diff(x, knots, is_cyclic=None, ord=4,sparseX=True,split_range=None):
+def basisAndPenalty_diff(x, knots, is_cyclic=None, order=4,outer_ok=True,sparseX=True,split_range=None):
     """
     Description
     ===========
@@ -670,19 +674,20 @@ def basisAndPenalty_diff(x, knots, is_cyclic=None, ord=4,sparseX=True,split_rang
     if is_cyclic is None:
         is_cyclic = np.zeros(dim_spline, dtype=bool)
 
+
     Xs = []
     Bs = []
     Ms = []
     basis_dim = []
     for k in range(dim_spline):
-        B,M = non_eqSpaced_diff_pen(knots, order, outer_ok=True, cyclic=is_cyclic[k])
+        M,B = non_eqSpaced_diff_pen(knots[k], order, outer_ok=outer_ok, cyclic=is_cyclic[k])
         if is_cyclic[k]:
-            Xs += [cSplineDes(knots[k], x[k], ord=ord, der=0)]
+            Xs += [cSplineDes(knots[k], x[k], ord=order, der=0)]
             # Xs[k] will be of shape (n samples x spline dimension)
 
         else:
             # this will raise valueError if x is not contained in the knots
-            Xs += [splineDesign(knots[k], x[k], ord=ord, der=0, outer_ok=True)]
+            Xs += [splineDesign(knots[k], x[k], ord=order, der=0, outer_ok=True)]
             
         
         Bs += [B]

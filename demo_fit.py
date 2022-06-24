@@ -142,9 +142,10 @@ sm_handler = smooths_handler()
 
 kern_dir = -1 # post event causality
 int_knots = -np.linspace(0., 15, int_knots_num)[::-1] # internal knots
+int_knots = np.hstack((int_knots[:3], int_knots[5:]))
 knots = np.hstack(([int_knots[0]]*3,int_knots,[int_knots[-1]]*3))
-sm_handler.add_smooth('temporal', [events], ord=order, knots=[knots],
-                      penalty_type='der', der=2, kernel_length=165,
+sm_handler.add_smooth('temporal', [events], ord=2, knots=[knots],
+                      penalty_type='diff', der=2, kernel_length=165,
                       kernel_direction=kern_dir,trial_idx=np.ones(time_points),
                       is_temporal_kernel=True, time_bin=0.006,
                       event_input=True,lam=10)
