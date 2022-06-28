@@ -11,7 +11,7 @@ print (inspect.getfile(inspect.currentframe()))
 # sys.path.append('/Users/edoardo/Work/Code/GAM_code/GAM_library')
 # sys.path.append('/Users/edoardo/Work/Code/GAM_code/firefly_utils')
 # sys.path.append('/Users/edoardo/Work/Code/GAM_code/preprocessing_pipeline/util_preproc/')
-
+from scipy.io import savemat
 if os.path.exists('/Users/edoardo/Work/Code/GAM_code/GAM_library'):
     sys.path.append('/Users/edoardo/Work/Code/GAM_code/GAM_library')
     sys.path.append('/Users/edoardo/Work/Code/GAM_code/firefly_utils')
@@ -68,8 +68,8 @@ if not cluster:
     npz_path = '/Volumes/WD_Edo/firefly_analysis/LFP_band/concatenation_with_accel/'
 
 else:
-    path_to_gam = '/scratch/jpn5/mutual_info/'
-    npz_path = '/scratch/jpn5/dataset_firefly/'
+    path_to_gam = '/scratch/jpn5/GAM_fit_with_acc/'
+    npz_path = ' /scratch/jpn5/dataset_firefly/'
 
 monkey_dict = {'m44':'Quigley','m53':'Schro','m91':'Ody','m51':'Bruno',
                    'm72':'Marco'}
@@ -90,7 +90,8 @@ dict_type = {'names':
               'manipulation type','manipulation value',
               'is significant','p-value',
               'coupling strength','instantaneous coupling strength',
-              'filter duration (ms)','area under filter','filter dur [ms]','log |cov|','pseudo-r2'),
+              'filter duration (ms)','area under filter','filter dur [ms]','log |cov|','pseudo-r2',
+              'coupling_filter'),
              'formats':
                  ('U20','U20',
                   'U20','U20',
@@ -100,7 +101,7 @@ dict_type = {'names':
                   int,int,
                   'U30',float,bool,float,
                   float,float,
-                  float,float,float,float,float)
+                  float,float,float,float,float,object)
              }
 
 
@@ -265,6 +266,7 @@ for name in os.listdir(os.path.join(path_to_gam,'gam_%s'%session)):
         info_neu['coupling strength'][cc] = np.linalg.norm(fX)
         info_neu['instantaneous coupling strength'][cc] = fX[0]
         info_neu['filter duration (ms)'][cc] = fX.shape[0]*6
+        info_neu['coupling_filter'][cc] = fX
 
 
         cc += 1
@@ -274,5 +276,5 @@ for name in os.listdir(os.path.join(path_to_gam,'gam_%s'%session)):
 
 
 np.save('coupling_info_%s.npy'%session,info_coupling)
-            
+savemat('coupling_info_%s.mat'%session,mdict={'info_coupling':info_coupling})
         

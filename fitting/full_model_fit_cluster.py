@@ -9,8 +9,8 @@ import os,inspect,sys,re
 print (inspect.getfile(inspect.currentframe()))
 thisPath = os.path.dirname(inspect.getfile(inspect.currentframe()))
 
-if os.path.exists('/scratch/jpn5/GAM_Repo/GAM_library/'):
-    sys.path.append('/scratch/jpn5/GAM_Repo/GAM_library/')
+if os.path.exists('/scratch/eb162/GAM_Repo/GAM_library/'):
+    sys.path.append('/scratch/eb162/GAM_Repo/GAM_library/')
     sys.path.append('/scratch/jpn5/GAM_Repo/preprocessing_pipeline/util_preproc')
     sys.path.append('/scratch/jpn5/GAM_Repo/firefly_utils/')
 else:

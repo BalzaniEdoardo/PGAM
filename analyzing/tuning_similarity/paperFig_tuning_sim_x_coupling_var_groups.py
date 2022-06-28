@@ -5,7 +5,7 @@ import matplotlib.pylab as plt
 import dill,sys,os
 sys.path.append('/Users/edoardo/Work/Code/Angelaki-Savin/GAM_library')
 from seaborn import *
-from GAM_library import *
+#from GAM_library import *
 from scipy.integrate import simps
 from spectral_clustering import *
 from basis_set_param_per_session import *
@@ -14,6 +14,7 @@ from scipy.cluster.hierarchy import linkage,dendrogram
 import scipy.stats as sts
 import statsmodels.api as sm
 from copy import  deepcopy
+from scipy.io import savemat
 import matplotlib
 matplotlib.rcParams['pdf.fonttype'] = 42
 matplotlib.rcParams['ps.fonttype'] = 42
@@ -204,6 +205,10 @@ for k in range(4):
 plt.tight_layout(rect=[0, 0.03, 1, 0.95])
 
 plt.savefig('ratio_paper_tuning_sim_cp.pdf')
+mdict = {'edge_mst':edge_mst,'height_mst':height_mst,
+         'edge_ppc':edge_ppc,'height_ppc':height_ppc,
+         'edge_pfc':edge_pfc,'height_pfc':height_pfc}
+savemat('/Users/edoardo/Dropbox/NoelBalzani_breifComm/Noise correlations as a function of tunning/coup_prob_vs_tun_sim.mat',mdict=mdict)
 # if filter_area == 'all':
 #     plt.savefig('monk_%s_coupling_prob_grouped.pdf'%monkey)
 #

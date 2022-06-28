@@ -142,6 +142,30 @@ def smoothPen_sqrt(M):
     Bx = Bx.T
     return Bx
 
+def non_eqSpaced_diff_pen(knots,order,outer_ok=False, cyclic=False):
+    assert(all(knots[:order] == knots[0]))
+    assert(all(knots[-order:] == knots[-1]))
+    if order == 1:
+        int_knots = knots
+    else:
+        int_knots = knots[order-1: -(order-1)]
+    
+    if not cyclic:
+        Ak =  splineDesign(knots, int_knots, ord=order, der=0, outer_ok=False)
+        Amid = splineDesign(knots, int_knots[:-2] + int_knots[2:] - int_knots[1:-1], ord=order, der=0, outer_ok=False)
+    else:
+        Ak =  cSplineDes(knots, int_knots, ord=order, der=0)
+        Amid = cSplineDes(knots, int_knots[:-2] + int_knots[2:] - int_knots[1:-1], ord=order, der=0)
+   
+    
+    B = np.zeros((Ak.shape[0]-2,Ak.shape[1]))
+    
+    for i in range(Ak.shape[1]):
+        B[:,i] = (Ak[:-2, i] - Ak[1:-1, i] - Amid[:, i] + Ak[2:, i])
+    
+    M = sparse.csr_matrix(np.dot(B.T,B))
+    return M,B
+
 
 def smPenalty_1D_derBased(knots, xmin, xmax, n_points, ord=4, der=1, outer_ok=False, cyclic=False,
                               measure=None):
@@ -427,6 +451,10 @@ def basisAndPenalty(x, knots,xmin=None,xmax=None, penalty_type='EqSpaced', der=1
                     prercomp_SandB=None):
     if penalty_type == 'EqSpaced':
         return basisAndPenalty_EqSpaced(x, knots, is_cyclic=None, ord=ord,sparseX=sparseX,split_range=None)
+    
+    elif penalty_type == 'diff':
+        return basisAndPenalty_diff(x, knots, is_cyclic=is_cyclic,outer_ok=True, order=ord,sparseX=sparseX,split_range=None)
+    
     elif penalty_type=='der':
         return basisAndPenalty_deriv(x,knots, xmin, xmax, n_points, ord=ord, der=der, outer_ok=True,is_cyclic=is_cyclic,sparseX=sparseX,
                                      measure=measure)
@@ -630,6 +658,49 @@ def basisAndPenalty_Adaptive(x, knots, xmin, xmax, n_points,ord_AD=3, ad_smooth_
 
     return X, B_list, S_list, basis_dim
 
+def basisAndPenalty_diff(x, knots, is_cyclic=None, order=4,outer_ok=True,sparseX=True,split_range=None):
+    """
+    Description
+    ===========
+    This function compute the spline design matrix and the penalty matrix of an arbitrary dimensional spline.
+    High dimensional splines will result in huge design matrix (see the row wise kron product).
+
+    penaltyType = 'Equispaced'
+
+
+    """
+    dim_spline = len(x)
+    assert(split_range is None)
+    if is_cyclic is None:
+        is_cyclic = np.zeros(dim_spline, dtype=bool)
+
+
+    Xs = []
+    Bs = []
+    Ms = []
+    basis_dim = []
+    for k in range(dim_spline):
+        M,B = non_eqSpaced_diff_pen(knots[k], order, outer_ok=outer_ok, cyclic=is_cyclic[k])
+        if is_cyclic[k]:
+            Xs += [cSplineDes(knots[k], x[k], ord=order, der=0)]
+            # Xs[k] will be of shape (n samples x spline dimension)
+
+        else:
+            # this will raise valueError if x is not contained in the knots
+            Xs += [splineDesign(knots[k], x[k], ord=order, der=0, outer_ok=True)]
+            
+        
+        Bs += [B]
+        Ms += [M]
+        basis_dim += [Xs[k].shape[1]]
+
+    B_list = Bs
+    S_list = smPenalty_ND_spline(*Ms)
+
+
+    X = multiRowWiseKron(*Xs,sparseX=sparseX)
+
+    return X, B_list,S_list, basis_dim
 
 def basisAndPenalty_EqSpaced(x, knots, is_cyclic=None, ord=4,sparseX=True,split_range=None):
     """

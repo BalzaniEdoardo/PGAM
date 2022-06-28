@@ -549,7 +549,7 @@ class load_trial_types(object):
         if 'density' in list(ttype.dtype.names):
             self.set_trial_type_density(ttype,trials_behv,skip_not_ok=skip_not_ok)
         if 'reward' in list(ttype.dtype.names):
-            self.set_trial_type_reward(ttype)
+            self.set_trial_type_reward(ttype, trials_behv,skip_not_ok=skip_not_ok)
         if 'ptb' in list(ttype.dtype.names):
             self.set_trial_type_ptb(ttype)
         if 'landmark' in list(ttype.dtype.names):
@@ -673,23 +673,31 @@ class load_trial_types(object):
         ok_trials = self.trial_type['all']
         self.trial_type['landmark'][~ok_trials] = -1
 
-    def set_trial_type_reward(self,ttype):
+    def set_trial_type_reward(self,ttype, trials_behv,skip_not_ok=True):
         struc_array = ttype['reward'].all()
         # set unclassified trials as -1
-        self.trial_type['reward'] = -1
-        for k in range(struc_array.shape[1]):
-            descr = struc_array[0,k]['val'][0]
-            if 'unrewarded' in descr:
-                flag = 0
-            elif 'rewarded' in descr:
-                flag = 1
-            else:
-                raise ValueError('description must be: rewarded or unrewarded')
+        self.trial_type['reward'] = 0
+        tmp = np.zeros(self.trial_type.shape[0])
 
-            trialIndx = np.array(struc_array[0, k]['trlindx'].flatten(),dtype=bool)
-            self.trial_type['reward'][trialIndx] = flag
+        for k in range(self.trial_type.shape[0]):
+            tmp[k] = float(np.squeeze(trials_behv['logical'][k]['reward'][0][0]))
+
+        # for k in range(struc_array.shape[1]):
+        #     descr = struc_array[0,k]['val'][0]
+        #     if 'unrewarded' in descr:
+        #         flag = 0
+        #     elif 'rewarded' in descr:
+        #         flag = 1
+        #     else:
+        #         raise ValueError('description must be: rewarded or unrewarded')
+        #
+        #     trialIndx = np.array(struc_array[0, k]['trlindx'].flatten(),dtype=bool)
+        #     self.trial_type['reward'][trialIndx] = flag
+
+        self.trial_type['reward'] = tmp
         ok_trials = self.trial_type['all']
-        self.trial_type['reward'][~ok_trials] = -1
+        if skip_not_ok:
+            self.trial_type['reward'][~ok_trials] = -1
 
     def set_trial_type_replay(self,ttype):
         struc_array = ttype['replay'].all()
