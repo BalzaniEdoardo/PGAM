@@ -1105,8 +1105,8 @@ class general_additive_model(object):
                 new_smooth = []
                 for var in sub_list:
                     sm_handler = self.sm_handler
-                    if sm_handler[var].penalty_type == 'der':
-                        sm_handler[var].penalty_type = 'adaptive'
+                    # if sm_handler[var].penalty_type == 'der':
+                    #     sm_handler[var].penalty_type = 'adaptive'
                     if sm_handler[var].is_temporal_kernel:
                         xx = np.array([sm_handler[var].time_pt_for_kernel])
                         sm_handler[var].basis_kernel, sm_handler[var].B_list, sm_handler[var].S_list, sm_handler[var].basis_dim = \
