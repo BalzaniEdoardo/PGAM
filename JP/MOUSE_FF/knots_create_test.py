@@ -181,8 +181,7 @@ if __name__ == '__main__':
     import statsmodels.api as sm
     from der_wrt_smoothing import deriv3_link, d2variance_family
 
-    neu_num = 0
-    dat = loadmat('/Users/edoardo/Work/Code/GAM_code/JP/MOUSE_FF/data/ON_VL_CI058_20211208.mat')
+    dat = loadmat('/Users/edoardo/Work/Code/GAM_code/JP/MOUSE_FF/data/ON_VISp_CI033_20210421.mat')
     # create the cov info dictionary
     knots_info = np.load('knots_for_bspline.npy',allow_pickle=True).all()
     cov_info = {
@@ -395,7 +394,7 @@ if __name__ == '__main__':
                 'initial_penalty': 10,
                 'is_temporal_kernel': True,
                 'is_categorical': False,
-                'kernel_direction': -1,
+                'kernel_direction': 1,
                 'penalty_type': 'der',
                 'der_order': 2,
                 'zscore' :False,
@@ -404,9 +403,9 @@ if __name__ == '__main__':
                 },
         }
 
-    neu_num = 0
+    neu_num = 13
 
-    counts = np.squeeze(dat['N'][0,:])
+    counts = np.squeeze(dat['N'][neu_num,:])
     F_var_list = ['rad target', 'ymp', 'ymv', 'yma', 'yfp', 'yfv', 'pd',
                'eyeH', 'eyeV', 'FFon', 'FFoff', 'moveOn', 'MoveOff', 'reward',
                'theta', 'alpha', 'beta']
@@ -416,6 +415,7 @@ if __name__ == '__main__':
             neu_list.append(var[0])
     neu_name = neu_list[neu_num]
     neu_list.remove(neu_name)
+    neu_list = []
     var_list = F_var_list + neu_list + ['spike_hist']
     
     orig_var_list = []
@@ -449,7 +449,7 @@ if __name__ == '__main__':
     sm_handler = smooths_handler()
     for var in var_list:
         var_dict = input_dict[var]
-        #print(var, var_dict['knots'])
+        print(var, var_dict['knots'])
         sm_handler.add_smooth(var, var_dict['x'], ord=var_dict['order'], knots=var_dict['knots'],
                           penalty_type=var_dict['penalty_type'], der=var_dict['der'], 
                           kernel_length=var_dict['kernel_len'],
@@ -470,7 +470,7 @@ if __name__ == '__main__':
     for tr in choose_trials:
         filter_trials[trial_idx==tr] = True
     
-    
+    filter_trials =  np.ones(trial_idx.shape[0], dtype=bool)
     gam_model = general_additive_model(sm_handler,sm_handler.smooths_var,counts,poissFam,fisher_scoring=False)
     
     full_fit, reduced_fit = gam_model.fit_full_and_reduced(sm_handler.smooths_var,th_pval=0.001,
