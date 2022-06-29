@@ -405,13 +405,13 @@ def mle_gradient_bassed_optim(rho,sm_handler, var_list,y,X,family,phi_est = 1, m
             beta0 = np.random.normal(0, 0.1, X.shape[1])
             while np.linalg.norm(grad_func(beta0)) > 10**8 or np.isnan(np.linalg.norm(grad_func(beta0))):
                 beta0 = 0.1*beta0
-            tmp = minimize(func, beta0, method=method, jac=grad_func, hess=hess_func, tol=tol, options={'disp':True})
+            tmp = minimize(func, beta0, method=method, jac=grad_func, hess=hess_func, tol=tol, options={'disp':False})
             if tmp.fun < curr_min:
                 res = tmp
                 curr_min = tmp.fun
                 beta_zero = beta0.copy()
     else:
-        res = minimize(func, beta_zero, method=method, jac=grad_func, hess=hess_func, tol=tol, options={'disp':True})
+        res = minimize(func, beta_zero, method=method, jac=grad_func, hess=hess_func, tol=tol, options={'disp':False})
 
     return res.x,res,beta_zero
 

@@ -849,7 +849,7 @@ class general_additive_model(object):
                     print('NaN here')
 
                 res = minimize(gcv_func,rho0,method=method,jac=gcv_grad,hess=gcv_hess,tol=gcv_sel_tol,bounds=bounds_rho,
-                               options={'disp':True})
+                               options={'disp':False})
                 res.x = np.clip(res.x,-25,30)
 
                 if res.success or ((init_score - res.fun) < init_score*np.finfo(float).eps):
