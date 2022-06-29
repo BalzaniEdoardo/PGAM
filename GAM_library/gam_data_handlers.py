@@ -1094,7 +1094,7 @@ class covarate_smooth(object):
         self.X, self.B_list, self.S_list, self.colMean_X, self.basis_dim,self.basis_kernel = self.eval_basis_and_penalty()
 
     def compute_Bx(self):
-        if self.dim == 1 and (self.penalty_type=='EqSpaced' or self.der <= 1):
+        if self.dim == 1 and (self.penalty_type in ['EqSpaced','diff'] or self.der <= 1):
             Bx = np.sqrt(self.lam[0]) * self.B_list[0]
 
         else:
