@@ -261,6 +261,27 @@ def rowWiseKron(A, C):
                 R[i,:] = kron_cython.kron_cython(rowA,rowC)
     return R
 
+def rowWiseKron_fullPython(a,b):
+    i = a.shape[0]
+    j = a.shape[1]
+    l = b.shape[1]
+
+    
+    result = np.zeros((i, j*l), dtype=float)
+    a_reshape = np.zeros((1, j), dtype=np.double)
+    b_reshape = np.zeros((1, l), dtype=np.double)
+    
+    
+    for m in range(i):
+        for p in range(j):
+            a_reshape[0,p] = a[m,p]
+        for q in range(l):
+            b_reshape[0,q] = b[m,q]
+        result[m,:]  = np.kron(a_reshape,b_reshape)
+        
+        
+    return result
+
 
 def multiRowWiseKron(*M,sparseX=True):
     KP = M[0]
@@ -279,7 +300,10 @@ def multiRowWiseKron(*M,sparseX=True):
         if type(X) != np.ndarray:
             X = X.toarray()
         X = np.array(X, dtype=np.double, order='C')
-        KP = kron_cython.rowwise_kron_cython(KP, X)
+        if use_fast_kron:
+            KP = kron_cython.rowwise_kron_cython(KP, X)
+        else:
+            KP = rowWiseKron_fullPython(KP,X)
 
     if sparseX:
         return sparse.csr_matrix(KP, dtype=np.float64)
