@@ -15,8 +15,9 @@ Akis/*
 *.png
 __pycache__
 .Rhistory
-.DS*
+.DS_*
 *.npy
 *.npz
 *_old.*
-
+firefly_utils/*
+TMP/*
