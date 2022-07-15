@@ -115,6 +115,13 @@ def load_eye_pos(trials_behv,use_eye=None):
 class emptyStruct(object):
     def __init__(self):
         return
+    def __repr__(self):
+        strprint = 'emptyStruct with attr: \n' 
+        for key in self.__dict__.keys():
+            strprint += '%s:\t%s\n'%(key,self.__dict__[key])
+        return strprint
+            
+                                    
 
 class behavior_experiment(object):
     """
@@ -145,6 +152,9 @@ class behavior_experiment(object):
 
         self.events = emptyStruct()
         self.continuous = emptyStruct()
+        
+        self.prs = np.zeros(len(trials_behv), dtype=object)
+        self.add_prs(trials_behv)
 
         self.n_trials = trials_behv.shape[0]
         self.trbeh = trials_behv
@@ -202,7 +212,10 @@ class behavior_experiment(object):
             self.events.t_ptb = create_dict_beahv(trials_behv, 'events', 't_ptb')
         except:
             print('no t_ptb')
-        
+        try:
+            self.events.t_ptbn = create_dict_beahv(trials_behv, 'events', 't_ptbn')
+        except:
+            print('no normalized t_ptb (t_ptbn)')
         # time of movement start
         self.events.t_move = create_dict_beahv(trials_behv, 'events', 't_move')
 
@@ -306,7 +319,15 @@ class behavior_experiment(object):
             self.continuous.x_fly_screen, self.continuous.z_fly_screen = fly_screen_x, fly_screen_z
 
 
-
+    def add_prs(self, trials_behv):
+        prs = trials_behv['prs']
+        for k in range(len(prs)):
+            self.prs[k] = emptyStruct()
+            for name in prs[k].dtype.names:
+                 setattr(self.prs[k], name, prs[k][name][0][0][0,0])
+                
+            
+        
     def get_fly_pos(self,trials_behv):
         """
         indx_beg = find(continuous(i).ts > events(i).t_targ, 1); % sample number of target onset time
