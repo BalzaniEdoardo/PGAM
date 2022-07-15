@@ -20,4 +20,5 @@ __pycache__
 *.npz
 *_old.*
 firefly_utils/*
-TMP/*
+TMP/
+plotting
