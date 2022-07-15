@@ -22,8 +22,6 @@ try:
 except:
     pass
 from opt_einsum import contract
-import matplotlib.pylab as plt
-# from GAM_library import GAM_result,general_additive_model
 
 
 
@@ -174,31 +172,7 @@ def create_Slam(rho, sm_handler, var_list):
     Slam = np.einsum('i,ikl->kl',np.exp(rho),S_tens)
     return Slam
 
-# def compute_Sjs(sm_handler,var_list):
-#
-#     S_all = []
-#     tot_dim = 1
-#     ii = 0
-#     if len(var_list)> 1:
-#         ii = 1
-#     for var in var_list:
-#         tot_dim += sm_handler[var].X.shape[1] - ii
-#
-#     cc = 1
-#     for var in var_list:
-#         dim = sm_handler[var].dim
-#
-#         for k in range(dim):
-#
-#             S = np.zeros((tot_dim,tot_dim))
-#             Sk = sm_handler[var].S_list[k]
-#             shapeS = Sk.shape[0]
-#             Sk = Sk[:shapeS-ii,:shapeS-ii]
-#             S[cc: cc+Sk.shape[0], cc:cc+Sk.shape[0]] = Sk
-#         S_all += [S]
-#         cc += Sk.shape[0]
-#
-#     return S_all
+
 
 def compute_Sall(sm_handler, var_list):
     Sall = []

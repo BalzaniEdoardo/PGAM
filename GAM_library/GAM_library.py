@@ -63,9 +63,10 @@ def wSumChisq_cdf(x,df,w):
 
 
 def alignRateForMI(y,lam_s, var, sm_handler, smooth_info, time_bin, filter_trials, trial_idx):
-
+    """
+    Slow aligment method.
+    """
     reward = np.squeeze(sm_handler[var]._x)[filter_trials]
-
     # temp kernel where 161 timepoints long
     size_kern = smooth_info[var]['time_pt_for_kernel'].shape[0]
     if size_kern % 2 == 0:
@@ -89,18 +90,17 @@ def alignRateForMI(y,lam_s, var, sm_handler, smooth_info, time_bin, filter_trial
         lam_s_tr = lam_s[select]
         y_tr = y[select]
         for ii in np.where(rwd_tr==1)[0]:
-            # tr = trial_idx[ii_big]
             i0 = max(0, ii-half_size)
             i1 = min(len(rwd_tr), ii+half_size+1)
             d0 = ii - i0
             d1 = i1 - ii
             tmpmu = lam_s_tr[i0:i1]
             tmpy = y_tr[i0:i1]
-            iidx = np.round(nbin//2 + (-d0 + np.arange(0,d1+d0))*time_bin / (temp_bins[1]-temp_bins[0]))
+            iidx = np.array(np.round(nbin//2 + (-d0 + np.arange(0,d1+d0))*time_bin / (temp_bins[1]-temp_bins[0])),dtype=int)
             for cc in np.unique(iidx):
-                tuning[int(cc)] = tuning[int(cc)] + tmpmu[iidx == cc].sum()
-                count_bins[int(cc)] = count_bins[int(cc)] + (iidx == cc).sum()
-                sc_based_tuning[int(cc)] = sc_based_tuning[int(cc)] + tmpy[iidx==cc].sum()
+                tuning[cc] = tuning[cc] + tmpmu[iidx == cc].sum()
+                count_bins[cc] = count_bins[cc] + (iidx == cc).sum()
+                sc_based_tuning[cc] = sc_based_tuning[cc] + tmpy[iidx==cc].sum()
 
 
     tuning = tuning / count_bins
@@ -108,10 +108,7 @@ def alignRateForMI(y,lam_s, var, sm_handler, smooth_info, time_bin, filter_trial
 
     entropy_s = np.zeros(temp_bins.shape[0])*np.nan
     for cc in range(tuning.shape[0]):
-        try:
-            entropy_s[cc] = sts.poisson.entropy(tuning[cc])
-        except:
-            xxxx = 1
+        entropy_s[cc] = sts.poisson.entropy(tuning[cc])
 
     if (var.startswith('neu')) or var == 'spike_hist':
         sel = temp_bins > 0
@@ -182,9 +179,6 @@ class GAM_result(object):
         FF = np.dot(F, F)
 
         self.edf1 = 2 * np.trace(F) - np.trace(FF)
-
-
-
 
         # compute cov_beta
         B = sm_handler.get_penalty_agumented(var_list)
@@ -440,7 +434,7 @@ class GAM_result(object):
         V_corr = np.array(V_corr)
         self.edf2 = np.sum(inner1d(V_corr,H.T))
         self.AIC = -2 * unpenalized_ll(self.beta,y,X,family,phi_est,omega=1)\
-                   -2 * penalty_ll(rho,self.beta,sm_handler,self.var_list,phi_est)+ 2*self.edf2
+                   -2 * penalty_ll(rho,self.beta,sm_handler,self.var_list,phi_est) + 2*self.edf2
 
     def predict(self,X_list,var_list=None,log_space=False,trial_idx=None,post_trial_dur=None,
                 pre_trial_dur=None):
@@ -456,13 +450,12 @@ class GAM_result(object):
         for X in X_list:
             nan_filter = np.array(np.sum(np.isnan(np.array(X)), axis=0), dtype=bool)
             var_name = var_list[cc]
-            # smooth = self.smooth_info[var_name]
             fX = self.eval_basis(X,var_name,sparseX=False,post_trial_dur=post_trial_dur,
                                  pre_trial_dur=pre_trial_dur,trial_idx=trial_idx,domain_fun=self.domain_fun[var_name])
             if type(fX) in [sparse.csr.csr_matrix,sparse.coo.coo_matrix
                             ]:
                 fX = fX.toarray()
-            # fX,_,_,_ = basisAndPenalty(X, smooth['knots'], is_cyclic=smooth['is_cyclic'], ord=smooth['ord'])
+
             # mean center and remove col if more than 1 smooth in the AM
             if len(self.var_list) > 0:
                 fX = fX[:, :-1] - np.mean(fX[~nan_filter, :-1], axis=0)
@@ -581,7 +574,6 @@ class GAM_result(object):
         else:
             k = int(np.floor(r))  # consider also the constant term that has been removed forcing the identifiability constraint
             nu = r - k #+ 1
-        # k = int(np.floor(r))
 
         rho = np.sqrt((1 - nu) * nu * 0.5)
         nu1 = (nu + 1 + (1 - nu ** 2) ** (0.5)) * 0.5
@@ -901,8 +893,6 @@ class general_additive_model(object):
                                  filter_trials=filter_trials,beta_hist=beta_hist)
         return gam_results
 
-
-
     def initialize_smooth_par(self,f_weights_and_data,X,S_all,random_init=False):
         # not stable
         mu = f_weights_and_data.family.starting_mu(self.y)
@@ -994,85 +984,6 @@ class general_additive_model(object):
             best_test_bool[trial_index == tr] = 1
         return best_model, best_test_bool
 
-
-
-    def optim_direct_REML(self,var_list, smooth_pen=None, max_iter=10 ** 3, tol=1e-5,minim_method = 'L-BFGS-B',compute_AIC=False,bounds_rho=None):
-
-        conv_criteria = 'deviance'
-        converged = False
-        old_conv_score = -100
-        iteration = 0
-        S_all = compute_Sjs(self.sm_handler, var_list)
-        X, index_cov = self.sm_handler.get_exog_mat(var_list)
-        y = self.y
-        family = self.family
-        f_weights_and_data = weights_and_data(self.y, self.family, fisher_scoring=False)
-        if smooth_pen is None:
-            rho0 = self.initialize_smooth_par(f_weights_and_data,X,S_all)
-        else:
-            rho0 = np.log(smooth_pen)
-
-        if minim_method == 'L-BFGS-B' and bounds_rho is None:
-            bounds_rho = [(-5*np.log(10),13*np.log(10))]*len(smooth_pen)
-        elif minim_method == 'L-BFGS-B' and type(bounds_rho) is tuple:
-            bounds_rho = [bounds_rho]*len(smooth_pen)
-        elif minim_method != 'L-BFGS-B':
-            bounds_rho = None
-
-        while not converged:
-            self.sm_handler.set_smooth_penalties(np.exp(rho0),var_list)
-            func = lambda rho: -laplace_appr_REML(rho, None, S_all, y, X, family, 1,
-                                                  self.sm_handler,var_list, compute_grad=True, fixRand=True)
-            grad = lambda rho: -grad_laplace_appr_REML(rho, None, S_all, y, X, family, 1,
-                                                       self.sm_handler,var_list, compute_grad=True, fixRand=True)
-            if minim_method == 'Newton-CG':
-                hess = lambda rho: -hess_laplace_appr_REML(rho, None, S_all, y, X, family, 1,
-                                                       self.sm_handler, var_list, compute_grad=True, fixRand=True)
-            else:
-                hess = None
-
-
-            res = minimize(func, rho0, method = minim_method, jac = grad, hess = hess, tol = tol,options={'disp': True},bounds=bounds_rho )
-
-            rho0 = res.x
-            beta_hat = mle_gradient_bassed_optim(rho0, self.sm_handler, var_list, y, X, family, phi_est=1, method='Newton-CG',
-                                         num_random_init=1)[0]
-            lin_pred = np.dot(X,beta_hat)
-
-            conv_score = self.convergence_score(None,smooth_pen, eta=lin_pred, criteria='deviance',idx_sele=np.ones(len(self.y)))
-            print('\n', iteration + 1, conv_criteria, conv_score, 'smoothing par', smooth_pen)
-
-            converged = abs(conv_score - old_conv_score) < tol * conv_score
-            old_conv_score = conv_score
-            if iteration >= max_iter:
-                break
-            iteration += 1
-
-        # save useful parameters
-        self.converged = converged
-
-        # fit the usual WLS
-        smooth_pen = np.exp(rho0)
-        n_obs = X.shape[0]
-        exog, index_var = self.sm_handler.get_exog_mat(var_list)
-        mu = f_weights_and_data.family.fitted(lin_pred)
-        z, w = f_weights_and_data.get_params(mu)
-
-        pen_matrix = self.sm_handler.get_penalty_agumented(var_list)
-        Xagu = np.vstack((exog, pen_matrix))
-        yagu = np.zeros(Xagu.shape[0])
-        yagu[:n_obs] = z
-        wagu = np.ones(Xagu.shape[0])
-        wagu[:n_obs] = w
-        model = sm.WLS(yagu, Xagu, wagu)
-        fit_OLS = model.fit()
-        # compute statistics in post processing
-        gam_results = GAM_result(model, self.family, fit_OLS, smooth_pen,
-                                       n_obs, index_cov, self.sm_handler, var_list,
-                                       self.y, compute_AIC)
-        return gam_results
-
-
     def convergence_score(self,gcv_func,smooth_pen,criteria='gcv',eta=None,idx_sele=None):
         if criteria == 'gcv':
             return self.compute_gcv_convergence(gcv_func,smooth_pen)
@@ -1087,36 +998,6 @@ class general_additive_model(object):
     def compute_deviance(self,eta,idx_sele):
         mu = self.family.link.inverse(eta)
         return self.family.deviance(self.y[idx_sele], mu)
-
-    def AIC_based_variable_selection(self,var_list,smooth_pen=None,method = 'Newton-CG',tol=1e-8,delta=1e-5,conv_criteria='deviance',
-                                     initial_smooths_guess=True,max_iter=10**3,th_pval=0.05):
-        # slow procedure, obsolete
-        full_model = self.optim_gam(var_list,smooth_pen=smooth_pen, max_iter = max_iter, tol = tol, conv_criteria = conv_criteria,
-                        perform_PQL = True, initial_smooths_guess = initial_smooths_guess, method = method,compute_AIC=True)
-
-        current_model = deepcopy(full_model)
-        print('Full Model:', var_list, 'AIC:', current_model.AIC)
-        aic_decr = True
-        while aic_decr:
-            p_vals = current_model.covariate_significance['p-val']
-            idxmax = np.argmax(p_vals)
-            worst_cov = current_model.covariate_significance['covariate'][idxmax]
-            worst_cov = str(worst_cov)
-            # remove least significant cov
-            var_list = list(deepcopy(current_model.var_list))
-            var_list.remove(worst_cov)
-            if var_list == []:
-                break
-            new_model = self.optim_gam(var_list,smooth_pen=smooth_pen,max_iter = max_iter, tol = tol, conv_criteria = conv_criteria,
-                        perform_PQL = True, initial_smooths_guess = True, method = method,compute_AIC=True)
-            print('Model Var:',var_list,'AIC:',new_model.AIC)
-            if p_vals[idxmax] > 1 - 10**(-9) or new_model.AIC < current_model.AIC:
-                aic_decr = True
-                current_model = new_model
-            else:
-                aic_decr = False
-        return full_model,current_model
-
 
     def fit_full_and_reduced(self,var_list,th_pval=0.01,method = 'L-BFGS-B',tol=1e-8,conv_criteria='deviance',
                                      max_iter=10**3,gcv_sel_tol=10**-13,random_init=False,
@@ -1179,8 +1060,7 @@ class general_additive_model(object):
                 new_smooth = []
                 for var in sub_list:
                     sm_handler = self.sm_handler
-                    # if sm_handler[var].penalty_type == 'der':
-                    #     sm_handler[var].penalty_type = 'adaptive'
+
                     if sm_handler[var].is_temporal_kernel:
                         xx = np.array([sm_handler[var].time_pt_for_kernel])
                         sm_handler[var].basis_kernel, sm_handler[var].B_list, sm_handler[var].S_list, sm_handler[var].basis_dim = \
@@ -1306,8 +1186,6 @@ if __name__ == '__main__':
     func1 = lambda x : ((x+2)**3)/10
     func2 = lambda x: 1*(x-0.5)**2
     mu = np.exp(func1(xs[0]) + func2(xs[1]) + np.log(2))
-
-
     y = np.random.poisson(lam=mu)
 
     import pandas as pd
@@ -1325,10 +1203,6 @@ if __name__ == '__main__':
                           is_cyclic=[False], lam=None,penalty_type='der',der=2)
 
     var_list = ['1d_var','1d_var2','1d_var3']
-    for var in var_list:
-        df = pd.DataFrame()
-        df['knots'] = sm_handler[var].knots[0]
-        df.to_hdf('%s_knot.h5'%var, key='knots')
 
 
     link = deriv3_link(sm.genmod.families.links.log())
@@ -1345,23 +1219,3 @@ if __name__ == '__main__':
                                   initial_smooths_guess=False,
                                   method='L-BFGS-B',
                                   gcv_sel_tol=10 ** (-13), use_dgcv=True, fit_initial_beta=True,pseudoR2_per_variable=False)
-
-    gam_res = full
-    knots = full.smooth_info['1d_var']['knots']
-    mink = knots[0][0]
-    maxk = knots[0][-1]
-    plt.figure(figsize=[10,6])
-    xx = np.linspace(mink,maxk,100)
-    fX,fX_p_ci,fX_m_ci = gam_res.smooth_compute([xx],'1d_var',perc=0.99)
-    true_y = func1(xx)
-    interc1 = np.mean(true_y - fX)
-    smooth = gam_model.sm_handler['1d_var']
-    par = gam_res.beta[gam_res.index_dict['1d_var']]
-    c1 = -np.mean(np.dot(smooth.X[:,:-1].toarray(),par))
-
-    plt.subplot(231)
-    plt.plot(xx,true_y,label='true smooths',color='k')
-    plt.plot(xx, fX+interc1,color='r',label='recovered smooth')
-    plt.fill_between(xx, fX_m_ci + interc1+interc1, fX_p_ci,alpha=0.3,color='r')
-    plt.legend()
-    plt.xticks([])
