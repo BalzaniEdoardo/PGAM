@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pylab as plt
 import sys, inspect, os
 
-path = os.path.join(os.path.dirname(inspect.getfile(inspect.currentframe())), 'GAM_library')
+path = os.path.join(os.path.dirname((os.path.dirname(inspect.getfile(inspect.currentframe())))), 'GAM_library')
 sys.path.append(path)
 print(path)
 from GAM_library import *
