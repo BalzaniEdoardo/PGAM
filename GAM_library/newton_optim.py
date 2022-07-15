@@ -259,7 +259,7 @@ def gcv_grad_comp(rho, X, Q, R, endog,sm_handler,var_list,return_par='gcv',gamma
         return alpha_grad
     elif return_par == 'delta':
         return delta_grad
-    elif return_par is 'A':
+    elif return_par == 'A':
         return A_grad
     else:
         raise ValueError('unknow output specification')
