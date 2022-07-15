@@ -27,7 +27,7 @@ from copy import deepcopy
 tryCuda = False
 try:
     if not tryCuda:
-        raise ModuleNotFoundError('User imposed not to use CUDA')
+        raise ModuleNotFoundError('Module pycuda not found! Use CPU')
     import pycuda.autoinit
     import pycuda.gpuarray as gpuarray
     import skcuda.linalg as cuda_linalg
@@ -46,6 +46,7 @@ class empty_container(object):
 from rpy2.robjects.packages import importr
 import rpy2.robjects.numpy2ri as numpy2ri
 survey = importr('survey')
+from neg_weights_WLS import robust_WLS
 
 def wSumChisq_cdf(x,df,w):
     numpy2ri.activate()
@@ -61,11 +62,83 @@ def wSumChisq_cdf(x,df,w):
     return np.clip(pval,0,1)
 
 
+def alignRateForMI(y,lam_s, var, sm_handler, smooth_info, time_bin, filter_trials, trial_idx):
+
+    reward = np.squeeze(sm_handler[var]._x)[filter_trials]
+
+    # temp kernel where 161 timepoints long
+    size_kern = smooth_info[var]['time_pt_for_kernel'].shape[0]
+    if size_kern % 2 == 0:
+        size_kern += 1
+    half_size = (size_kern - 1) // 2
+    timept = np.arange(-half_size, half_size + 1) * time_bin
+    if (var.startswith('neu')) or var == 'spike_hist':
+        nbin = timept.shape[0]
+        if nbin % 2 == 0:
+            nbin += 1
+    else:
+        nbin = 15
+    temp_bins = np.linspace(timept[0], timept[-1], nbin)
+    # sum spikes
+    tuning = np.zeros(temp_bins.shape[0])
+    count_bins = np.zeros(temp_bins.shape[0])
+    sc_based_tuning = np.zeros(temp_bins.shape[0])
+    for tr in np.unique(trial_idx):
+        select = trial_idx == tr
+        rwd_tr = reward[select]
+        lam_s_tr = lam_s[select]
+        y_tr = y[select]
+        for ii in np.where(rwd_tr==1)[0]:
+            # tr = trial_idx[ii_big]
+            i0 = max(0, ii-half_size)
+            i1 = min(len(rwd_tr), ii+half_size+1)
+            d0 = ii - i0
+            d1 = i1 - ii
+            tmpmu = lam_s_tr[i0:i1]
+            tmpy = y_tr[i0:i1]
+            iidx = np.round(nbin//2 + (-d0 + np.arange(0,d1+d0))*time_bin / (temp_bins[1]-temp_bins[0]))
+            for cc in np.unique(iidx):
+                tuning[int(cc)] = tuning[int(cc)] + tmpmu[iidx == cc].sum()
+                count_bins[int(cc)] = count_bins[int(cc)] + (iidx == cc).sum()
+                sc_based_tuning[int(cc)] = sc_based_tuning[int(cc)] + tmpy[iidx==cc].sum()
+
+
+    tuning = tuning / count_bins
+    sc_based_tuning = sc_based_tuning / count_bins
+
+    entropy_s = np.zeros(temp_bins.shape[0])*np.nan
+    for cc in range(tuning.shape[0]):
+        try:
+            entropy_s[cc] = sts.poisson.entropy(tuning[cc])
+        except:
+            xxxx = 1
+
+    if (var.startswith('neu')) or var == 'spike_hist':
+        sel = temp_bins > 0
+        temp_bins = temp_bins[sel]
+        count_bins = count_bins[sel]
+        tuning = tuning[sel]
+        sc_based_tuning = sc_based_tuning[sel]
+        entropy_s = entropy_s[sel]
+    prob_s = count_bins / count_bins.sum()
+    mean_lam = np.sum(prob_s * tuning)
+
+    try:
+        mi = (sts.poisson.entropy(mean_lam) - (prob_s * entropy_s).sum()) * np.log2(np.exp(1)) / time_bin
+    except:
+        mi = np.nan
+
+    tmp_val = empty_container()
+    tmp_val.x = temp_bins
+    tmp_val.y_raw = sc_based_tuning / time_bin
+    tmp_val.y_model = tuning / time_bin
+
+    return mi, tmp_val
 
 class GAM_result(object):
     def __init__(self,model,family,fit_OLS,smooth_pen,n_obs,index_var,sm_handler,var_list,y, compute_AIC=True,
                  filtwidth=10,trial_idx=None,pre_trial_dur=0.2,post_trial_dur=0.2,time_bin=0.006,compute_mutual_info=False,
-                 filter_trials=None):
+                 filter_trials=None,beta_hist=None):
         # save the model results
         self.var_list = var_list
         self.smooth_pen = smooth_pen
@@ -73,6 +146,12 @@ class GAM_result(object):
         self.pre_trial_dur = pre_trial_dur
         self.post_trial_dur = post_trial_dur
         self.time_bin = time_bin
+        self.domain_fun = {}
+        for var in sm_handler.smooths_var:
+            self.domain_fun[var] = sm_handler[var].domain_fun
+
+        if not beta_hist is None:
+            self.beta_hist = beta_hist
 
         # self.gam_fit = fit_OLS # has all the data inside !! no good
         self.beta = fit_OLS.params
@@ -197,55 +276,22 @@ class GAM_result(object):
             sigm2_s = sigm2_s
 
             for var in self.var_list:
-                if var.startswith('neu') or var == 'spike_hist':
-                    continue
+
                 if self.smooth_info[var]['is_temporal_kernel'] and self.smooth_info[var]['is_event_input']:
-
-
-                    reward = np.squeeze(sm_handler[var]._x)[filter_trials]
-                    # set everything to -1
-                    time_kernel = np.ones(reward.shape[0]) * np.inf
-                    rew_idx = np.where(reward == 1)[0]
-
-                    # temp kernel where 161 timepoints long
-                    size_kern = self.smooth_info[var]['time_pt_for_kernel'].shape[0]
-                    if size_kern %2 == 0:
-                        size_kern += 1
-                    half_size = (size_kern - 1) // 2
-                    timept = np.arange(-half_size,half_size+1) * self.time_bin
-
-                    temp_bins = np.linspace(timept[0], timept[-1], 15)
-                    dt = temp_bins[1] - temp_bins[0]
-
-                    tuning = np.zeros(temp_bins.shape[0])
-                    var_tuning = np.zeros(temp_bins.shape[0])
-                    sc_based_tuning = np.zeros(temp_bins.shape[0])
-                    entropy_s = np.zeros(temp_bins.shape[0])
-                    tot_s_vec = np.zeros(temp_bins.shape[0])
-                    x_axis = deepcopy(temp_bins)
-
-                    for ind in rew_idx:
-                        if (ind < half_size) or (ind >= time_kernel.shape[0] - half_size):
-                            continue
-                        time_kernel[ind - half_size:ind + half_size+1] = timept
-
-                    cc = 0
-                    for t0 in temp_bins:
-                        idx = (time_kernel >= t0) * (time_kernel < t0 + dt)
-                        tuning[cc] = np.mean(lam_s[idx])
-                        var_tuning[cc] = np.nanpercentile(sigm2_s[idx], 90)
-                        sc_based_tuning[cc] = y[idx].mean()
-                        tot_s_vec[cc] = np.sum(idx)
-                        entropy_s[cc] = sts.poisson.entropy(tuning[cc])
-                        cc += 1
+                    mi,tv = alignRateForMI(y, lam_s, var, sm_handler, self.smooth_info, self.time_bin, filter_trials,self.trial_idx)
                 else:
                     # this gives error for 2d variable
                     vels = np.squeeze(sm_handler[var]._x)[filter_trials]
                     if len(vels.shape) > 1:
                         print('Mutual info not implemented for multidim variable')
                         continue
-                    knots = self.smooth_info[var]['knots'][0]
-                    vel_bins = np.linspace(knots[0], knots[-2], 16)
+                    if not self.smooth_info[var]['is_temporal_kernel']:
+                        knots = self.smooth_info[var]['knots'][0]
+                        vel_bins = np.linspace(knots[0], knots[-2], 16)
+                    else:
+                        lb = np.nanpercentile(vels,2)
+                        ub = np.nanpercentile(vels, 98)
+                        vel_bins = np.linspace(lb, ub, 16)
                     dv = vel_bins[1] - vel_bins[0]
 
                     tuning = np.zeros(vel_bins.shape[0]-1)
@@ -266,6 +312,7 @@ class GAM_result(object):
 
                         sc_based_tuning[cc] = y[idx].mean()
                         tot_s_vec[cc] = np.sum(idx)
+                        # print(var, tuning)
                         try:
                             if tuning[cc] > 10 ** 4:
                                 break
@@ -274,28 +321,26 @@ class GAM_result(object):
                             pass
                         cc += 1
 
-                if any(tuning > 10 ** 4):
+                    prob_s = tot_s_vec / tot_s_vec.sum()
+                    mean_lam = np.sum(prob_s * tuning)
+                    # set attributes for plotting rate
+                    tv = empty_container()
+                    tv.x = x_axis
+                    tv.y_raw = sc_based_tuning / self.time_bin
+                    tv.y_model = tuning / self.time_bin
+                    tv.y_var_model = var_tuning / (self.time_bin ** 2)
+                    try:
+                        mi = (sts.poisson.entropy(mean_lam) - (prob_s * entropy_s).sum()) * np.log2(
+                            np.exp(1)) / self.time_bin
+                    except:
+                        mi = np.nan
+
+                if any(tv.y_model > 10 ** 4):
                     self.mutual_info[var] = np.nan
                     print('\n\nDISCARD NEURON \n\n')
                 else:
-
-                    prob_s = tot_s_vec / tot_s_vec.sum()
-                    mean_lam = np.sum(prob_s * tuning)
-                    # mean_lam_shuffle = np.sum((prob_s*tuning_shuffled.T).T,axis=0)
-                    try:
-                        self.mutual_info[var] = (sts.poisson.entropy(mean_lam) - (prob_s * entropy_s).sum())*np.log2(np.exp(1))/self.time_bin
-
-                        # set attributes for plotting rate
-                        tmp_val = empty_container()
-                        tmp_val.x = x_axis
-                        tmp_val.y_raw = sc_based_tuning / self.time_bin
-                        tmp_val.y_model = tuning / self.time_bin
-                        tmp_val.y_var_model = var_tuning / (self.time_bin ** 2)
-
-                        setattr(self.tuning_Hz, var, tmp_val)
-                    except:
-                        self.mutual_info[var] = np.nan
-
+                    self.mutual_info[var] = mi
+                    setattr(self.tuning_Hz, var, tv)
 
     def get_smooths_info(self,sm_handler):
         self.smooth_info = {}
@@ -317,7 +362,7 @@ class GAM_result(object):
 
 
     def eval_basis(self,X,var_name,sparseX=True,trial_idx=-1,pre_trial_dur=None,
-                   post_trial_dur=None):
+                   post_trial_dur=None,domain_fun=lambda x:np.ones(x,dtype=bool)):
 
         """
         Description: for temporal kernel, if None is passed, then use the ild version
@@ -348,7 +393,7 @@ class GAM_result(object):
 
         if not is_temporal:
             fX = basisAndPenalty(X, knots, is_cyclic=is_cyclic, ord=ord_spline,
-                                             penalty_type=penalty_type, xmin=xmin, xmax=xmax, der=der)[0]
+                                             penalty_type=penalty_type, xmin=xmin, xmax=xmax, der=der,compute_pen=False,domain_fun=self.domain_fun[var_name])[0]
         else:
             if type(basis_kernel) is sparse.csr.csr_matrix or type(basis_kernel) is sparse.csr.csr_matrix:
                 basis_kernel = basis_kernel.toarray()
@@ -413,7 +458,7 @@ class GAM_result(object):
             var_name = var_list[cc]
             # smooth = self.smooth_info[var_name]
             fX = self.eval_basis(X,var_name,sparseX=False,post_trial_dur=post_trial_dur,
-                                 pre_trial_dur=pre_trial_dur,trial_idx=trial_idx)
+                                 pre_trial_dur=pre_trial_dur,trial_idx=trial_idx,domain_fun=self.domain_fun[var_name])
             if type(fX) in [sparse.csr.csr_matrix,sparse.coo.coo_matrix
                             ]:
                 fX = fX.toarray()
@@ -432,7 +477,8 @@ class GAM_result(object):
             mu = self.family.link.inverse(eta)
         return mu
 
-    def mu_sigma_log_space(self,X_list,var_list=None,get_exog=False,trial_idx=None,pre_trial_dur=None,post_trial_dur=None):
+    def mu_sigma_log_space(self,X_list,var_list=None,get_exog=False,
+                           trial_idx=None,pre_trial_dur=None,post_trial_dur=None):
         cc = 0
         if var_list is None:
             var_list = self.var_list
@@ -446,7 +492,7 @@ class GAM_result(object):
             nan_filter = np.array(np.sum(np.isnan(np.array(X)), axis=0), dtype=bool)
             var_name = var_list[cc]
             fX = self.eval_basis(X,var_name,sparseX=False,post_trial_dur=post_trial_dur,
-                                 pre_trial_dur=pre_trial_dur,trial_idx=trial_idx)
+                                 pre_trial_dur=pre_trial_dur,trial_idx=trial_idx,domain_fun=self.domain_fun[var_name])
             if type(fX) in [sparse.csr.csr_matrix,sparse.coo.coo_matrix]:
                 fX = fX.toarray()
 
@@ -483,7 +529,7 @@ class GAM_result(object):
         if pre_trial_dur is None:
             pre_trial_dur = self.pre_trial_dur
         fX = self.eval_basis(X,var_name,post_trial_dur=post_trial_dur,
-                                 pre_trial_dur=pre_trial_dur,trial_idx=trial_idx)
+                                 pre_trial_dur=pre_trial_dur,trial_idx=trial_idx,domain_fun=self.domain_fun[var_name])
         nan_filter = np.array(np.sum(np.isnan(np.array(X)), axis=0), dtype=bool)
         # mean center and remove col if more than 1 smooth in the AM
         if len(self.var_list) > 0:
@@ -529,10 +575,17 @@ class GAM_result(object):
         # compute p-vals following chap 6.12.1 of GAM book (Wood 2017)
         # take the edf corrected for the smoothing bias
         r = np.clip([2 * diagF[idx].sum() - diagFF[idx].sum()], 0, beta.shape[0])[0]
-        k = int(np.floor(r))  # consider also the constant term that has been removed forcing the identifiability constraint
-        nu = r - k #+ 1
+        if (r - np.floor(r) > 0.99) and (r - np.floor(r) < 1):
+            k = int(np.ceil(r))
+            nu = 0#+ 1
+        else:
+            k = int(np.floor(r))  # consider also the constant term that has been removed forcing the identifiability constraint
+            nu = r - k #+ 1
+        # k = int(np.floor(r))
+
         rho = np.sqrt((1 - nu) * nu * 0.5)
         nu1 = (nu + 1 + (1 - nu ** 2) ** (0.5)) * 0.5
+
         nu2 = nu + 1 - nu1
         Vb = self.cov_beta[idx, :]
         Vb = Vb[:, idx]
@@ -633,9 +686,9 @@ class general_additive_model(object):
         self.fisher_scoring = fisher_scoring
 
     def optim_gam(self, var_list, smooth_pen=None,max_iter=10**3,tol=1e-5,conv_criteria='gcv',
-                  perform_PQL=True,use_dgcv=False,initial_smooths_guess=True,method='Newton-CG',
+                  perform_PQL=True,use_dgcv=False,initial_smooths_guess=True,method='Newton-CG',methodInit='Newton-CG',
                   compute_AIC=False,random_init=False,bounds_rho=None,gcv_sel_tol=1e-10,fit_initial_beta=False,
-                  filter_trials=None,compute_MI=False):
+                  filter_trials=None,compute_MI=False,saveBetaHist=False, WLS_solver='positive_weights'):
 
         if filter_trials is None:
             filter_trials = np.ones(self.y.shape[0],dtype=bool)
@@ -670,7 +723,7 @@ class general_additive_model(object):
         if fit_initial_beta:
             rho = np.log(smooth_pen)
             # newton based optim of the likelihood
-            bhat = mle_gradient_bassed_optim(rho, self.sm_handler, var_list, yfit, exog, self.family, phi_est=1, method='Newton-CG',
+            bhat = mle_gradient_bassed_optim(rho, self.sm_handler, var_list, yfit, exog, self.family, phi_est=1, method=methodInit,
                                             num_random_init=1, beta_zero=None, tol=10 ** -8)[0]
             lin_pred = np.dot(exog[:n_obs, :], bhat)
             mu = f_weights_and_data.family.fitted(lin_pred)
@@ -701,34 +754,45 @@ class general_additive_model(object):
         else:
             bounds_rho = None
         first_itetation = True
+        if saveBetaHist:
+            beta_hist = np.zeros((0,bhat.shape[0]))
+        else:
+            beta_hist = None
         while not converged:
+            if WLS_solver == 'positive_weights':
+                print('smooth_pen iter %d'%iteration,smooth_pen)
+                z,w = f_weights_and_data.get_params(mu)
+                self.sm_handler.set_smooth_penalties(smooth_pen,var_list)
+                pen_matrix = self.sm_handler.get_penalty_agumented(var_list)
+                Xagu = np.vstack((exog,pen_matrix))
+                yagu = np.zeros(Xagu.shape[0])
+                yagu[:n_obs] = z
+                wagu = np.ones(Xagu.shape[0])
+                wagu[:n_obs] = w
+                model = sm.WLS(yagu,Xagu,wagu)
 
-            z,w = f_weights_and_data.get_params(mu)
-            self.sm_handler.set_smooth_penalties(smooth_pen,var_list)
-            pen_matrix = self.sm_handler.get_penalty_agumented(var_list)
-            Xagu = np.vstack((exog,pen_matrix))
-            yagu = np.zeros(Xagu.shape[0])
-            yagu[:n_obs] = z
-            wagu = np.ones(Xagu.shape[0])
-            wagu[:n_obs] = w
-            model = sm.WLS(yagu,Xagu,wagu)
+                #begin STEP HALVINB
+                Slam = create_Slam(np.log(smooth_pen), self.sm_handler, var_list)
+                func = lambda beta:  -(
+                        unpenalized_ll(beta, yfit, exog[:n_obs, :], self.family, 1, omega=1) + penalty_ll_Slam(Slam,
+                                                                                                               beta, 1))
 
-            #begin STEP HALVINB
-            Slam = create_Slam(np.log(smooth_pen), self.sm_handler, var_list)
-            func = lambda beta:  -(
-                    unpenalized_ll(beta, yfit, exog[:n_obs, :], self.family, 1, omega=1) + penalty_ll_Slam(Slam,
-                                                                                                           beta, 1))
+                if not first_itetation:
+                    dev0 = np.sum(func(bhat))
+                else:
+                    dev0 = np.inf
 
-            if not first_itetation:
-                dev0 = np.sum(func(bhat))
+                fit_OLS = model.fit()
+
+                # step halving
+                bnew = fit_OLS.params.copy()
+                bnew_halved = bnew.copy()
             else:
-                dev0 = np.inf
+                bnew, _, _, _, z, w, _ = robust_WLS(yfit, mu, self.family, exog, f_weights_and_data,
+                                                    S_list=compute_Sjs(self.sm_handler, var_list),
+                                                    lambda_list=np.log(smooth_pen), fisher_scoring=self.fisher_scoring)
+                bnew_halved = bnew.copy()
 
-            fit_OLS = model.fit()
-
-            # step halving
-            bnew = fit_OLS.params.copy()
-            bnew_halved = bnew.copy()
             dev1 = np.sum(func(bnew))
 
             halving_max = 10
@@ -743,6 +807,11 @@ class general_additive_model(object):
 
             if decr_dev:
                 bhat = bnew_halved
+
+            if saveBetaHist:
+                tmp = np.zeros((1,bhat.shape[0]))
+                tmp[0] = bhat
+                beta_hist = np.vstack((beta_hist,tmp))
 
             if any(bnew != fit_OLS.params):
                 mu = f_weights_and_data.family.fitted(np.dot(exog[:n_obs, :], bhat))
@@ -779,7 +848,8 @@ class general_additive_model(object):
                 if np.sum(np.isnan(gcv_func(rho0))):
                     print('NaN here')
 
-                res = minimize(gcv_func,rho0,method=method,jac=gcv_grad,hess=gcv_hess,tol=gcv_sel_tol,bounds=bounds_rho)
+                res = minimize(gcv_func,rho0,method=method,jac=gcv_grad,hess=gcv_hess,tol=gcv_sel_tol,bounds=bounds_rho,
+                               options={'disp':False})
                 res.x = np.clip(res.x,-25,30)
 
                 if res.success or ((init_score - res.fun) < init_score*np.finfo(float).eps):
@@ -816,6 +886,7 @@ class general_additive_model(object):
         post_trial_dur = None
         time_bin = None
         for var in var_list:
+            time_bin = self.sm_handler[var].time_bin
             if self.sm_handler[var].is_temporal_kernel:
                 trial_idx = self.sm_handler[var].trial_idx[filter_trials]
                 time_bin = self.sm_handler[var].time_bin
@@ -826,7 +897,8 @@ class general_additive_model(object):
         gam_results = GAM_result(model,self.family,fit_OLS,smooth_pen,
                                        n_obs,index_var,self.sm_handler,var_list,
                                        yfit,compute_AIC,trial_idx=trial_idx,pre_trial_dur=pre_trial_dur,
-                                 post_trial_dur=post_trial_dur,time_bin=time_bin,compute_mutual_info=compute_MI,filter_trials=filter_trials)
+                                 post_trial_dur=post_trial_dur,time_bin=time_bin,compute_mutual_info=compute_MI,
+                                 filter_trials=filter_trials,beta_hist=beta_hist)
         return gam_results
 
 
@@ -858,7 +930,8 @@ class general_additive_model(object):
 
     def k_fold_crossval(self,k, trial_index, var_list, smooth_pen=None,max_iter=10**3,tol=1e-5,conv_criteria='gcv',
                   perform_PQL=True,use_dgcv=False,initial_smooths_guess=True,method='Newton-CG',
-                  compute_AIC=False,random_init=False,bounds_rho=None,gcv_sel_tol=1e-10,fit_initial_beta=False,compute_MI=False):
+                  compute_AIC=False,random_init=False,bounds_rho=None,gcv_sel_tol=1e-10,fit_initial_beta=False,compute_MI=False,
+                  saveBetaHist=False, WLS_solver='positive_weights'):
         # perform a k-fold cross validation
         unq_trials = np.unique(trial_index)
         # get integer num of trials to use
@@ -889,24 +962,24 @@ class general_additive_model(object):
             model_fit = self.optim_gam(var_list, smooth_pen=smooth_pen,max_iter=max_iter,tol=tol,conv_criteria=conv_criteria,
                   perform_PQL=perform_PQL,use_dgcv=use_dgcv,initial_smooths_guess=initial_smooths_guess,method=method,
                   compute_AIC=compute_AIC,random_init=random_init,bounds_rho=bounds_rho,gcv_sel_tol=gcv_sel_tol,
-                                       fit_initial_beta=fit_initial_beta,filter_trials=bool_train,compute_MI=compute_MI)
+                                       fit_initial_beta=fit_initial_beta,filter_trials=bool_train,compute_MI=compute_MI,saveBetaHist=saveBetaHist,WLS_solver=WLS_solver)
 
             ## compute pr2 on test
             exog, index_var = self.sm_handler.get_exog_mat(model_fit.var_list)
             exog = exog[bool_test, :]
             lin_pred = np.dot(exog, model_fit.beta)
             mu = self.family.fitted(lin_pred)
-    
+
             res_dev_t = self.family.resid_dev(self.y[bool_test], mu)
             resid_deviance = np.sum(res_dev_t ** 2)
-    
+
             null_mu = self.y[bool_test].sum()/self.y[bool_test].shape[0]
             null_dev_t = self.family.resid_dev(self.y[bool_test], [null_mu]*self.y[bool_test].shape[0])
             null_deviance = np.sum(null_dev_t ** 2)
-    
+
             pseudo_r2 = (null_deviance - resid_deviance) / null_deviance
-            
-            
+
+
             kfold_pseudo_r2[test_idx] = pseudo_r2
             model_dict[test_idx] = model_fit
         # select best fit
@@ -1050,7 +1123,7 @@ class general_additive_model(object):
                                      use_dgcv=True,smooth_pen=None,initial_smooths_guess=True,fit_initial_beta=False,
                                      pseudoR2_per_variable=False,filter_trials=None,k_fold = False,fold_num=5,
                                         trial_num_vec=None,compute_MI=True, k_fold_reducedOnly=True,bounds_rho=None,
-                             reducedAdaptive=True, ord_AD=3, ad_knots=6):
+                             reducedAdaptive=True, ord_AD=3, ad_knots=6,saveBetaHist=False,perform_PQL=True,WLS_solver='positive_weights'):
         if smooth_pen is None:
             smooth_pen = []
             for var in var_list:
@@ -1063,18 +1136,19 @@ class general_additive_model(object):
         if (not k_fold) or k_fold_reducedOnly:
             full_model = self.optim_gam(var_list, max_iter=max_iter, tol=tol,
                                         conv_criteria=conv_criteria,
-                                        perform_PQL=True, initial_smooths_guess=initial_smooths_guess, method=method,
+                                        perform_PQL=perform_PQL, initial_smooths_guess=initial_smooths_guess, method=method,
                                         compute_AIC=False,gcv_sel_tol=gcv_sel_tol,random_init=random_init,
                                         use_dgcv=use_dgcv,smooth_pen=smooth_pen,fit_initial_beta=fit_initial_beta,
-                                        filter_trials=filter_trials,compute_MI=compute_MI,bounds_rho=bounds_rho)
+                                        filter_trials=filter_trials,compute_MI=compute_MI,bounds_rho=bounds_rho,
+                                        saveBetaHist=saveBetaHist,WLS_solver=WLS_solver)
             test_bool = np.ones(self.y.shape[0], dtype=bool)
         else:
             full_model,test_bool = self.k_fold_crossval(fold_num,trial_num_vec,var_list, max_iter=max_iter, tol=tol,
                                         conv_criteria=conv_criteria,
-                                        perform_PQL=True, initial_smooths_guess=initial_smooths_guess, method=method,
+                                        perform_PQL=perform_PQL, initial_smooths_guess=initial_smooths_guess, method=method,
                                         compute_AIC=False, gcv_sel_tol=gcv_sel_tol, random_init=random_init,
                                         use_dgcv=use_dgcv, smooth_pen=smooth_pen, fit_initial_beta=fit_initial_beta,compute_MI=compute_MI,
-                                        bounds_rho=bounds_rho)
+                                        bounds_rho=bounds_rho,saveBetaHist=saveBetaHist,WLS_solver=WLS_solver)
 
         pvals = full_model.covariate_significance['p-val']
         keep_idx = pvals <= th_pval
@@ -1135,19 +1209,21 @@ class general_additive_model(object):
             if not k_fold:
                 reduced_model = self.optim_gam(sub_list, max_iter=max_iter, tol=tol,
                                     conv_criteria=conv_criteria,
-                                    perform_PQL=True, initial_smooths_guess=initial_smooths_guess, method=method,
+                                    perform_PQL=perform_PQL, initial_smooths_guess=initial_smooths_guess, method=method,
                                     compute_AIC=False, gcv_sel_tol=gcv_sel_tol, random_init=random_init,
                                     use_dgcv=use_dgcv,smooth_pen=smooth_pen,fit_initial_beta=fit_initial_beta,
-                                               filter_trials=filter_trials,compute_MI=compute_MI,bounds_rho=bounds_rho)
+                                               filter_trials=filter_trials,compute_MI=compute_MI,bounds_rho=bounds_rho,
+                                               saveBetaHist=saveBetaHist,WLS_solver=WLS_solver)
                 test_bool = np.ones(self.y.shape[0],dtype=bool)
             else:
                 reduced_model,test_bool = self.k_fold_crossval(fold_num, trial_num_vec, sub_list, max_iter=max_iter, tol=tol,
                                                   conv_criteria=conv_criteria,
-                                                  perform_PQL=True, initial_smooths_guess=initial_smooths_guess,
+                                                  perform_PQL=perform_PQL, initial_smooths_guess=initial_smooths_guess,
                                                   method=method,
                                                   compute_AIC=False, gcv_sel_tol=gcv_sel_tol, random_init=random_init,
                                                   use_dgcv=use_dgcv, smooth_pen=smooth_pen,
-                                                  fit_initial_beta=fit_initial_beta,compute_MI=compute_MI,bounds_rho=bounds_rho
+                                                  fit_initial_beta=fit_initial_beta,compute_MI=compute_MI,bounds_rho=bounds_rho,
+                                                  saveBetaHist=saveBetaHist,WLS_solver=WLS_solver
                                                   )
 
         if pseudoR2_per_variable and (not reduced_model is None):
