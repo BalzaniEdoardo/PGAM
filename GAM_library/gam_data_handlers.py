@@ -965,7 +965,7 @@ class covarate_smooth(object):
             knots = knots[0]
 
         repeats = self._ord - 1
-        kernel_length = kernel_length + self._ord + 1
+        kernel_length = kernel_length #+ self._ord + 1
         if kernel_direction == 0:
             if knots is None:
                 times = np.linspace(1 - kernel_length, kernel_length - 1, kernel_length)
