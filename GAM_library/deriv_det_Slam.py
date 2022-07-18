@@ -123,7 +123,7 @@ def transform_Slam(S_all,rho):
         Q = Q - r
         Slam = S_prime
         index_gamma = index_gamma_prime
-        if len(index_gamma_prime) is 0:
+        if len(index_gamma_prime) == 0:
             break
     return Slam,S_transformed
 
