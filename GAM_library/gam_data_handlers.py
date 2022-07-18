@@ -977,7 +977,7 @@ class covarate_smooth(object):
 
         elif kernel_direction == 1:
             if knots is None:
-                int_knots = np.linspace(0.000001, knots_num, knots_num - 2 * repeats)
+                int_knots = np.linspace(0.000001, knots_num, knots_num)
                 knots = np.hstack(([int_knots[0]] * repeats, int_knots, [(int_knots[-1])] * repeats))
 
             times_pos = np.linspace(0, knots[-1], (kernel_length + 1) // 2)
@@ -986,7 +986,7 @@ class covarate_smooth(object):
 
         elif kernel_direction == -1:
             if knots is None:
-                int_knots = np.linspace(0.000001, knots_num, knots_num - 2 * repeats)
+                int_knots = np.linspace(0.000001, knots_num, knots_num)
                 knots = np.hstack(([int_knots[0]] * repeats, int_knots, [(int_knots[-1])] * repeats))
                 knots = -knots[::-1]
 
