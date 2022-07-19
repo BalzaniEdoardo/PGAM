@@ -1421,7 +1421,7 @@ class smooths_handler(object):
         first = True
         index_cov = {}
         count = 1
-        t0 = perf_counter()
+        #t0 = perf_counter()
         # # calculate col number
         # num_col = 1
         # for name in name_list:
@@ -1446,7 +1446,7 @@ class smooths_handler(object):
             if type(X) is sparse.csr.csr_matrix:
                 hstack_X = sparse.hstack
             else:
-                print('full matrix stack')
+                #print('full matrix stack')
                 hstack_X = np.hstack
 
             if first:
@@ -1454,13 +1454,13 @@ class smooths_handler(object):
                 fullX = hstack_X((np.ones((X.shape[0], 1)), X.copy()))
             else:
                 fullX = hstack_X((fullX, X))
-        t1 = perf_counter()
-        print('hstack:', t1 - t0, 'sec')
-        t0 = perf_counter()
+        #t1 = perf_counter()
+        #print('hstack:', t1 - t0, 'sec')
+        #t0 = perf_counter()
         if type(fullX) is sparse.csr.csr_matrix or type(fullX) is sparse.coo.coo_matrix:
             fullX = fullX.toarray()
         t1 = perf_counter()
-        print('tranform to full matrix: ', t1 - t0, 'sec')
+        #print('tranform to full matrix: ', t1 - t0, 'sec')
 
         return fullX, index_cov
 

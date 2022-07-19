@@ -752,7 +752,7 @@ class general_additive_model(object):
             beta_hist = None
         while not converged:
             if WLS_solver == 'positive_weights':
-                print('smooth_pen iter %d'%iteration,smooth_pen)
+                #print('smooth_pen iter %d'%iteration,smooth_pen)
                 z,w = f_weights_and_data.get_params(mu)
                 self.sm_handler.set_smooth_penalties(smooth_pen,var_list)
                 pen_matrix = self.sm_handler.get_penalty_agumented(var_list)
