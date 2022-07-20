@@ -202,8 +202,8 @@ def knots_cerate(x,var,session, hand_vel_temp=False,hist_filt_dur='short',
         is_temporal_kernel = True
     
     elif var =='t_ptb':
-        kernel_len = 401
-        knots = np.linspace(10**-6,200,10)
+        kernel_len = 801
+        knots = np.linspace(10**-6,400,10)
         knots = np.hstack(([knots[0]]*3,
                                 knots,
                                 [knots[-1]]*3
