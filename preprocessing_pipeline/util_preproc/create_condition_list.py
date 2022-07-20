@@ -24,7 +24,7 @@ user_paths = get_paths_class()
 sess_nopr = []
 FIRST = True
 
-for fh in os.listdir('/Volumes/WD_Edo/firefly_analysis/LFP_band/concatenation_with_accel'):
+for fh in os.listdir('/Volumes/WD_Edo 1/firefly_analysis/LFP_band/concatenation_with_accel'):
     session = fh.split('.npz')[0]
     # print(session)
     # if session !='m53s42':
@@ -32,12 +32,13 @@ for fh in os.listdir('/Volumes/WD_Edo/firefly_analysis/LFP_band/concatenation_wi
     # if session != 'm44s174':
     #     continue
 #session = 'm53s91'
-    sess_keep = ['m73s5']
+    sess_keep = ['m53s36','m53s39','m53s40','m53s41','m53s42','m53s43','m53s44',
+                 'm53s46','m53s47','m53s48','m53s49','m53s50','m53s51']
     #
     if not session in sess_keep:
         continue
 
-    fhName = os.path.join('/Volumes/WD_Edo/firefly_analysis/LFP_band/concatenation_with_accel/','%s.npz'%session)
+    fhName = os.path.join('/Volumes/WD_Edo 1/firefly_analysis/LFP_band/concatenation_with_accel','%s.npz'%session)
     save_fld = ''
     
     
