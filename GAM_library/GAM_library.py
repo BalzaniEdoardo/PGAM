@@ -873,6 +873,7 @@ class general_additive_model(object):
             self.sm_handler.set_smooth_penalties(smooth_pen, var_list)
 
             converged = np.abs(conv_score - old_conv_score) < tol * conv_score
+            converged = converged and (iteration > 3)
             old_conv_score = conv_score
             if iteration >= max_iter:
                 break
