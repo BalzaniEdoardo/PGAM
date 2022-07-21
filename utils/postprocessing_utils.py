@@ -8,6 +8,7 @@ import inspect,os
 dir_fh = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 dir_gamlib = os.path.join(os.path.dirname(dir_fh),'GAM_library')
 import GAM_library as gl
+import scipy.stats as sts
 
 def pseudo_r2_comp(spk, fit, sm_handler, family, use_tp=None, exog=None):
     if exog is None:
@@ -55,7 +56,7 @@ def mutual_info_est(spk_counts, exog, fit, var, sm_handler, filter_trials, dt=0.
     if (smooth_info[var]['kernel_direction'] == 1) and\
             (smooth_info[var]['is_temporal_kernel']) and (smooth_info[var]['is_event_input']):
 
-        sel = temp_bins >= 0
+        sel = temp_bins > 0
         temp_bins = temp_bins[sel]
         count_bins = count_bins[sel]
         tuning = tuning[sel]
@@ -64,7 +65,7 @@ def mutual_info_est(spk_counts, exog, fit, var, sm_handler, filter_trials, dt=0.
 
     elif (smooth_info[var]['kernel_direction'] == -1) and\
             (smooth_info[var]['is_temporal_kernel']) and (smooth_info[var]['is_event_input']):
-        sel = temp_bins <= 0
+        sel = temp_bins < 0
         temp_bins = temp_bins[sel]
         count_bins = count_bins[sel]
         tuning = tuning[sel]
@@ -252,8 +253,8 @@ def compute_average(spk, lam_s, events, temp_bins, sc_based_tuning, tuning, tot_
 
 
 
-def postprocess_results(counts, full_fit, reduced_fit, filter_trials,
-                        sm_handler, family, var_zscore_par,info_save={}):
+def postprocess_results(neuron_id,counts, full_fit, reduced_fit, filter_trials,
+                        sm_handler, family, var_zscore_par,info_save={},bins=30):
 
 
     dtypes = {
@@ -307,7 +308,9 @@ def postprocess_results(counts, full_fit, reduced_fit, filter_trials,
     results = np.zeros(len((full_fit.var_list)), dtype=dtype_dict)
     for name in info_save.keys():
         results[name] = info_save[name]
-
+    
+    results['neuron_id'] = neuron_id
+    
     cs_table = full_fit.covariate_significance
     if not reduced_fit is None:
         cs_table_red = reduced_fit.covariate_significance
@@ -345,7 +348,7 @@ def postprocess_results(counts, full_fit, reduced_fit, filter_trials,
             else:
                 results['reduced_pval'][cc] = np.nan
         try:
-            mi_full, tun_full = mutual_info_est(spk_counts, exog_full, full_fit, var, sm_handler, filter_trials, dt=full_fit.time_bin, bins=20)
+            mi_full, tun_full = mutual_info_est(counts, exog_full, full_fit, var, sm_handler, filter_trials, dt=full_fit.time_bin, bins=bins)
 
         except:
             mi_full = np.nan
@@ -366,7 +369,7 @@ def postprocess_results(counts, full_fit, reduced_fit, filter_trials,
         results['raw_rate_Hz'][cc] = tun_full.y_raw
 
         try:
-            mi_full, tun_full = mutual_info_est(spk_counts, exog_full, full_fit, var, sm_handler, ~filter_trials, dt=full_fit.time_bin, bins=20)
+            mi_full, tun_full = mutual_info_est(counts, exog_full, full_fit, var, sm_handler, ~filter_trials, dt=full_fit.time_bin, bins=bins)
 
         except:
             mi_full = np.nan
@@ -623,5 +626,4 @@ if __name__ == '__main__':
         var_zscore_par[var] = {}
         var_zscore_par[var]['loc'] = 0
         var_zscore_par[var]['scale'] = 1
-
     results = postprocess_results(spk_counts,full,reduced,train_trials,sm_handler,poissFam,var_zscore_par=var_zscore_par,info_save={})
