@@ -179,6 +179,17 @@ class behavior_experiment(object):
         # extrct virtualr real velocity (cm/s)
         self.continuous.rad_vel = create_dict_beahv(trials_behv,'continuous','v')
         self.continuous.ang_vel = create_dict_beahv(trials_behv, 'continuous', 'w')
+        
+        try:
+            self.continuous.rad_vel_diff = create_dict_beahv(trials_behv,'continuous','v_diff')
+            self.continuous.ang_vel_diff = create_dict_beahv(trials_behv, 'continuous', 'w_diff')
+            self.continuous.rad_vel_ptb = create_dict_beahv(trials_behv,'continuous','v_ptb')
+            self.continuous.ang_vel_ptb = create_dict_beahv(trials_behv, 'continuous', 'w_ptb')
+        except:
+            self.continuous.rad_vel_diff = None
+            self.continuous.ang_vel_diff = None
+            self.continuous.rad_vel_ptb = None
+            self.continuous.ang_vel_ptb = None
         # extract PCs hand velocities (cm/s)
         try:
             self.continuous.hand_vel1 = create_dict_beahv(trials_behv, 'continuous', 'h1')
@@ -213,7 +224,8 @@ class behavior_experiment(object):
         except:
             print('no t_ptb')
         try:
-            self.events.t_ptbn = create_dict_beahv(trials_behv, 'events', 't_ptbn')
+            self.events.t_ptb = create_dict_beahv(trials_behv, 'events', 't_ptbn')
+            print('SUBSTITUTE T_PTB with realigned')
         except:
             print('no normalized t_ptb (t_ptbn)')
         # time of movement start
