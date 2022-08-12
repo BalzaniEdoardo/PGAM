@@ -185,6 +185,7 @@ class behavior_experiment(object):
             self.continuous.ang_vel_diff = create_dict_beahv(trials_behv, 'continuous', 'w_diff')
             self.continuous.rad_vel_ptb = create_dict_beahv(trials_behv,'continuous','v_ptb')
             self.continuous.ang_vel_ptb = create_dict_beahv(trials_behv, 'continuous', 'w_ptb')
+            
         except:
             self.continuous.rad_vel_diff = None
             self.continuous.ang_vel_diff = None
@@ -243,7 +244,18 @@ class behavior_experiment(object):
         self.events.t_targ = create_dict_beahv(trials_behv, 'events', 't_targ')
         # t_end??
         self.events.t_end = create_dict_beahv(trials_behv, 'events', 't_end')
-
+        
+        
+        # here set the vel_diff as the normal vel if no ptb and the vel_ptb as 0
+        if not self.continuous.rad_vel_diff is None:
+            for tr in self.continuous.rad_vel_diff.keys():
+                # if trial is without ptb add vel
+                if np.isnan(self.events.t_ptb[tr][0]):
+                    self.continuous.rad_vel_diff[tr] = self.continuous.rad_vel[tr]
+                    self.continuous.ang_vel_diff[tr] = self.continuous.ang_vel[tr]
+                    self.continuous.rad_vel_ptb[tr] = np.zeros(self.continuous.rad_vel[tr].shape)
+                    self.continuous.ang_vel_ptb[tr] = np.zeros(self.continuous.rad_vel[tr].shape)
+        
         if extract_fly_and_monkey_xy:
             self.continuous.x_monk = creat_dict_from_beahv_stat(behav_stat, 'pos_abs', 'x_monk')
             self.continuous.y_monk = creat_dict_from_beahv_stat(behav_stat, 'pos_abs', 'y_monk')
