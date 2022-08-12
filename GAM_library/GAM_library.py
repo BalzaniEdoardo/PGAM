@@ -678,7 +678,7 @@ class general_additive_model(object):
         self.fisher_scoring = fisher_scoring
 
     def optim_gam(self, var_list, smooth_pen=None,max_iter=10**3,tol=1e-5,conv_criteria='gcv',
-                  perform_PQL=True,use_dgcv=False,initial_smooths_guess=True,method='Newton-CG',methodInit='Newton-CG',
+                  perform_PQL=True,use_dgcv=False,method='Newton-CG',methodInit='Newton-CG',
                   compute_AIC=False,random_init=False,bounds_rho=None,gcv_sel_tol=1e-10,fit_initial_beta=False,
                   filter_trials=None,compute_MI=False,saveBetaHist=False, WLS_solver='positive_weights'):
 
@@ -692,11 +692,7 @@ class general_additive_model(object):
 
         f_weights_and_data = weights_and_data(self.y[filter_trials], self.family, fisher_scoring=self.fisher_scoring)
 
-        # initialize smooths in order to balance penalty matrix determinants
-        if initial_smooths_guess:
-            X, _ = self.sm_handler.get_exog_mat(var_list)
-            S_all = compute_Sjs(self.sm_handler, var_list)
-            smooth_pen = np.exp(self.initialize_smooth_par(f_weights_and_data,X,S_all,random_init=random_init))
+        
 
         # otherwise use the one setted when defining the covariate smooths
         if smooth_pen is None:
@@ -864,7 +860,7 @@ class general_additive_model(object):
             # print('\n',iteration+1, conv_criteria,conv_score, 'smoothing par',smooth_pen)
             self.sm_handler.set_smooth_penalties(smooth_pen, var_list)
 
-            converged = (np.abs(conv_score - old_conv_score) < tol * conv_score) and (iteration > 3)
+            converged = np.abs(conv_score - old_conv_score) < tol * conv_score
             old_conv_score = conv_score
             if iteration >= max_iter:
                 break
@@ -919,7 +915,7 @@ class general_additive_model(object):
         return rho
 
     def k_fold_crossval(self,k, trial_index, var_list, smooth_pen=None,max_iter=10**3,tol=1e-5,conv_criteria='gcv',
-                  perform_PQL=True,use_dgcv=False,initial_smooths_guess=True,method='Newton-CG',
+                  perform_PQL=True,use_dgcv=False,method='Newton-CG',
                   compute_AIC=False,random_init=False,bounds_rho=None,gcv_sel_tol=1e-10,fit_initial_beta=False,compute_MI=False,
                   saveBetaHist=False, WLS_solver='positive_weights'):
         # perform a k-fold cross validation
@@ -950,7 +946,7 @@ class general_additive_model(object):
             print('%d-fold cross-validation: fold %d'%(k,test_idx+1))
             print('train set size: %d - test set size: %d '%(sum(bool_train),sum(bool_test)))
             model_fit = self.optim_gam(var_list, smooth_pen=smooth_pen,max_iter=max_iter,tol=tol,conv_criteria=conv_criteria,
-                  perform_PQL=perform_PQL,use_dgcv=use_dgcv,initial_smooths_guess=initial_smooths_guess,method=method,
+                  perform_PQL=perform_PQL,use_dgcv=use_dgcv,method=method,
                   compute_AIC=compute_AIC,random_init=random_init,bounds_rho=bounds_rho,gcv_sel_tol=gcv_sel_tol,
                                        fit_initial_beta=fit_initial_beta,filter_trials=bool_train,compute_MI=compute_MI,saveBetaHist=saveBetaHist,WLS_solver=WLS_solver)
 
@@ -1001,7 +997,8 @@ class general_additive_model(object):
 
     def fit_full_and_reduced(self,var_list,th_pval=0.01,method = 'L-BFGS-B',tol=1e-8,conv_criteria='deviance',
                                      max_iter=10**3,gcv_sel_tol=10**-13,random_init=False,
-                                     use_dgcv=True,smooth_pen=None,initial_smooths_guess=False,fit_initial_beta=False,
+                                     use_dgcv=True,smooth_pen=None,fit_initial_beta=False,
+
                                      pseudoR2_per_variable=False,filter_trials=None,k_fold = False,fold_num=5,
                                         trial_num_vec=None,compute_MI=True, k_fold_reducedOnly=True,bounds_rho=None,
                              reducedAdaptive=True, ord_AD=3, ad_knots=6,saveBetaHist=False,perform_PQL=True,WLS_solver='positive_weights'):
@@ -1017,7 +1014,7 @@ class general_additive_model(object):
         if (not k_fold) or k_fold_reducedOnly:
             full_model = self.optim_gam(var_list, max_iter=max_iter, tol=tol,
                                         conv_criteria=conv_criteria,
-                                        perform_PQL=perform_PQL, initial_smooths_guess=initial_smooths_guess, method=method,
+                                        perform_PQL=perform_PQL, method=method,
                                         compute_AIC=False,gcv_sel_tol=gcv_sel_tol,random_init=random_init,
                                         use_dgcv=use_dgcv,smooth_pen=smooth_pen,fit_initial_beta=fit_initial_beta,
                                         filter_trials=filter_trials,compute_MI=compute_MI,bounds_rho=bounds_rho,
@@ -1026,7 +1023,7 @@ class general_additive_model(object):
         else:
             full_model,test_bool = self.k_fold_crossval(fold_num,trial_num_vec,var_list, max_iter=max_iter, tol=tol,
                                         conv_criteria=conv_criteria,
-                                        perform_PQL=perform_PQL, initial_smooths_guess=initial_smooths_guess, method=method,
+                                        perform_PQL=perform_PQL, method=method,
                                         compute_AIC=False, gcv_sel_tol=gcv_sel_tol, random_init=random_init,
                                         use_dgcv=use_dgcv, smooth_pen=smooth_pen, fit_initial_beta=fit_initial_beta,compute_MI=compute_MI,
                                         bounds_rho=bounds_rho,saveBetaHist=saveBetaHist,WLS_solver=WLS_solver)
@@ -1042,7 +1039,7 @@ class general_additive_model(object):
             reduced_model = full_model
         else:
             # restart smooth pen
-            if not initial_smooths_guess and not reducedAdaptive:
+            if not reducedAdaptive:
 
                 cc = 0
                 new_smooth = []
@@ -1089,7 +1086,7 @@ class general_additive_model(object):
             if not k_fold:
                 reduced_model = self.optim_gam(sub_list, max_iter=max_iter, tol=tol,
                                     conv_criteria=conv_criteria,
-                                    perform_PQL=perform_PQL, initial_smooths_guess=initial_smooths_guess, method=method,
+                                    perform_PQL=perform_PQL, method=method,
                                     compute_AIC=False, gcv_sel_tol=gcv_sel_tol, random_init=random_init,
                                     use_dgcv=use_dgcv,smooth_pen=smooth_pen,fit_initial_beta=fit_initial_beta,
                                                filter_trials=filter_trials,compute_MI=compute_MI,bounds_rho=bounds_rho,
@@ -1098,7 +1095,7 @@ class general_additive_model(object):
             else:
                 reduced_model,test_bool = self.k_fold_crossval(fold_num, trial_num_vec, sub_list, max_iter=max_iter, tol=tol,
                                                   conv_criteria=conv_criteria,
-                                                  perform_PQL=perform_PQL, initial_smooths_guess=initial_smooths_guess,
+                                                  perform_PQL=perform_PQL,
                                                   method=method,
                                                   compute_AIC=False, gcv_sel_tol=gcv_sel_tol, random_init=random_init,
                                                   use_dgcv=use_dgcv, smooth_pen=smooth_pen,
@@ -1216,6 +1213,6 @@ if __name__ == '__main__':
 
     full,reduced = gam_model.fit_full_and_reduced(var_list,th_pval=0.001, smooth_pen=[1] * 6, max_iter=10 ** 3, tol=10 ** (-8),
                                   conv_criteria='gcv',
-                                  initial_smooths_guess=False,
+                                  
                                   method='L-BFGS-B',
                                   gcv_sel_tol=10 ** (-13), use_dgcv=True, fit_initial_beta=True,pseudoR2_per_variable=False)
