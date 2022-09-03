@@ -26,7 +26,7 @@ Below we will provide two recomanded ways of setting up the package:
 1. Install all software requirerments and create a dedicated [conda environment](#conda-environment)
 2. Download and run a [Docker image](#docker-image).
 
-#### Conda environemnt
+## Conda environemnt
 
 In order to set up a conda environment with the specified packages repeat the following steps,
 
@@ -72,7 +72,7 @@ Test the installation by *cd* to the *PGAM/GAM_library* directory and run,
 	exit()
 ```
 
-##### Inspect and edit the PATH environment variable
+### Inspect and edit the PATH environment variable
 
 On **windows**, inspect the folder in PATH by enterinng	
 
@@ -85,12 +85,19 @@ On **windows**, inspect the folder in PATH by enterinng
  If not add it manually, on Windows 10:
  
  1. 	open the "Control Panel"
+ 
  2. 	search for "environment"
+ 
  3. 	Click on "Edit the system environment variables"->"Edit variables..."
+ 
  4. 	Scroll on "System variables" and click on "Path"
+ 
  5. 	Click on "Edit..." -> "New", type the path to the R home folder and click "Ok".
+
  6.	Close the second pop-up by clicking on "Ok"
+
  7. 	In the first pop-up, cllck "Apply" and then "Ok".
+
  8.    Restart the commad prompt.
 
 
@@ -129,7 +136,7 @@ On **Linux**:
 4.	Restart your terminal
 
   
-#### Docker image
+## Docker image
 
 
 # Usage
