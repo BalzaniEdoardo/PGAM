@@ -30,7 +30,7 @@ Below we will provide two recomanded ways of setting up the package:
 
 In order to set up a conda environment with the specified packages repeat the following steps,
 
-1. Download  and install <a href="https://www.r-project.org/">R<a> and <a href="https://www.anaconda.com/products/distribution"> Anaconda <a>. Make sure that the path to R is in the system PATH environment variable after the installation, [add it otherwise](#env-var) . 
+1. Download  and install <a href="https://www.r-project.org/">R<a> and <a href="https://www.anaconda.com/products/distribution"> Anaconda <a>. Make sure that the path to R is in the system PATH environment variable after the installation, [add it otherwise](#env-var). 
 
 2. Open the terminal/command prompt and create a conda environment with
 	
@@ -74,43 +74,43 @@ Test the installation by *cd* to the *PGAM/GAM_library* directory and run,
 
 ### Inspect and edit the PATH environment variable
 
-On **windows**, inspect the folder in PATH by enterinng	
+On **windows**:
+	
+Inspect the folder in PATH by enterinng	
 
-	```
+```
 	echo %PATH:;=&echo.%
-	```
+```
  
  in the command prompt, the R home folder shold be listed  (usually *C:\R\R-version\\*).
  
- If not add it manually, on Windows 10:
+ If not, edit the PATH variable (Wiindows 10):
  
- 1. 	open the "Control Panel"
+ 1. open the "Control Panel"
  
- 2. 	search for "environment"
+ 2. search for "environment"
  
- 3. 	Click on "Edit the system environment variables"->"Edit variables..."
+ 3. click on "Edit the system environment variables"->"Edit variables..."
  
- 4. 	Scroll on "System variables" and click on "Path"
+ 4. scroll on "System variables" and click on "Path"
  
- 5. 	Click on "Edit..." -> "New", type the path to the R home folder and click "Ok".
+ 5. click on "Edit..." -> "New", type the path to the R home folder and click "Ok".
 
- 6.	Close the second pop-up by clicking on "Ok"
+ 6. close the pop-up by clicking on "Ok"
 
- 7. 	In the first pop-up, cllck "Apply" and then "Ok".
+ 7. click "Apply" and then "Ok".
 
- 8.    Restart the commad prompt.
-
-
+ 8. restart the commad prompt.
 
 
-On **mac OS X** and **Linux**, inspect PATH by enterinng in the terrminal,
+Inspect the PATH variable on **mac OS X** and **Linux** by entering in the terrminal,
  
-	```
+```
 	echo $PATH | tr : '\n'
-	```
+```
 	
 
-If the R home folder is not listed, add it to the paths,
+If the R home folder is not listed, add it to the paths;
 
 On **mac OS X**:
 
@@ -133,7 +133,7 @@ On **Linux**:
 	
 3.	Save the .bashrc file.
 
-4.	Restart your terminal
+4.	Restart your terminal.
 
   
 ## Docker image
