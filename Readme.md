@@ -47,13 +47,15 @@ Below we will provide two recomanded ways of setting up the package:
 	<ol type="a", start="a">
   		<li>Run python, import r utils and install the package <em>survey</em>
   		</li>
-  		</ol> 
+  	</ol> 
+  	
   		```sh
   		python
   		from rpy2.robjects.packages import importr
   		utils = importr('utils')
   		utils.install_packages('survey')
 		```
+		
 		<ol type="a", start="b">
   		<li>Select a mirror, proceed with the installation.</li>
   		<li>Exit python.
