@@ -10,6 +10,8 @@ Table of Contents
      * [Conda environment](#conda-environment)
      	* [Inspect and edit the PATH environment variable](#env-var)
      * [Docker image](#docker-image)
+     	* [Working with jupyter](#working-with-jupyter)
+     	* [Running a script](#running-a-script)
 * [Usage](#usage)
    * [Notebooks](#notebooks)
    * [Model parameters](#model-parameters)
@@ -144,16 +146,66 @@ On **Linux**:
 
   
 ## Docker image
-Download, install and start <a href="https://docs.docker.com/get-docker/"> Docker<a>.
 
-In order to download and run the docker container enter in the terrminal/command propmpt:
+Downloadinng a Docker image and running it in a Docker container is very simple and makes the setup of the package trivial. However, working with docker containers requires some familiarity with the docker syntax (starting, stopping and removing containers, mounting volumes etc.); I would recommand checking out one of the many tutorial available online before starting to work with docker. 
+
+### Installing and running the PGAM Docker image
+
+
+Download, install and start <a href="https://docs.docker.com/get-docker/"> Docker<a>. 
+
+Download the PGAM Docker Image with the terminal command
 
 ```
-	docker run   -v your-notebook-folder:/notebooks -ti -p 8888:8888 edoardobalzani87/pgam:1.0 /bin/bash
+docker pull  edoardobalzani87/pgam:1.0
 ```
 
-The -v option mounts the folder *your-notebook-folder* as a volume in the Docker container. 
+You can check the list of all the dowloaded images by typing
+```
+docker images
+```
 
+You can run the image in a Docker container and inspect the contents by typing in the command prompt:
+
+```
+docker run -ti  edoardobalzani87/pgam:1.0 /bin/bash
+```
+ 
+The command will run a Linux bash shell that allows you to inspect the image content. python, R and all the required packages  are already installed and the enviironment variables are set up. Type ```exit```, to exit the bash shell and stop the container. 
+
+You can delete a stopped container  with the command  ```docker rm CONTAINER-ID``` . The container ID can be found with the command ```docker ps -a```, which will list all available containers, their IDs, the image that they run and the command that they execute.
+
+### Working with jupyter
+
+Run the PGAM image in a container and launch jupyter notebook with the following command,
+
+```
+	docker run   -v your-notebook-folder:/notebooks -ti -p 8888:8888 edoardobalzani87/pgam:1.0
+```
+
+The -v option mounts the folder *your-notebook-folder*  of your coputer (the host computer) as a volume in the Docker container virtual file system linking it to the folder */notebook* .  
+
+Files saved by the container in the */notebook* virtual folder will be automatically copied in *your-notebook-folder*, and files already present in *your-notebook-folder* will be automatically copied in */notebook* when the container is started. 
+
+FIles that the container saves in other directories of the virtual file system will be lost once the container is stopped or removed (the container as a temporary file system).
+
+The -p *local-port:contanier-port* option connects the port 8888 of the container with that of the host operating system, allowing the container and the operating system to interact.
+
+Open a browser, and browse to *localhost:8888/* to connect to jupyter. You can test the library by working with the "PGAM Tutorial.ipynb" or you can crerate your own notebook. Files will be stoerd in the *your-notebook-folder*.
+
+The ```run``` command  creates a new container each time, however, if you haven't removed an old contaiiner, it can be restarted with the command ```docker start CONTAINER-ID```. Inspect the inactive containers with ```docker ps -a```. You can stop a container with  ```docker stop CONTAINER-ID```
+
+### Running a scripts
+
+If you want to run *yourscript.py*  enter the code,
+
+```
+docker run -v your-script-folder/:/scripts -ti -p 8888:8888 edoardobalzani87/pgam:1.0 /bin/bash -c "python scripts/yourscript.py"
+```
+
+The -v option mounts *your-script-folder* as a volume in the contaiiner, links it to the virtual folder */scripts*, while the -c option executes a shell command, in this case *python yourscript.py*. 
+
+Note that eventual the inputs loaded by *yourscript.py* needs to be saved in *your-script-folder* to be available within the container. Similarly, all the outputs that *yourscript.py* saves, must be saved in the virtual folder *scripts/* to be copied in the host file system.
 
 # Usage
 
