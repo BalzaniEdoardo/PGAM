@@ -44,7 +44,7 @@ Below we will provide two recomanded ways of setting up the package:
 	```
 
 4. Install the R package *survey*. The recommended option is to install the package directly through rpy2 with the following steps:
-	<ol type="a", start="a">
+	<ol type="a"; start="a">
   		<li>Run python, import r utils and install the package <em>survey</em>
   		</li>
   	</ol> 
@@ -59,7 +59,7 @@ Below we will provide two recomanded ways of setting up the package:
 		
 		
 		
-	<ol type="a", start="b">
+	<ol type="a"; start="2">
   		<li>Select a mirror, proceed with the installation.</li>
   		<li>Exit python.
   	</ol>
