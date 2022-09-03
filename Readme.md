@@ -8,6 +8,7 @@ Table of Contents
 =================
 * [Setup](#setup)
      * [Conda environment](#conda-environment)
+     	* [Inspect and edit the PATH environment variable](#env-var)
      * [Docker image](#docker-image)
 * [Usage](#usage)
    * [Notebooks](#notebooks)
@@ -26,7 +27,10 @@ Below we will provide two recomanded ways of setting up the package:
 2. Download and run a [Docker image](#docker-image).
 
 #### Conda environemnt
-1. Download  and install <a href="https://www.r-project.org/">R<a> and <a href="https://www.anaconda.com/products/distribution"> Anaconda <a>. 
+
+In order to set up a conda environment with the specified packages repeat the following steps,
+
+1. Download  and install <a href="https://www.r-project.org/">R<a> and <a href="https://www.anaconda.com/products/distribution"> Anaconda <a>. Make sure that the path to R is in the system PATH environment variable after the installation, [add it otherwise](#env-var) . 
 
 2. Open the terminal/command prompt and create a conda environment with
 	
@@ -38,6 +42,7 @@ Below we will provide two recomanded ways of setting up the package:
 
 	```
 	conda activate pgam
+	conda install jupyter
 	conda install numpy pandas dill scikit-learn matplotlib -y
 	conda install seaborn pyyaml h5py numba -y
 	pip install rpy2 opt_einsum statsmodels
@@ -49,27 +54,83 @@ Below we will provide two recomanded ways of setting up the package:
   		</li>
   	</ol> 
   	
-  		```
-  		python
-  		from rpy2.robjects.packages import importr
-  		utils = importr('utils')
-  		utils.chooseCRANmirror(ind=1) # any CRAN mirror id
-  		utils.install_packages('survey')
-		```
-		
-		
-	<ol type="a"; start="2">
-  		<li>Select a mirror, proceed with the installation.</li>
-  		<li>Exit python.
-  	</ol>
-  	
-  		```
-  		exit()
-  		```
+  	```
+	python
+  	from rpy2.robjects.packages import importr
+  	utils = importr('utils')
+  	utils.chooseCRANmirror(ind=1) # any CRAN mirror id
+  	utils.install_packages('survey')
+  	exit()
+	```
+
+
+Test the installation by *cd* to the *PGAM/GAM_library* directory and run,
+
+```
+	python
+	from GAM_library import *
+	exit()
+```
+
+##### Inspect and edit the PATH environment variable
+
+On **windows**, inspect the folder in PATH by enterinng	
+
+	```
+	echo %PATH:;=&echo.%
+	```
+ 
+ in the command prompt, the R home folder shold be listed  (usually *C:\R\R-version\\*).
+ 
+ If not add it manually, on Windows 10:
+ 
+ 1. 	open the "Control Panel"
+ 2. 	search for "environment"
+ 3. 	Click on "Edit the system environment variables"->"Edit variables..."
+ 4. 	Scroll on "System variables" and click on "Path"
+ 5. 	Click on "Edit..." -> "New", type the path to the R home folder and click "Ok".
+ 6.	Close the second pop-up by clicking on "Ok"
+ 7. 	In the first pop-up, cllck "Apply" and then "Ok".
+ 8.    Restart the commad prompt.
+
+
+
+
+On **mac OS X** and **Linux**, inspect PATH by enterinng in the terrminal,
+ 
+	```
+	echo $PATH | tr : '\n'
+	```
 	
 
+If the R home folder is not listed, add it to the paths,
 
+On **mac OS X**:
+
+1. 	Open the .bash_profile file in your home directory (for example, /Users/your-user-name/.bash_profile) in a text editor.
+
+2. 	Add <br>
+	*export PATH="your-dir:$PATH"* <br>
+	to the last line of the file, where your-dir is the R home directory.
+	
+3.	Save the .bash_profile file.
+    Restart your terminal.
+    
+On **Linux**:
+
+1.	Open the .bashrc file in your home directory (for example, /home/your-user-name/.bashrc) in a text editor.
+
+2.	Add <br>
+	*export PATH="your-dir:$PATH"* <br>
+	 to the last line of the file, where your-dir is the R home directory.
+	
+3.	Save the .bashrc file.
+
+4.	Restart your terminal
+
+  
 #### Docker image
+
 
 # Usage
 

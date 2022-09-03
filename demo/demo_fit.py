@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pylab as plt
 import sys, inspect, os
 
-path = os.path.join(os.path.dirname((os.path.dirname(inspect.getfile(inspect.currentframe())))), 'GAM_library')
+path = os.path.join( '../GAM_library')
 sys.path.append(path)
 print(path)
 from GAM_library import *
@@ -168,7 +168,6 @@ gam_model = general_additive_model(sm_handler, sm_handler.smooths_var, spk,
 full, reduced = gam_model.fit_full_and_reduced(sm_handler.smooths_var, th_pval=0.001,
                                                smooth_pen=None, max_iter=10 ** 3, tol=10 ** (-8),
                                                conv_criteria='deviance',
-                                               initial_smooths_guess=False,
                                                method='L-BFGS-B',
                                                gcv_sel_tol=10 ** (-13),
                                                use_dgcv=True,
@@ -249,7 +248,7 @@ plt.xlabel('x')
 
 plt.tight_layout(rect=[0, 0.03, 1, 0.95])
 
-
+plt.show(block=True)
 
 
 
