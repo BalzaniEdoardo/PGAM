@@ -86,7 +86,7 @@ Inspect the PATH variable by entering in the command prompt,
  
 The R home folder shold be listed  (usually *C:\R\R-version\\*).
  
- If not, edit the PATH variable (Wiindows 10):
+ If not, edit the PATH variable (Windows 10):
  
  1. open the "Control Panel"
  
