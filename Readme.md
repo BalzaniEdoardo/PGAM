@@ -40,7 +40,7 @@ Below we will provide two recomanded ways of setting up the package:
 	conda activate pgam
 	conda install numpy pandas dill scikit-learn matplotlib 
 	conda install seaborn pyyaml h5py numba -y
-    	pip install rpy2 opt_einsum statsmodels
+	pip install rpy2 opt_einsum statsmodels
 	```
 
 
