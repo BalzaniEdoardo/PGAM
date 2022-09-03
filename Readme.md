@@ -56,9 +56,14 @@ Below we will provide two recomanded ways of setting up the package:
   		utils.install_packages('survey')
 		```
 		
-		<ol type="a", start="b">
+		
+		
+		
+	<ol type="a", start="b">
   		<li>Select a mirror, proceed with the installation.</li>
   		<li>Exit python.
+  	</ol>
+  	
   		```sh
   		exit()</li>
   		```
