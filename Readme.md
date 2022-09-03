@@ -187,7 +187,7 @@ Run the PGAM image in a container and launch jupyter notebook with the following
 	docker run   -v your-notebook-folder:/notebooks -ti -p 8888:8888 edoardobalzani87/pgam:1.0
 ```
 
-The -v option mounts the folder *your-notebook-folder*  of your computer as a volume in the Docker container virtual file system linking it to the folder */notebook* .  
+The -v option mounts the folder *your-notebook-folder*  of your computer as a volume in the Docker container virtual file system linking it to the virtual folder */notebook* .  
 
 Files saved by the container in the */notebook* virtual folder will be automatically copied in *your-notebook-folder*, and files already present in *your-notebook-folder* will be automatically copied in */notebook* when the container is started. 
 
