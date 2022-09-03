@@ -211,6 +211,13 @@ class behavior_experiment(object):
             self.continuous.rad_acc = None
             self.continuous.ang_acc = None
         
+        try:
+            self.continuous.rad_acc_diff = creat_dict_from_beahv_stat(behav_stat,'accel','radial_diff')
+            self.continuous.ang_acc_diff = creat_dict_from_beahv_stat(behav_stat,'accel','angular_diff')
+        except:
+            self.continuous.rad_acc_diff = None
+            self.continuous.ang_acc_diff = None
+        
         # integrate radial and angular path
         self.continuous.rad_path = self.itegrate_path(self.continuous.rad_vel)
         self.continuous.ang_path = self.itegrate_path(self.continuous.ang_vel)
@@ -584,7 +591,7 @@ class load_trial_types(object):
         # self.trial_type['landmark'] = ttype['landmark'].all()['trlindx'].all().flatten()
         # self.trial_type['replay'] = ttype['replay'].all()['trlindx'].all().flatten()
         if 'microstim' in list(ttype.dtype.names):
-            self.set_trial_type_microstim(ttype)
+            self.set_trial_type_microstim(trials_behv,skip_not_ok=skip_not_ok)
         if 'replay' in list(ttype.dtype.names):
             self.set_trial_type_replay(ttype)
             try:
@@ -596,11 +603,11 @@ class load_trial_types(object):
         if 'reward' in list(ttype.dtype.names):
             self.set_trial_type_reward(ttype, trials_behv,skip_not_ok=skip_not_ok)
         if 'ptb' in list(ttype.dtype.names):
-            self.set_trial_type_ptb(ttype)
+            self.set_trial_type_ptb(trials_behv,skip_not_ok=skip_not_ok)
         if 'landmark' in list(ttype.dtype.names):
             self.set_trial_type_landmark(ttype)
         if 'controlgain' in list(ttype.dtype.names):
-            self.set_trial_type_controlgain(ttype)
+            self.set_trial_type_controlgain(ttype,trials_behv,skip_not_ok=skip_not_ok)
         if 'firefly_fullON' in trials_behv['logical'][0].dtype.names:
             self.set_trial_type_firefly_fullON(trials_behv)
 
@@ -610,10 +617,12 @@ class load_trial_types(object):
         for k in range(trials_behv['logical'].shape[0]):
             self.trial_type['firefly_fullON'][k] = trials_behv['logical'][k]['firefly_fullON'][0,0][0,0]
 
-    def set_trial_type_controlgain(self, ttype):
+    def set_trial_type_controlgain(self, ttype, trials_behv,skip_not_ok=True):
+        self.trial_type['controlgain'] = 1.
+        
         struc_array = ttype['controlgain'].all()
         # set unclassified trials as -1
-        self.trial_type['controlgain'] = -1
+        #self.trial_type['controlgain'] = -1
         for k in range(struc_array.shape[1]):
             descr = struc_array[0, k]['val'][0]
             if descr.startswith('gain ='):
@@ -623,12 +632,14 @@ class load_trial_types(object):
             trialIndx = np.array(struc_array[0, k]['trlindx'].flatten(), dtype=bool)
             self.trial_type['controlgain'][trialIndx] = flag
         ok_trials = self.trial_type['all']
-        self.trial_type['controlgain'][~ok_trials] = -1
+        if skip_not_ok:
+            self.trial_type['controlgain'][~ok_trials] = -1
+        
 
     def set_trial_type_landmark(self, ttype):
         struc_array = ttype['landmark'].all()
         # set unclassified trials as -1
-        self.trial_type['landmark'] = -1
+        self.trial_type['landmark'] = 0
         for k in range(struc_array.shape[1]):
             descr = struc_array[0, k]['val'][0]
             if 'with landmark' in descr:
@@ -659,85 +670,44 @@ class load_trial_types(object):
                 # density = float(descr.split('=')[1].rstrip().lstrip())
                 trialIndx = np.array(struc_array[0,k]['trlindx'].flatten(),dtype=bool)
                 self.trial_type['density'][trialIndx] = density
+        ok_trials = self.trial_type['all']
 
         if skip_not_ok:
             self.trial_type['density'][~ok_trials] = np.nan
+            
         if np.prod(np.isnan(self.trial_type['density'])):
             raise Warning('some trial was not classified for the density of texture elements')
 
-    def set_trial_type_microstim(self, ttype):
-        struc_array = ttype['microstim'].all()
-        # set unclassified trials as -1
-        self.trial_type['microstim'] = -1
-        for k in range(struc_array.shape[1]):
-            descr = struc_array[0, k]['val'][0]
-            if 'with microstimulation' in descr:
-                flag = 1
-            elif 'without microstimulation' in descr:
-                flag = 0
-            else:
-                raise ValueError('description must be: without/with microstimulation')
-            trialIndx = np.array(struc_array[0, k]['trlindx'].flatten(), dtype=bool)
-            self.trial_type['microstim'][trialIndx] = flag
+    def set_trial_type_microstim(self, trials_behv,skip_not_ok=True):
+        self.trial_type['microstim'] = 0
+        for k in range(self.trial_type.shape[0]):
+            self.trial_type['microstim'][k] = float(np.squeeze(trials_behv['logical'][k]['microstim'][0][0]))
         ok_trials = self.trial_type['all']
-        self.trial_type['microstim'][~ok_trials] = -1
+        if skip_not_ok:
+            self.trial_type['microstim'][~ok_trials] = -1
+      
 
-    def set_trial_type_ptb(self, ttype):
-        struc_array = ttype['ptb'].all()
-        # set unclassified trials as -1
-        self.trial_type['ptb'] = -1
-        for k in range(struc_array.shape[1]):
-            descr = struc_array[0, k]['val'][0]
-            if 'with perturbation' in descr:
-                flag = 1
-            elif 'without perturbation' in descr:
-                flag = 0
-            else:
-                raise ValueError('description must be: without/with perturbation')
-            trialIndx = np.array(struc_array[0, k]['trlindx'].flatten(), dtype=bool)
-            self.trial_type['ptb'][trialIndx] = flag
+
+    def set_trial_type_ptb(self, trials_behv, skip_not_ok=True):
+        self.trial_type['ptb'] = 0
+        for k in range(self.trial_type.shape[0]):
+            self.trial_type['ptb'][k] = float(np.squeeze(trials_behv['logical'][k]['ptb'][0][0]))
         ok_trials = self.trial_type['all']
-        self.trial_type['ptb'][~ok_trials] = -1
+        if skip_not_ok:
+            self.trial_type['ptb'][~ok_trials] = -1
+        
 
 
-    def set_trial_type_landmark(self,ttype):
-        struc_array = ttype['landmark'].all()
-        # set unclassified trials as -1
-        self.trial_type['landmark'] = -1
-        for k in range(struc_array.shape[1]):
-            descr = struc_array[0,k]['val'][0]
-            if 'without landmark' in descr:
-                flag = 0
-            elif 'with landmark' in descr:
-                flag = 1
-            else:
-                raise ValueError('description must be: without/with landmark')
-
-            trialIndx = np.array(struc_array[0, k]['trlindx'].flatten(),dtype=bool)
-            self.trial_type['landmark'][trialIndx] = flag
-        ok_trials = self.trial_type['all']
-        self.trial_type['landmark'][~ok_trials] = -1
 
     def set_trial_type_reward(self,ttype, trials_behv,skip_not_ok=True):
-        struc_array = ttype['reward'].all()
+        # struc_array = ttype['reward'].all()
         # set unclassified trials as -1
         self.trial_type['reward'] = 0
         tmp = np.zeros(self.trial_type.shape[0])
-
+        
         for k in range(self.trial_type.shape[0]):
             tmp[k] = float(np.squeeze(trials_behv['logical'][k]['reward'][0][0]))
 
-        # for k in range(struc_array.shape[1]):
-        #     descr = struc_array[0,k]['val'][0]
-        #     if 'unrewarded' in descr:
-        #         flag = 0
-        #     elif 'rewarded' in descr:
-        #         flag = 1
-        #     else:
-        #         raise ValueError('description must be: rewarded or unrewarded')
-        #
-        #     trialIndx = np.array(struc_array[0, k]['trlindx'].flatten(),dtype=bool)
-        #     self.trial_type['reward'][trialIndx] = flag
 
         self.trial_type['reward'] = tmp
         ok_trials = self.trial_type['all']
@@ -747,13 +717,13 @@ class load_trial_types(object):
     def set_trial_type_replay(self,ttype):
         struc_array = ttype['replay'].all()
         # set unclassified trials as -1
-        self.trial_type['replay'] = -1
+        self.trial_type['replay'] = 0
         for k in range(struc_array.shape[1]):
             descr = struc_array[0,k]['val'][0]
             if 'active behaviour' in descr:
-                flag = 1
-            elif 'replay behaviour' in descr:
                 flag = 0
+            elif 'replay behaviour' in descr:
+                flag = 1
             else:
                 raise ValueError('description must be: active or passive behaviour')
 

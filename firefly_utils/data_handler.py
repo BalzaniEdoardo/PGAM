@@ -412,12 +412,19 @@ class data_handler(object):
         var_dict = {}
 
         for var in varnames:
+            
             if var in event_names:
                 events = self.behav.events.__dict__[var]
+                if events is None:
+                    print('empty %s'%var)
+                    continue
                 var_dict[var] = self.behav.create_event_time_binned(events,time_stamps,t_start=t_start,t_stop=t_stop,select=self.filter)
 
             elif var in continuous_names:
                 continuous = self.behav.continuous.__dict__[var]
+                if continuous is None:
+                    print('empty %s'%var)
+                    continue
                 var_dict[var] = self.behav.cut_continuous( continuous, time_stamps, t_start=t_start, t_stop=t_stop,
                                                           select=self.filter,idx0=None,idx1=None)
             elif var == 'phase':

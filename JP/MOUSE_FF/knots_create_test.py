@@ -401,87 +401,149 @@ if __name__ == '__main__':
                 'knots': 8,
                 'kernel_len':201,
                 },
+        'PTB1': {'order': 4,
+                'is_cyclic': [False],
+                'initial_penalty': 10,
+                'is_temporal_kernel': True,
+                'is_categorical': False,
+                'kernel_direction': 1,
+                'penalty_type': 'der',
+                'der_order': 2,
+                'zscore' :False,
+                'knots': 8,
+                'kernel_len':201,
+                },
+        'PTB2': {'order': 4,
+                'is_cyclic': [False],
+                'initial_penalty': 10,
+                'is_temporal_kernel': True,
+                'is_categorical': False,
+                'kernel_direction': 1,
+                'penalty_type': 'der',
+                'der_order': 2,
+                'zscore' :False,
+                'knots': 8,
+                'kernel_len':201,
+                },
+        'PTB3': {'order': 4,
+                'is_cyclic': [False],
+                'initial_penalty': 10,
+                'is_temporal_kernel': True,
+                'is_categorical': False,
+                'kernel_direction': 1,
+                'penalty_type': 'der',
+                'der_order': 2,
+                'zscore' :False,
+                'knots': 8,
+                'kernel_len':201,
+                },
+        'PTB4': {'order': 4,
+                'is_cyclic': [False],
+                'initial_penalty': 10,
+                'is_temporal_kernel': True,
+                'is_categorical': False,
+                'kernel_direction': 1,
+                'penalty_type': 'der',
+                'der_order': 2,
+                'zscore' :False,
+                'knots': 8,
+                'kernel_len':201,
+                },
+        'PTB5': {'order': 4,
+                'is_cyclic': [False],
+                'initial_penalty': 10,
+                'is_temporal_kernel': True,
+                'is_categorical': False,
+                'kernel_direction': 1,
+                'penalty_type': 'der',
+                'der_order': 2,
+                'zscore' :False,
+                'knots': 8,
+                'kernel_len':201,
+                }
+        
+        
         }
 
-    neu_num = 13
+    # neu_num = 13
 
-    counts = np.squeeze(dat['N'][neu_num,:])
-    F_var_list = ['rad target', 'ymp', 'ymv', 'yma', 'yfp', 'yfv', 'pd',
-               'eyeH', 'eyeV', 'FFon', 'FFoff', 'moveOn', 'MoveOff', 'reward',
-               'theta', 'alpha', 'beta']
-    neu_list = []
-    for var in dat['variable_names'][0]:
-        if (not var[0] in F_var_list) and (var[0]!='yfa'):
-            neu_list.append(var[0])
-    neu_name = neu_list[neu_num]
-    neu_list.remove(neu_name)
-    neu_list = []
-    var_list = F_var_list + neu_list + ['spike_hist']
+    # counts = np.squeeze(dat['N'][neu_num,:])
+    # F_var_list = ['rad target', 'ymp', 'ymv', 'yma', 'yfp', 'yfv', 'pd',
+    #            'eyeH', 'eyeV', 'FFon', 'FFoff', 'moveOn', 'MoveOff', 'reward',
+    #            'theta', 'alpha', 'beta']
+    # neu_list = []
+    # for var in dat['variable_names'][0]:
+    #     if (not var[0] in F_var_list) and (var[0]!='yfa'):
+    #         neu_list.append(var[0])
+    # neu_name = neu_list[neu_num]
+    # neu_list.remove(neu_name)
+    # neu_list = []
+    # var_list = F_var_list + neu_list + ['spike_hist']
     
-    orig_var_list = []
-    for k in range(len(dat['variable_names'][0])):
-        orig_var_list.append(dat['variable_names'][0][k][0])
-    orig_var_list = np.array(orig_var_list)
+    # orig_var_list = []
+    # for k in range(len(dat['variable_names'][0])):
+    #     orig_var_list.append(dat['variable_names'][0][k][0])
+    # orig_var_list = np.array(orig_var_list)
     
-    # create list of covariates with the same order as var_list
-    covs = np.zeros((len(var_list),dat['F'].shape[1]))
-    cc = 0
-    for var in var_list:
-        if var in F_var_list:
-            idx = np.where(orig_var_list == var)[0][0]
-            covs[cc] = dat['F'][idx]
+    # # create list of covariates with the same order as var_list
+    # covs = np.zeros((len(var_list),dat['F'].shape[1]))
+    # cc = 0
+    # for var in var_list:
+    #     if var in F_var_list:
+    #         idx = np.where(orig_var_list == var)[0][0]
+    #         covs[cc] = dat['F'][idx]
         
-        elif var == 'spike_hist':
-            idx = np.where(orig_var_list == neu_name)[0][0] - len(F_var_list) - 1
-            covs[cc] = dat['N'][idx,:]
-    #         print(neu_name,var,idx)
+    #     elif var == 'spike_hist':
+    #         idx = np.where(orig_var_list == neu_name)[0][0] - len(F_var_list) - 1
+    #         covs[cc] = dat['N'][idx,:]
+    # #         print(neu_name,var,idx)
             
-        else:
-            idx = np.where(orig_var_list == var)[0][0] - len(F_var_list) - 1
-    #         print(neu_name,var,idx)
-            covs[cc] = dat['N'][idx,:]
+    #     else:
+    #         idx = np.where(orig_var_list == var)[0][0] - len(F_var_list) - 1
+    # #         print(neu_name,var,idx)
+    #         covs[cc] = dat['N'][idx,:]
         
-        cc += 1
+    #     cc += 1
     
-    input_dict, perc_dict = knots_create(covs, counts, var_list, cov_info, min_obs_between_knots=1000)
+    # input_dict, perc_dict = knots_create(covs, counts, var_list, cov_info, min_obs_between_knots=1000)
 
-    # create the input
-    sm_handler = smooths_handler()
-    for var in var_list:
-        var_dict = input_dict[var]
-        print(var, var_dict['knots'])
-        sm_handler.add_smooth(var, var_dict['x'], ord=var_dict['order'], knots=var_dict['knots'],
-                          penalty_type=var_dict['penalty_type'], der=var_dict['der'], 
-                          kernel_length=var_dict['kernel_len'],
-                          kernel_direction=var_dict['kernel_direction'],trial_idx=np.squeeze(dat['T']),
-                          is_temporal_kernel=var_dict['is_temporal_kernel'], time_bin=0.005,
-                          lam=var_dict['lam'],is_cyclic=var_dict['is_cyclic'])
+    # # create the input
+    # sm_handler = smooths_handler()
+    # for var in var_list:
+    #     var_dict = input_dict[var]
+    #     print(var, var_dict['knots'])
+    #     sm_handler.add_smooth(var, var_dict['x'], ord=var_dict['order'], knots=var_dict['knots'],
+    #                       penalty_type=var_dict['penalty_type'], der=var_dict['der'], 
+    #                       kernel_length=var_dict['kernel_len'],
+    #                       kernel_direction=var_dict['kernel_direction'],trial_idx=np.squeeze(dat['T']),
+    #                       is_temporal_kernel=var_dict['is_temporal_kernel'], time_bin=0.005,
+    #                       lam=var_dict['lam'],is_cyclic=var_dict['is_cyclic'])
     
-    link = deriv3_link(sm.genmod.families.links.log())
-    poissFam = sm.genmod.families.family.Poisson(link=link)
-    family = d2variance_family(poissFam)
+    # link = deriv3_link(sm.genmod.families.links.log())
+    # poissFam = sm.genmod.families.family.Poisson(link=link)
+    # family = d2variance_family(poissFam)
     
-    # train trail (90% dataset)
-    trial_idx = np.squeeze(dat['T'])
-    unchosen = np.arange(0, np.unique(trial_idx).shape[0])[::10]
-    choose_trials = np.array(list(set(np.arange(0, np.unique(trial_idx).shape[0])).difference(set(unchosen))),dtype=int)
-    choose_trials = np.unique(trial_idx)[np.sort(choose_trials)]
-    filter_trials = np.zeros(trial_idx.shape[0], dtype=bool)
-    for tr in choose_trials:
-        filter_trials[trial_idx==tr] = True
+    # # train trail (90% dataset)
+    # trial_idx = np.squeeze(dat['T'])
+    # unchosen = np.arange(0, np.unique(trial_idx).shape[0])[::10]
+    # choose_trials = np.array(list(set(np.arange(0, np.unique(trial_idx).shape[0])).difference(set(unchosen))),dtype=int)
+    # choose_trials = np.unique(trial_idx)[np.sort(choose_trials)]
+    # filter_trials = np.zeros(trial_idx.shape[0], dtype=bool)
+    # for tr in choose_trials:
+    #     filter_trials[trial_idx==tr] = True
     
-    filter_trials =  np.ones(trial_idx.shape[0], dtype=bool)
-    gam_model = general_additive_model(sm_handler,sm_handler.smooths_var,counts,poissFam,fisher_scoring=False)
+    # filter_trials =  np.ones(trial_idx.shape[0], dtype=bool)
+    # gam_model = general_additive_model(sm_handler,sm_handler.smooths_var,counts,poissFam,fisher_scoring=False)
     
-    full_fit, reduced_fit = gam_model.fit_full_and_reduced(sm_handler.smooths_var,th_pval=0.001,
-                                                      smooth_pen=None, max_iter=10 ** 3, tol=10 ** (-8),
-                                                      conv_criteria='deviance',
-                                                      initial_smooths_guess=False,
-                                                      method='L-BFGS-B',
-                                                      gcv_sel_tol=10 ** (-10),
-                                                      use_dgcv=True,
-                                                      fit_initial_beta=True,
-                                                      trial_num_vec=trial_idx,
-                                                      filter_trials=filter_trials)
+    # full_fit, reduced_fit = gam_model.fit_full_and_reduced(sm_handler.smooths_var,th_pval=0.001,
+    #                                                   smooth_pen=None, max_iter=10 ** 3, tol=10 ** (-8),
+    #                                                   conv_criteria='deviance',
+    #                                                   initial_smooths_guess=False,
+    #                                                   method='L-BFGS-B',
+    #                                                   gcv_sel_tol=10 ** (-10),
+    #                                                   use_dgcv=True,
+    #                                                   fit_initial_beta=True,
+    #                                                   trial_num_vec=trial_idx,
+                                                      # filter_trials=filter_trials)
             
             

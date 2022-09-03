@@ -16,6 +16,7 @@ class spike_counts(object):
         self.brain_area = self.unpack_struct_N_times_1(units,'brain_area')
         self.channel_id = self.unpack_struct_N_times_1(units,'channel_id')
         self.electrode_id = self.unpack_struct_N_times_1(units, 'electrode_id')
+        self.electrode_type = self.unpack_struct_N_times_1(units, 'electrode_type')
         # single identifier for the unit
         self.cluster_id = self.unpack_struct_N_times_1(units, 'cluster_id')
 

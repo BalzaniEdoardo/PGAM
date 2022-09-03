@@ -45,7 +45,7 @@ for root, dirs, files in os.walk(DIRECT, topdown=False):
 # concat_list = concat_list[ii+1:]
 # fld_list = fld_list[ii+1:]
 
-concat_list =  ['m53s49']#['m53s38','m53s39', 'm53s48', 'm53s49', 'm53s50', 'm53s51']
+concat_list =  ['m51s120', 'm51s121', 'm51s122']#,'m53s50', 'm53s51'
 # concat_list = ['m72s2']
 
 sv_folder = '/Volumes/WD_Edo 1/firefly_analysis/LFP_band/concatenation_with_accel'
@@ -173,15 +173,15 @@ for session in concat_list:
     #  SALVA IL TRIAL ID
     exp_data.set_filters('all', True)
 
-    if any(exp_data.info.trial_type['replay'] == 0): # replay triial are available
-        trial_all_id = exp_data.behav.trial_id[np.where(exp_data.filter)[0]]
-        repl_tr = []
-        for id in trial_all_id:
-            pair = np.where(exp_data.behav.trial_id == id)[0]
-            for tr in pair:
-                if exp_data.info.trial_type['replay'][tr] == 0:
-                    repl_tr += [tr]
-        exp_data.filter[np.array(repl_tr)] = True
+    # if any(exp_data.info.trial_type['replay'] == 0): # replay triial are available
+    #     trial_all_id = np.where(exp_data.filter)[0]
+    #     repl_tr = []
+    #     for id in trial_all_id:
+    #         pair = np.where(np.where(exp_data.filter)[0] == id)[0]
+    #         for tr in pair:
+    #             if exp_data.info.trial_type['replay'][tr] == 0:
+    #                 repl_tr += [tr]
+    #     exp_data.filter[np.array(repl_tr)] = True
 
     # # impose all replay trials
     # is_replay = any(exp_data.info.get_replay(0,skip_not_ok=False))
@@ -200,8 +200,7 @@ for session in concat_list:
 
     var_names = ('rad_vel','ang_vel','rad_path','ang_path','rad_target','ang_target',
                  'lfp_beta','lfp_alpha','lfp_theta','t_move','t_flyOFF','t_stop','t_reward','eye_vert','eye_hori',
-                 'hand_vel1','hand_vel2','rad_acc','ang_acc','rad_vel_diff','rad_vel_ptb',
-                 'ang_vel_diff','ang_vel_ptb','t_ptb')
+                 'hand_vel1','hand_vel2','rad_acc','ang_acc','t_ptb')#'rad_vel_diff','rad_vel_ptb','ang_vel_diff','ang_vel_ptb'
                  #'lfp_alpha_power',
                  #'lfp_theta_power','lfp_beta_power')
     try:

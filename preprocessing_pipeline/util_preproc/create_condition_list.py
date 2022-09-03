@@ -32,8 +32,7 @@ for fh in os.listdir('/Volumes/WD_Edo 1/firefly_analysis/LFP_band/concatenation_
     # if session != 'm44s174':
     #     continue
 #session = 'm53s91'
-    sess_keep = ['m53s36','m53s39','m53s40','m53s41','m53s42','m53s43','m53s44',
-                 'm53s46','m53s47','m53s48','m53s49','m53s50','m53s51']
+    sess_keep = ['m51s120','m51s121','m51s122']
     #
     if not session in sess_keep:
         continue
@@ -125,29 +124,29 @@ for fh in os.listdir('/Volumes/WD_Edo 1/firefly_analysis/LFP_band/concatenation_
     
     quotient = shape//all_num
     one_every = min(quotient,5)
-    # print(one_every)
+    print(one_every)
     # if cond_list['condition']
-    # if one_every > 0:
-    #     cond_list2 = deepcopy(cond_list)
-    #     cond_list2['neuron'] = -1
-    #     cond_list2['condition'] = ''
-    #     cond_list2['value'] = np.nan
-    #     idx_all = np.where(cond_list['condition'] == 'all')[0]
-    #     idx_other = np.where(cond_list['condition'] != 'all')[0]
-    #     new_idx_all = np.arange(0,idx_all.shape[0]*one_every,one_every)
-    #     new_idx_other = np.array(list(set(np.arange(0,cond_list.shape[0])).difference(set(new_idx_all))))
-    #
-    #     cond_list2['neuron'][new_idx_all] = cond_list['neuron'][idx_all]
-    #     cond_list2['condition'][new_idx_all] = cond_list['condition'][idx_all]
-    #     cond_list2['value'][new_idx_all] = cond_list['value'][idx_all]
-    #
-    #     cond_list2['neuron'][new_idx_other] = cond_list['neuron'][idx_other]
-    #     cond_list2['condition'][new_idx_other] = cond_list['condition'][idx_other]
-    #     cond_list2['value'][new_idx_other] = cond_list['value'][idx_other]
-    #
-    #     cond_list = cond_list2
-    #
-    # 
+    if one_every > 0:
+        cond_list2 = deepcopy(cond_list)
+        cond_list2['neuron'] = -1
+        cond_list2['condition'] = ''
+        cond_list2['value'] = np.nan
+        idx_all = np.where(cond_list['condition'] == 'all')[0]
+        idx_other = np.where(cond_list['condition'] != 'all')[0]
+        new_idx_all = np.arange(0,idx_all.shape[0]*one_every,one_every,dtype=int)
+        new_idx_other = np.array(list(set(np.arange(0,cond_list.shape[0])).difference(set(new_idx_all))),dtype=int)
+    
+        cond_list2['neuron'][new_idx_all] = cond_list['neuron'][idx_all]
+        cond_list2['condition'][new_idx_all] = cond_list['condition'][idx_all]
+        cond_list2['value'][new_idx_all] = cond_list['value'][idx_all]
+    
+        cond_list2['neuron'][new_idx_other] = cond_list['neuron'][idx_other]
+        cond_list2['condition'][new_idx_other] = cond_list['condition'][idx_other]
+        cond_list2['value'][new_idx_other] = cond_list['value'][idx_other]
+    
+        cond_list = cond_list2
+    
+    
     # if 'ptb' in cond_list['condition'] or 'controlgain' in cond_list['condition']:
     # if not 'density' in cond_list['condition']:
     #     continue
