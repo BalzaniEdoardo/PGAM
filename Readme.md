@@ -30,13 +30,13 @@ Below we will provide two recomanded ways of setting up the package:
 
 2. Open the terminal/command prompt and create a conda environment with
 	
-	```sh
+	```
 	conda create -n pgam python=3.9
 	```
 
 3. Activate the environment and install the required python packages
 
-	```sh
+	```
 	conda activate pgam
 	conda install numpy pandas dill scikit-learn matplotlib -y
 	conda install seaborn pyyaml h5py numba -y
@@ -49,14 +49,13 @@ Below we will provide two recomanded ways of setting up the package:
   		</li>
   	</ol> 
   	
-  		```sh
+  		```
   		python
   		from rpy2.robjects.packages import importr
   		utils = importr('utils')
+  		utils.chooseCRANmirror(ind=1) # any CRAN mirror id
   		utils.install_packages('survey')
 		```
-		
-		
 		
 		
 	<ol type="a"; start="2">
@@ -64,8 +63,8 @@ Below we will provide two recomanded ways of setting up the package:
   		<li>Exit python.
   	</ol>
   	
-  		```sh
-  		exit()</li>
+  		```
+  		exit()
   		```
 	
 
