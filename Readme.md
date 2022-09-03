@@ -30,7 +30,7 @@ Below we will provide two recomanded ways of setting up the package:
 
 ## Conda environment
 
-In order to set up a conda environment with the specified packages repeat the following steps,
+Instruction on how to set up a conda environment with the specified packages are provided below.
 
 1. Download  and install <a href="https://www.r-project.org/">R<a> and <a href="https://www.anaconda.com/products/distribution"> Anaconda <a>. Make sure that the path to R is in the system PATH environment variable after the installation, [add it otherwise](#env-var). 
 
@@ -154,18 +154,18 @@ Downloadinng a Docker image and running it in a Docker container is very simple 
 
 Download, install and start <a href="https://docs.docker.com/get-docker/"> Docker<a>. 
 
-Download the PGAM Docker Image with the terminal command
+Download the PGAM Docker image with the terminal/command propmpt command
 
 ```
 docker pull  edoardobalzani87/pgam:1.0
 ```
 
-You can check the list of all the dowloaded images by typing
+You can check the list of all the dowloaded images with the command,
 ```
 docker images
 ```
 
-You can run the image in a Docker container and inspect the contents by typing in the command prompt:
+You can run the image in a Docker container and inspect the contents with the command,
 
 ```
 docker run -ti  edoardobalzani87/pgam:1.0 /bin/bash
