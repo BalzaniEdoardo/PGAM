@@ -12,11 +12,12 @@ Table of Contents
      * [Docker image](#docker-image)
      	* [Working with jupyter](#working-with-jupyter)
      	* [Running a script](#running-a-script)
+<!---
 * [Usage](#usage)
    * [Notebooks](#notebooks)
    * [Model parameters](#model-parameters)
 * [References](#references)
-
+--->
 
 # Setup
 The package was implemented on macOS (Monterey version 12.5.1) and tested on Linux (RHEL version 8.4) and Windows 10. 
@@ -215,13 +216,13 @@ The -v option mounts *your-script-folder* as a volume in the container, and link
 
 
 Note that eventual the inputs loaded by *yourscript.py* needs to be saved in *your-script-folder* to be available within the container. Similarly, all the outputs that *yourscript.py* saves, must be saved in the virtual folder *scripts/* to be copied in the host file system.
-
+<!---
 # Usage
 
 ## Demo
 
 ## Notebook
-
+--->
 
 
 # References
