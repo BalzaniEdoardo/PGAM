@@ -44,21 +44,23 @@ Below we will provide two recomanded ways of setting up the package:
 	```
 
 4. Install the R package *survey*. The recommended option is to install the package directly through rpy2 with the following steps:
-	<ol type="a">
-  		<li>Run python, import r utils and install the package *survey*<br>
+	<ol type="a", start="a">
+  		<li>Run python, import r utils and install the package <em>survey</em>
+  		</li>
+  		</ol> 
   		```sh
   		python
   		from rpy2.robjects.packages import importr
   		utils = importr('utils')
   		utils.install_packages('survey')
 		```
-  		</li>
+		<ol type="a", start="b">
   		<li>Select a mirror, proceed with the installation.</li>
   		<li>Exit python.
   		```sh
   		exit()</li>
   		```
-	</ol> 
+	
 
 
 #### Docker image
