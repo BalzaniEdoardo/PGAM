@@ -144,6 +144,15 @@ On **Linux**:
 
   
 ## Docker image
+Download, install and start <a href="https://docs.docker.com/get-docker/"> Docker<a>.
+
+In order to download and run the docker container enter in the terrminal/command propmpt:
+
+```
+	docker run   -v your-notebook-folder:/notebooks -ti -p 8888:8888 edoardobalzani87/pgam:1.0 /bin/bash
+```
+
+The -v option mounts the folder *your-notebook-folder* as a volume in the Docker container. 
 
 
 # Usage
