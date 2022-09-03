@@ -76,13 +76,13 @@ Test the installation by *cd* to the *PGAM/GAM_library* directory and run,
 
 On **windows**:
 	
-Inspect the folder in PATH by enterinng	
+Inspect the PATH variable by entering in the command prompt,
 
 ```
 	echo %PATH:;=&echo.%
 ```
  
- in the command prompt, the R home folder shold be listed  (usually *C:\R\R-version\\*).
+The R home folder shold be listed  (usually *C:\R\R-version\\*).
  
  If not, edit the PATH variable (Wiindows 10):
  
@@ -103,14 +103,20 @@ Inspect the folder in PATH by enterinng
  8. restart the commad prompt.
 
 
-Inspect the PATH variable on **mac OS X** and **Linux** by entering in the terrminal,
+
+
+
+<br><br>
+On **mac OS X** and **Linux**,
+
+Inspect the PATH variable by entering in the terrminal,
  
 ```
 	echo $PATH | tr : '\n'
 ```
 	
 
-If the R home folder is not listed, add it to the paths;
+If the R home folder is not listed,
 
 On **mac OS X**:
 
@@ -121,7 +127,8 @@ On **mac OS X**:
 	to the last line of the file, where your-dir is the R home directory.
 	
 3.	Save the .bash_profile file.
-    Restart your terminal.
+
+4.	Restart your terminal.
     
 On **Linux**:
 
