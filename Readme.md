@@ -4,6 +4,9 @@ Poisson Generalized Additive Model (PGAM)
 
 A PGAM for the estimation of neural tuning functions. Responses are represented in terms of B-splines regularized by a smoothing enforcing penalization. B-spline coefficients and regularization hyperparameters are jointly learned from the data by numerical optimization of a cross-validation score. The model infers marginal confidence bounds for the contribution of each feature to the neural response and uses such bonuds to identify the minimal subset of features each neuron responds to.  See [[1]](#1) for a more details. 
 
+The reository includes a tutorial that showcase the main functionality of the model, and familiarizes the user with the concepts of B-splines, the regularization and the model outputs.
+
+
 Table of Contents
 =================
 * [Setup](#setup)
