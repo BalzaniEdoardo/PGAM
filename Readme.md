@@ -28,9 +28,9 @@ Below we will provide two recomanded ways of setting up the package:
 #### Conda environemnt
 1. Download  and install <a href="https://www.r-project.org/">R<a> and <a href="https://www.anaconda.com/products/distribution"> Anaconda <a>. 
 
-2. Create a conda environment with the command
+2. Open the terminal/command prompt and create a conda environment with
 	
-	```
+	```sh
 	conda create -n pgam python=3.9
 	```
 
@@ -38,10 +38,27 @@ Below we will provide two recomanded ways of setting up the package:
 
 	```sh
 	conda activate pgam
-	conda install numpy pandas dill scikit-learn matplotlib 
+	conda install numpy pandas dill scikit-learn matplotlib -y
 	conda install seaborn pyyaml h5py numba -y
 	pip install rpy2 opt_einsum statsmodels
 	```
+
+4. Install the R package *survey*. The recommended option is to install the package directly through rpy2 with the following steps:
+	<ol type="a">
+  		<li>Run python, import r utils and install the package *survey*<br>
+  		```sh
+  		python
+  		from rpy2.robjects.packages import importr
+  		utils = importr('utils')
+  		utils.install_packages('survey')
+		```
+  		</li>
+  		<li>Select a mirror, proceed with the installation.</li>
+  		<li>Exit python.
+  		```sh
+  		exit()</li>
+  		```
+	</ol> 
 
 
 #### Docker image
