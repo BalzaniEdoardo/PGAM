@@ -26,7 +26,7 @@ Below we will provide two recomanded ways of setting up the package:
 1. Install all software requirerments and create a dedicated [conda environment](#conda-environment)
 2. Download and run a [Docker image](#docker-image).
 
-## Conda environemnt
+## Conda environment
 
 In order to set up a conda environment with the specified packages repeat the following steps,
 
