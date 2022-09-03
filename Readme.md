@@ -204,7 +204,7 @@ Open a browser, and browse to *localhost:8888/* to connect to jupyter. You can t
 The ```run``` command creates a new container each time, however, if you haven't removed an old container, it can be restarted with the command ```docker start CONTAINER-ID```. Inspect the inactive containers with ```docker ps -a```. You can stop a container with  ```docker stop CONTAINER-ID```
 
 
-### Running a scripts
+### Running a script
 
 If you want to run *yourscript.py*  enter the code,
 
