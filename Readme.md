@@ -2,7 +2,7 @@ Poisson Generalized Additive Model (PGAM)
 =====================================
 
 
-A PGAM for the estimation neural tuning functions. Responses are rerpresented in terms of B-splines regularized by a smoothing enforcing penalization. B-spline coefficients and regularization hyperparameters are jointly learned from the data by numerical optimization of the a cross-validation score. The model infers maginal confidence bounds for the contribution of each feature to the neural response, and uses such bonuds to  identify the minimal subset of features each neuron reponds to.  See [[1]](#1) for a more details.
+A PGAM for the estimation of neural tuning functions. Responses are represented in terms of B-splines regularized by a smoothing enforcing penalization. B-spline coefficients and regularization hyperparameters are jointly learned from the data by numerical optimization of a cross-validation score. The model infers marginal confidence bounds for the contribution of each feature to the neural response and uses such bonuds to identify the minimal subset of features each neuron responds to.  See [[1]](#1) for a more details. 
 
 Table of Contents
 =================
@@ -19,13 +19,13 @@ Table of Contents
 
 
 # Setup
-The package was implemented on macOS (Monterey version 12.5.1), and tested on Linux (RHEL version 8.4) and Windows 10. 
+The package was implemented on macOS (Monterey version 12.5.1) and tested on Linux (RHEL version 8.4) and Windows 10. 
 It requires python (>=3.6), and R (>= 3.6). 
 
 
-Below we will provide two recomanded ways of setting up the package:
+Below we will provide two recommended ways of setting up the package:
 
-1. Install all software requirerments and create a dedicated [conda environment](#conda-environment)
+1. Install all software requirements and create a dedicated [conda environment](#conda-environment)
 2. Download and run a [Docker image](#docker-image).
 
 ## Conda environment
@@ -78,13 +78,13 @@ Test the installation by *cd* to the *PGAM/GAM_library* directory and run,
 
 On **windows**:
 	
-Inspect the PATH variable by entering in the command prompt,
+Inspect the PATH variable by entering the command prompt,
 
 ```
 	echo %PATH:;=&echo.%
 ```
  
-The R home folder shold be listed  (usually *C:\R\R-version\\*).
+The R home folder should be listed  (usually *C:\R\R-version\\*).
  
  If not, edit the PATH variable (Windows 10):
  
@@ -102,7 +102,7 @@ The R home folder shold be listed  (usually *C:\R\R-version\\*).
 
  7. click "Apply" and then "Ok".
 
- 8. restart the commad prompt.
+ 8. restart the command prompt.
 
 
 
@@ -111,7 +111,7 @@ The R home folder shold be listed  (usually *C:\R\R-version\\*).
 <br><br>
 On **mac OS X** and **Linux**,
 
-Inspect the PATH variable by entering in the terrminal,
+Inspect the PATH variable by entering in the terminal,
  
 ```
 	echo $PATH | tr : '\n'
@@ -147,20 +147,20 @@ On **Linux**:
   
 ## Docker image
 
-Downloadinng a Docker image and running it in a Docker container is very simple and makes the setup of the package trivial. However, working with docker containers requires some familiarity with the docker syntax (starting, stopping and removing containers, mounting volumes etc.); I would recommand checking out one of the many tutorial available online before starting to work with docker. 
+Downloading a Docker image and running it in a Docker container is very simple and makes the setup of the package trivial. However, working with docker containers requires some familiarity with the concept of docker container itself and the docker syntax (starting, stopping, and removing containers, mounting volumes, etc.); I would recommend checking out one of the many tutorials available online before starting to work with docker. 
 
 ### Installing and running the PGAM Docker image
 
 
 Download, install and start <a href="https://docs.docker.com/get-docker/"> Docker<a>. 
 
-Download the PGAM Docker image with the terminal/command propmpt command
+Download the PGAM Docker image with the terminal/command prompt command
 
 ```
 docker pull  edoardobalzani87/pgam:1.0
 ```
 
-You can check the list of all the dowloaded images with the command,
+You can check the list of all the downloaded images with the command,
 ```
 docker images
 ```
@@ -171,9 +171,9 @@ You can run the image in a Docker container and inspect the contents with the co
 docker run -ti  edoardobalzani87/pgam:1.0 /bin/bash
 ```
  
-The command will run a Linux bash shell that allows you to inspect the image content. python, R and all the required packages  are already installed and the enviironment variables are set up. Type ```exit```, to exit the bash shell and stop the container. 
+The command will run a Linux bash shell that allows you to inspect the image content. python, R, and all the required packages are already installed and the environment variables are set up. Type ```exit```, to exit the bash shell and stop the container. 
 
-You can delete a stopped container  with the command  ```docker rm CONTAINER-ID``` . The container ID can be found with the command ```docker ps -a```, which will list all available containers, their IDs, the image that they run and the command that they execute.
+You can delete a stopped container with the command  ```docker rm CONTAINER-ID``` . The container ID can be found with the command ```docker ps -a```, which will list all available containers, their IDs, the image that they run, and the command that they execute.
 
 ### Working with jupyter
 
@@ -183,17 +183,25 @@ Run the PGAM image in a container and launch jupyter notebook with the following
 	docker run   -v your-notebook-folder:/notebooks -ti -p 8888:8888 edoardobalzani87/pgam:1.0
 ```
 
-The -v option mounts the folder *your-notebook-folder*  of your coputer (the host computer) as a volume in the Docker container virtual file system linking it to the folder */notebook* .  
+
+Run the PGAM image in a container and launch jupyter notebook with the following command,
+
+```
+	docker run   -v your-notebook-folder:/notebooks -ti -p 8888:8888 edoardobalzani87/pgam:1.0
+```
+
+The -v option mounts the folder *your-notebook-folder*  of your computer as a volume in the Docker container virtual file system linking it to the folder */notebook* .  
 
 Files saved by the container in the */notebook* virtual folder will be automatically copied in *your-notebook-folder*, and files already present in *your-notebook-folder* will be automatically copied in */notebook* when the container is started. 
 
-FIles that the container saves in other directories of the virtual file system will be lost once the container is stopped or removed (the container as a temporary file system).
+Files that the container saves in other directories of the virtual file system will be lost once the container is stopped or removed (the container as a temporary file system).
 
-The -p *local-port:contanier-port* option connects the port 8888 of the container with that of the host operating system, allowing the container and the operating system to interact.
+The -p *local-port:container-port* option connects port 8888 of the container with that of the host operating system, allowing the container and the operating system to interact.
 
-Open a browser, and browse to *localhost:8888/* to connect to jupyter. You can test the library by working with the "PGAM Tutorial.ipynb" or you can crerate your own notebook. Files will be stoerd in the *your-notebook-folder*.
+Open a browser, and browse to *localhost:8888/* to connect to jupyter. You can test the library by working with the "PGAM Tutorial.ipynb" or you can create your own notebook. Files will be stored in the *your-notebook-folder*.
 
-The ```run``` command  creates a new container each time, however, if you haven't removed an old contaiiner, it can be restarted with the command ```docker start CONTAINER-ID```. Inspect the inactive containers with ```docker ps -a```. You can stop a container with  ```docker stop CONTAINER-ID```
+The ```run``` command creates a new container each time, however, if you haven't removed an old container, it can be restarted with the command ```docker start CONTAINER-ID```. Inspect the inactive containers with ```docker ps -a```. You can stop a container with  ```docker stop CONTAINER-ID```
+
 
 ### Running a scripts
 
@@ -203,7 +211,8 @@ If you want to run *yourscript.py*  enter the code,
 docker run -v your-script-folder/:/scripts -ti -p 8888:8888 edoardobalzani87/pgam:1.0 /bin/bash -c "python scripts/yourscript.py"
 ```
 
-The -v option mounts *your-script-folder* as a volume in the contaiiner, links it to the virtual folder */scripts*, while the -c option executes a shell command, in this case *python yourscript.py*. 
+The -v option mounts *your-script-folder* as a volume in the container, and links it to the virtual folder */scripts*, while the -c option executes a shell command, in this case, *python yourscript.py*. 
+
 
 Note that eventual the inputs loaded by *yourscript.py* needs to be saved in *your-script-folder* to be available within the container. Similarly, all the outputs that *yourscript.py* saves, must be saved in the virtual folder *scripts/* to be copied in the host file system.
 
