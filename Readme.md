@@ -4,6 +4,9 @@ Poisson Generalized Additive Model (PGAM)
 
 A PGAM for the estimation of neural tuning functions. Responses are represented in terms of B-splines regularized by a smoothing enforcing penalization. B-spline coefficients and regularization hyperparameters are jointly learned from the data by numerical optimization of a cross-validation score. The model infers marginal confidence bounds for the contribution of each feature to the neural response and uses such bonuds to identify the minimal subset of features each neuron responds to.  See [[1]](#1) for a more details. 
 
+The reository includes a tutorial that showcase the main functionality of the model, and familiarizes the user with the concepts of B-splines, the regularization and the model outputs.
+
+
 Table of Contents
 =================
 * [Setup](#setup)
@@ -184,14 +187,7 @@ Run the PGAM image in a container and launch jupyter notebook with the following
 	docker run   -v your-notebook-folder:/notebooks -ti -p 8888:8888 edoardobalzani87/pgam:1.0
 ```
 
-
-Run the PGAM image in a container and launch jupyter notebook with the following command,
-
-```
-	docker run   -v your-notebook-folder:/notebooks -ti -p 8888:8888 edoardobalzani87/pgam:1.0
-```
-
-The -v option mounts the folder *your-notebook-folder*  of your computer as a volume in the Docker container virtual file system linking it to the folder */notebook* .  
+The -v option mounts the folder *your-notebook-folder*  of your computer as a volume in the Docker container virtual file system linking it to the virtual folder */notebook* .  
 
 Files saved by the container in the */notebook* virtual folder will be automatically copied in *your-notebook-folder*, and files already present in *your-notebook-folder* will be automatically copied in */notebook* when the container is started. 
 
