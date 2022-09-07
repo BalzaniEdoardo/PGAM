@@ -43,18 +43,27 @@ dtype_dict = np.dtype([('session', 'U10'), ('num PFC', int),
                        ('probe type PPC', 'U40'),('probe type MST', 'U40')])
 table = np.zeros(0, dtype=dtype_dict)
 #first = True
+dict_probe = {}
+first=True
 for fhname in os.listdir(path):
     if not re.match('^m\d+s\d+.mat$',fhname):
         continue
-   
-    
     session = fhname.split('.')[0]
+    if session != 'm73s28' and first:
+        continue
+    
+    
+    first=False
+    print(session)
+    
+    
     # print('session', session)
     # if session != 'm71s18' and ( first):
     #     continue
     # first=False
     print('session', session)
     dat = fireFly_dataPreproc(os.path.join(path, session+'.mat'))
+    dict_probe[session] = {}
     
     tmp = np.zeros(1, dtype=dtype_dict)
     tmp['session'] = session
@@ -68,5 +77,20 @@ for fhname in os.listdir(path):
         else:
             ptype = 'unknown'
         tmp['probe type %s'%area] = ptype
+    
+    for area in np.unique(dat.spikes.brain_area):
+        if not session.startswith('m73'):
+            ptype = np.unique(dat.spikes.electrode_type[dat.spikes.brain_area==area])
+        else:
+            ptype = dat.spikes.electrode_type[dat.spikes.brain_area==area][0]
+        if len(ptype) == 0:
+            ptype = ''
+        elif len(ptype) == 1:
+            ptype=ptype[0]
+        else:
+            ptype = 'unknown'
+        dict_probe[session][area] = ptype
+        
     table = np.hstack((table,tmp))
 np.save('/Users/edoardo/Work/Code/GAM_code/JP/ElifeRevisions/info_probe_session.npy',table)
+np.save('/Users/edoardo/Work/Code/GAM_code_OLD/analyzing/coupling/probe_info_dict.npy',dict_probe)
