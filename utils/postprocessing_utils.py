@@ -151,7 +151,7 @@ def alignRateForMI(y, lam_s, var, sm_handler, smooth_info, time_bin, filter_tria
     except:
         mi = np.nan
 
-    tmp_val = empty_container()
+    tmp_val = gl.empty_container()
     tmp_val.x = temp_bins
     tmp_val.y_raw = sc_based_tuning / time_bin
     tmp_val.y_model = tuning / time_bin

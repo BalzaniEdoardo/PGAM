@@ -1,0 +1,10 @@
+experiment_ID:
+- exp_1
+neuron_num:
+- 0
+path_to_config:
+- demo/config_example_data.yml
+path_to_input:
+- demo/example_data.npz
+session_ID:
+- session_A

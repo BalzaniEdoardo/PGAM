@@ -1,0 +1,73 @@
+events:
+  der: 2
+  is_cyclic:
+  - false
+  is_temporal_kernel: true
+  kernel_direction: 0
+  kernel_length: 500
+  knots: .nan
+  knots_num: 10
+  lam: 10
+  order: 4
+  penalty_type: der
+  samp_period: 0.006
+neuron_A:
+  der: 2
+  is_cyclic:
+  - false
+  is_temporal_kernel: true
+  kernel_direction: 1
+  kernel_length: 201
+  knots: .nan
+  knots_num: 8
+  lam: 10
+  order: 4
+  penalty_type: der
+  samp_period: 0.006
+spatial_1:
+  der: 2
+  is_cyclic:
+  - false
+  is_temporal_kernel: false
+  kernel_direction: .nan
+  kernel_length: .nan
+  knots: &id001
+  - -5.0
+  - -5.0
+  - -5.0
+  - -5.0
+  - -4.285714285714286
+  - -3.571428571428571
+  - -2.857142857142857
+  - -2.142857142857143
+  - -1.4285714285714284
+  - -0.7142857142857144
+  - 0.0
+  - 0.7142857142857144
+  - 1.4285714285714288
+  - 2.1428571428571432
+  - 2.8571428571428577
+  - 3.571428571428571
+  - 4.2857142857142865
+  - 5.0
+  - 5.0
+  - 5.0
+  - 5.0
+  knots_num: .nan
+  lam: 10
+  order: 4
+  penalty_type: der
+  samp_period: 0.006
+spatial_2:
+  der: 2
+  is_cyclic:
+  - false
+  is_temporal_kernel: false
+  kernel_direction: .nan
+  kernel_length: .nan
+  knots: *id001
+  knots_num: .nan
+  lam: 10
+  order: 4
+  penalty_type: der
+  samp_period: 0.006
