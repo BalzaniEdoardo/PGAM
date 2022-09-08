@@ -33,9 +33,6 @@ frac_eval = 0.2
 # PATH to fit list
 path_fit_list = '../demo/fit_list_example_data.yml'
 
-# path to output folder
-path_out = '../demo/'
-
 # save as mat
 save_as_mat = False
 #################################################
@@ -59,6 +56,8 @@ session_ID = fit_dict['session_ID'][fit_num]
 neuron_num = fit_dict['neuron_num'][fit_num]
 path_to_input = fit_dict['path_to_input'][fit_num]
 path_to_config = fit_dict['path_to_config'][fit_num]
+path_out = fit_dict['path_to_output'][fit_num]
+
 
 print('FIT INFO:\nEXP ID: %s\nSESSION ID: %s\nNEURON NUM: %d\nINPUT DATA PATH: %s\nCONFIG PATH: %s\n\n'%(
     experiment_ID,session_ID,neuron_num+1,path_to_input,path_to_config))

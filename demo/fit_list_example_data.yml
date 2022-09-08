@@ -6,5 +6,7 @@ path_to_config:
 - demo/config_example_data.yml
 path_to_input:
 - demo/example_data.npz
+path_to_output:
+- demo/
 session_ID:
 - session_A
