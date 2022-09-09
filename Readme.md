@@ -13,7 +13,7 @@ Table of Contents
      * [Conda environment](#conda-environment)
      	* [Inspect and edit the PATH environment variable](#env-var)
      * [Docker image](#docker-image)
-     	* [Download and running the PGAM Docker image](#download-run)
+     	* [Download and run the PGAM Docker image](#download-run)
      	* [Working with jupyter](#working-with-jupyter)
      	* [Running a script](#running-a-script)
 * [References](#refs) 
@@ -155,7 +155,7 @@ On **Linux**:
 
 Downloading a Docker image and running it in a Docker container is very simple and makes the setup of the package trivial. However, working with docker containers requires some familiarity with the concept of docker container itself and the docker syntax (starting, stopping, and removing containers, mounting volumes, etc.); I would recommend checking out one of the many tutorials available online before starting to work with docker. 
 
-### Download and running the PGAM Docker image <a name="download-run"></a>
+### Download and run the PGAM Docker image <a name="download-run"></a>
 
 
 Download, install and start <a href="https://docs.docker.com/get-docker/"> Docker<a>. 
