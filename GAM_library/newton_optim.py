@@ -75,7 +75,7 @@ def gcv_comp(rho, X, Q, R, endog,sm_handler,var_list,return_par='gcv',gamma=1.):
         print('NAN')
     U, s, V_T = linalg.svd(np.vstack((R, B[:, :])))
 
-    # remove low val singolar values
+    # remove low val singular values
     i_rem = np.where(s < 10 ** (-8) * s.max())[0]
 
     # remove cols
@@ -83,7 +83,7 @@ def gcv_comp(rho, X, Q, R, endog,sm_handler,var_list,return_par='gcv',gamma=1.):
     U = np.delete(U, i_rem, 1)
     V_T = np.delete(V_T, i_rem, 0)
 
-    # compute the diag matrix with the singolar vals
+    # compute the diag matrix with the singular vals
     D = np.zeros((s.shape[0], s.shape[0]))
     di = np.diag_indices(s.shape[0])
     D[di] = s
@@ -116,8 +116,6 @@ def gcv_comp(rho, X, Q, R, endog,sm_handler,var_list,return_par='gcv',gamma=1.):
     gcv = n_obs*alpha/(delta)**2
 
 
-
-
     if return_par == 'gcv':
         return gcv
     elif return_par == 'alpha':
@@ -146,7 +144,7 @@ def get_var_beta_inv(rho, R,sm_handler,var_list,remove_zeros=True):
     B = np.array(B, dtype=np.float64)
     U, s, V_T = linalg.svd(np.vstack((R, B[:, :])))
 
-    # remove low val singolar values
+    # remove low val singular values
     i_rem = np.where(s < 10 ** (-8) * s.max())[0]
 
     if remove_zeros:
@@ -162,7 +160,7 @@ def get_var_beta_inv(rho, R,sm_handler,var_list,remove_zeros=True):
         D2inv = np.matrix(D2inv)
     else:
         i_keep = np.where(s >= 10 ** (-8) * s.max())[0]
-        # compute the diag matrix with the singolar vals
+        # compute the diag matrix with the singular vals
         D = np.zeros((s.shape[0], s.shape[0]))
         di1,di2 = np.diag_indices(s.shape[0])
         D[di1[i_keep],di2[i_keep]] = s[i_keep]
@@ -188,7 +186,7 @@ def gcv_grad_comp(rho, X, Q, R, endog,sm_handler,var_list,return_par='gcv',gamma
     B = np.array(B, dtype=np.float64)
     U, s, V_T = linalg.svd(np.vstack((R, B[:, :])))
 
-    # remove low val singolar values
+    # remove low val singular values
     i_rem = np.where(s < 10 ** (-8) * s.max())[0]
 
     # remove cols
@@ -196,7 +194,7 @@ def gcv_grad_comp(rho, X, Q, R, endog,sm_handler,var_list,return_par='gcv',gamma
     U = np.delete(U, i_rem, 1)
     V_T = np.delete(V_T, i_rem, 0)
 
-    # compute the diag matrix with the singolar vals
+    # compute the diag matrix with the singular vals
     D = np.zeros((s.shape[0], s.shape[0]))
     di = np.diag_indices(s.shape[0])
     D[di] = s
@@ -272,7 +270,7 @@ def gcv_hess_comp(rho, X, Q, R, endog, sm_handler, var_list, return_par='gcv',ga
 
     U, s, V_T = linalg.svd(np.vstack((R, B[:, :])))
 
-    # remove low val singolar values
+    # remove low val singular values
     i_rem = np.where(s < 10 ** (-8) * s.max())[0]
 
     # remove cols
