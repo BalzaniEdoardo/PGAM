@@ -1,3 +1,5 @@
+*.c
+*.so
 .ipynb_checkpoints/
 .idea/
 demo/exp_1_session_A_neuron_A_config_example_data.*
