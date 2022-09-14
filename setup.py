@@ -6,15 +6,25 @@ Created on Wed Sep 14 09:36:11 2022
 @author: edoardo
 """
 
-from setuptools import setup
+from setuptools import setup, Extension
 from setuptools import find_namespace_packages
 from Cython.Build import cythonize
-from distutils.core import Extension
 
 
 # Load the README file.
 with open(file="Readme.md", mode="r") as readme_handle:
     long_description = readme_handle.read()
+
+extensions=[
+         Extension('fast_summations',
+               sources=['GAM_library/fast_summations.pyx'],
+               extra_compile_args=['-fopenmp'],
+               language='c'),
+         Extension('kron_cython',
+               sources=['GAM_library/kron_cython.pyx'],
+               extra_compile_args=['-fopenmp'],
+               language='c')
+     ]
 
 setup(
     
@@ -67,21 +77,13 @@ setup(
         'Send2Trash==1.8.0',
         'statsmodels==0.12.2'
     ],
+    ext_modules=cythonize(extensions),
     # ext_modules=[
     #     cythonize("/Users/edoardo/Work/Code/GAM_code/GAM_library/fast_summations.pyx"),
     #     cythonize("/Users/edoardo/Work/Code/GAM_code/GAM_library/kron_cython.pyx")
     #     ],
+    cythonised_files = cythonize("/Users/edoardo/Work/Code/GAM_code/GAM_library/kron_cython.pyx"),    
     
-    # ext_modules=[
-    #     Extension('fast_summations',
-    #           sources=['/Users/edoardo/Work/Code/GAM_code/GAM_library/fast_summations.pyx'],
-    #           extra_compile_args=['-fopenmp'],
-    #           language='c'),
-    #     Extension('/Users/edoardo/Work/Code/GAM_code/GAM_library/kron_cython',
-    #           sources=['kron_cython.pyx'],
-    #           extra_compile_args=['-fopenmp'],
-    #           language='c')
-    # ],
     
     #cmdclass = {'build_ext': build_ext},
     # Here are the keywords of my library.
