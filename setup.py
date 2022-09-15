@@ -43,7 +43,7 @@ setup(
     #   - MAJOR VERSION 0
     #   - MINOR VERSION 1
     #   - MAINTENANCE VERSION 0
-    version='0.1.0',
+    version='0.1.3',
 
     # Here is a small description of the library. This appears
     # when someone searches for the library on https://pypi.org/search.
@@ -68,8 +68,8 @@ setup(
         'numpy==1.20.3',
         'opt_einsum==3.3.0',
         'pandas==1.3.3',
-        'pycuda==2022.1',
-        'PyYAML==6.0',
+        #'pycuda==2022.1',
+        'PyYAML==5.4.1',
         'rpy2==3.4.4',
         'scikit_learn==1.1.2',
         'scipy==1.5.3',
@@ -78,11 +78,6 @@ setup(
         'statsmodels==0.12.2'
     ],
     ext_modules=cythonize(extensions),
-    # ext_modules=[
-    #     cythonize("/Users/edoardo/Work/Code/GAM_code/GAM_library/fast_summations.pyx"),
-    #     cythonize("/Users/edoardo/Work/Code/GAM_code/GAM_library/kron_cython.pyx")
-    #     ],
-    cythonised_files = cythonize("/Users/edoardo/Work/Code/GAM_code/GAM_library/kron_cython.pyx"),    
     
     
     #cmdclass = {'build_ext': build_ext},
@@ -90,9 +85,7 @@ setup(
     keywords='neuroscience, GAM, tuning function',
 
     # here are the packages I want "build."
-    packages=find_namespace_packages(
-        where='GAM_library/'
-    ),
+    packages=['GAM_library'],
 
     # # here we specify any package data.
     # package_data={
