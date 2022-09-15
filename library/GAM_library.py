@@ -12,6 +12,7 @@ try:
         print('path',sys.path.append(sys.argv[1]),'do not exist')
 except IndexError:
     pass
+from gam_data_handlers import *
 import numpy as np
 import matplotlib.pyplot as plt
 import statsmodels.api as sm
@@ -20,7 +21,7 @@ from scipy.optimize import minimize
 from newton_optim import *
 from der_wrt_smoothing import *
 import scipy.stats as sts
-from gam_data_handlers import *
+
 from time import perf_counter
 import scipy.linalg as linalg
 from copy import deepcopy
@@ -134,8 +135,8 @@ def alignRateForMI(y,lam_s, var, sm_handler, smooth_info, time_bin, filter_trial
 
 class GAM_result(object):
     def __init__(self,model,family,fit_OLS,smooth_pen,n_obs,index_var,sm_handler,var_list,y, compute_AIC=True,
-                 filtwidth=10,trial_idx=None,pre_trial_dur=0.2,post_trial_dur=0.2,time_bin=0.006,compute_mutual_info=False,
-                 filter_trials=None,beta_hist=None):
+                  filtwidth=10,trial_idx=None,pre_trial_dur=0.2,post_trial_dur=0.2,time_bin=0.006,compute_mutual_info=False,
+                  filter_trials=None,beta_hist=None):
         # save the model results
         self.var_list = var_list
         self.smooth_pen = smooth_pen
@@ -172,7 +173,7 @@ class GAM_result(object):
 
         rho0 = np.log(self.smooth_pen)
         self.gcv, alpha, delta, H_S_inv = gcv_comp(rho0, X, Q, R, model.wendog, sm_handler,var_list,
-                                                   return_par='all')
+                                                    return_par='all')
         #
         # get F matrix for computing the dof
         F = np.dot(H_S_inv, np.dot(X.T, X))
@@ -204,11 +205,11 @@ class GAM_result(object):
 
         # compute p-vals for non zero covariate coefficients
         self.covariate_significance = np.zeros(len(index_var.keys()),
-                                               dtype={'names':
+                                                dtype={'names':
                                                 ('covariate', 'Tc', 'p-val', 'nu', 'nu1',
                                                 'nu2', 'df_nu', 'df_nu1', 'df_nu2'),
                                                 'formats': ('U80', float, float, float, float, float,
-                                                 float, float, float)})
+                                                  float, float, float)})
         cc = 0
 
         for var_name in index_var.keys():
@@ -261,7 +262,7 @@ class GAM_result(object):
             self.mutual_info = {}
             mu = np.dot(model.exog[:n_obs, :], self.beta)
             sigma2 = np.einsum('ij,jk,ik->i', model.exog[:n_obs, :], self.cov_beta, model.exog[:n_obs, :],
-                               optimize=True)
+                                optimize=True)
 
             # convert to rate space
             lam_s = np.exp(mu + sigma2 * 0.5)
@@ -356,7 +357,7 @@ class GAM_result(object):
 
 
     def eval_basis(self,X,var_name,sparseX=True,trial_idx=-1,pre_trial_dur=None,
-                   post_trial_dur=None,domain_fun=lambda x:np.ones(x,dtype=bool)):
+                    post_trial_dur=None,domain_fun=lambda x:np.ones(x,dtype=bool)):
 
         """
         Description: for temporal kernel, if None is passed, then use the ild version
@@ -387,7 +388,7 @@ class GAM_result(object):
 
         if not is_temporal:
             fX = basisAndPenalty(X, knots, is_cyclic=is_cyclic, ord=ord_spline,
-                                             penalty_type=penalty_type, xmin=xmin, xmax=xmax, der=der,compute_pen=False,domain_fun=self.domain_fun[var_name])[0]
+                                              penalty_type=penalty_type, xmin=xmin, xmax=xmax, der=der,compute_pen=False,domain_fun=self.domain_fun[var_name])[0]
         else:
             if type(basis_kernel) is sparse.csr.csr_matrix or type(basis_kernel) is sparse.csr.csr_matrix:
                 basis_kernel = basis_kernel.toarray()
@@ -420,7 +421,7 @@ class GAM_result(object):
         S_all = compute_Sjs(sm_handler, self.var_list)
         X, index_cov = sm_handler.get_exog_mat(self.var_list)
         hess = -hess_laplace_appr_REML(rho, self.beta, S_all, y, X, self.family, phi_est,
-                                       sm_handler, self.var_list, compute_grad=False, fixRand=True)
+                                        sm_handler, self.var_list, compute_grad=False, fixRand=True)
 
         V_rho = np.linalg.pinv(hess)
         J = dbeta_hat(rho, self.beta, S_all, sm_handler, self.var_list, y, X, self.family, phi_est)
@@ -434,7 +435,7 @@ class GAM_result(object):
         V_corr = np.array(V_corr)
         self.edf2 = np.sum(inner1d(V_corr,H.T))
         self.AIC = -2 * unpenalized_ll(self.beta,y,X,family,phi_est,omega=1)\
-                   -2 * penalty_ll(rho,self.beta,sm_handler,self.var_list,phi_est) + 2*self.edf2
+                    -2 * penalty_ll(rho,self.beta,sm_handler,self.var_list,phi_est) + 2*self.edf2
 
     def predict(self,X_list,var_list=None,log_space=False,trial_idx=None,post_trial_dur=None,
                 pre_trial_dur=None):
@@ -451,7 +452,7 @@ class GAM_result(object):
             nan_filter = np.array(np.sum(np.isnan(np.array(X)), axis=0), dtype=bool)
             var_name = var_list[cc]
             fX = self.eval_basis(X,var_name,sparseX=False,post_trial_dur=post_trial_dur,
-                                 pre_trial_dur=pre_trial_dur,trial_idx=trial_idx,domain_fun=self.domain_fun[var_name])
+                                  pre_trial_dur=pre_trial_dur,trial_idx=trial_idx,domain_fun=self.domain_fun[var_name])
             if type(fX) in [sparse.csr.csr_matrix,sparse.coo.coo_matrix
                             ]:
                 fX = fX.toarray()
@@ -471,7 +472,7 @@ class GAM_result(object):
         return mu
 
     def mu_sigma_log_space(self,X_list,var_list=None,get_exog=False,
-                           trial_idx=None,pre_trial_dur=None,post_trial_dur=None):
+                            trial_idx=None,pre_trial_dur=None,post_trial_dur=None):
         cc = 0
         if var_list is None:
             var_list = self.var_list
@@ -485,7 +486,7 @@ class GAM_result(object):
             nan_filter = np.array(np.sum(np.isnan(np.array(X)), axis=0), dtype=bool)
             var_name = var_list[cc]
             fX = self.eval_basis(X,var_name,sparseX=False,post_trial_dur=post_trial_dur,
-                                 pre_trial_dur=pre_trial_dur,trial_idx=trial_idx,domain_fun=self.domain_fun[var_name])
+                                  pre_trial_dur=pre_trial_dur,trial_idx=trial_idx,domain_fun=self.domain_fun[var_name])
             if type(fX) in [sparse.csr.csr_matrix,sparse.coo.coo_matrix]:
                 fX = fX.toarray()
 
@@ -515,14 +516,14 @@ class GAM_result(object):
         return mu,sigma2
 
     def smooth_compute(self, X, var_name, perc=0.95,seWithMean=True,
-                       trial_idx=None,pre_trial_dur=None,post_trial_dur=None):
+                        trial_idx=None,pre_trial_dur=None,post_trial_dur=None):
         # eval the basis into the X
         if post_trial_dur is None:
             post_trial_dur = self.post_trial_dur
         if pre_trial_dur is None:
             pre_trial_dur = self.pre_trial_dur
         fX = self.eval_basis(X,var_name,post_trial_dur=post_trial_dur,
-                                 pre_trial_dur=pre_trial_dur,trial_idx=trial_idx,domain_fun=self.domain_fun[var_name])
+                                  pre_trial_dur=pre_trial_dur,trial_idx=trial_idx,domain_fun=self.domain_fun[var_name])
         nan_filter = np.array(np.sum(np.isnan(np.array(X)), axis=0), dtype=bool)
         # mean center and remove col if more than 1 smooth in the AM
         if len(self.var_list) > 0:
@@ -763,7 +764,7 @@ class general_additive_model(object):
                 Slam = create_Slam(np.log(smooth_pen), self.sm_handler, var_list)
                 func = lambda beta:  -(
                         unpenalized_ll(beta, yfit, exog[:n_obs, :], self.family, 1, omega=1) + penalty_ll_Slam(Slam,
-                                                                                                               beta, 1))
+                                                                                                                beta, 1))
 
                 if not first_itetation:
                     dev0 = np.sum(func(bhat))
@@ -823,21 +824,21 @@ class general_additive_model(object):
                 rho0 = np.log(smooth_pen)
 
                 gcv_func = lambda rho : gcv_comp(rho, X, Q, R, model.wendog, self.sm_handler, var_list,
-                                                 return_par='gcv',gamma=gamma)
+                                                  return_par='gcv',gamma=gamma)
                 gcv_grad = lambda rho : gcv_grad_comp(rho, X, Q, R, model.wendog, self.sm_handler, var_list,
                                                       return_par='gcv',gamma=gamma)
                 if method == 'L-BFGS-B':
                     gcv_hess = None
                 else:
                     gcv_hess = lambda rho: gcv_hess_comp(rho, X, Q, R, model.wendog, self.sm_handler, var_list,
-                                                         return_par='gcv', gamma=gamma)
+                                                          return_par='gcv', gamma=gamma)
                 init_score = gcv_func(rho0)
 
                 if np.sum(np.isnan(gcv_func(rho0))):
                     print('NaN here')
 
                 res = minimize(gcv_func,rho0,method=method,jac=gcv_grad,hess=gcv_hess,tol=gcv_sel_tol,bounds=bounds_rho,
-                               options={'disp':False})
+                                options={'disp':False})
                 res.x = np.clip(res.x,-25,30)
 
                 if res.success or ((init_score - res.fun) < init_score*np.finfo(float).eps):
@@ -883,10 +884,10 @@ class general_additive_model(object):
                 break
 
         gam_results = GAM_result(model,self.family,fit_OLS,smooth_pen,
-                                       n_obs,index_var,self.sm_handler,var_list,
-                                       yfit,compute_AIC,trial_idx=trial_idx,pre_trial_dur=pre_trial_dur,
-                                 post_trial_dur=post_trial_dur,time_bin=time_bin,compute_mutual_info=compute_MI,
-                                 filter_trials=filter_trials,beta_hist=beta_hist)
+                                        n_obs,index_var,self.sm_handler,var_list,
+                                        yfit,compute_AIC,trial_idx=trial_idx,pre_trial_dur=pre_trial_dur,
+                                  post_trial_dur=post_trial_dur,time_bin=time_bin,compute_mutual_info=compute_MI,
+                                  filter_trials=filter_trials,beta_hist=beta_hist)
         return gam_results
 
     def initialize_smooth_par(self,f_weights_and_data,X,S_all,random_init=False):
@@ -948,7 +949,7 @@ class general_additive_model(object):
             model_fit = self.optim_gam(var_list, smooth_pen=smooth_pen,max_iter=max_iter,tol=tol,conv_criteria=conv_criteria,
                   perform_PQL=perform_PQL,use_dgcv=use_dgcv,method=method,
                   compute_AIC=compute_AIC,random_init=random_init,bounds_rho=bounds_rho,gcv_sel_tol=gcv_sel_tol,
-                                       fit_initial_beta=fit_initial_beta,filter_trials=bool_train,compute_MI=compute_MI,saveBetaHist=saveBetaHist,WLS_solver=WLS_solver)
+                                        fit_initial_beta=fit_initial_beta,filter_trials=bool_train,compute_MI=compute_MI,saveBetaHist=saveBetaHist,WLS_solver=WLS_solver)
 
             ## compute pr2 on test
             exog, index_var = self.sm_handler.get_exog_mat(model_fit.var_list)
@@ -996,12 +997,12 @@ class general_additive_model(object):
         return self.family.deviance(self.y[idx_sele], mu)
 
     def fit_full_and_reduced(self,var_list,th_pval=0.01,method = 'L-BFGS-B',tol=1e-8,conv_criteria='deviance',
-                                     max_iter=10**3,gcv_sel_tol=10**-13,random_init=False,
-                                     use_dgcv=True,smooth_pen=None,fit_initial_beta=False,
+                                      max_iter=10**3,gcv_sel_tol=10**-13,random_init=False,
+                                      use_dgcv=True,smooth_pen=None,fit_initial_beta=False,
 
-                                     pseudoR2_per_variable=False,filter_trials=None,k_fold = False,fold_num=5,
+                                      pseudoR2_per_variable=False,filter_trials=None,k_fold = False,fold_num=5,
                                         trial_num_vec=None,compute_MI=True, k_fold_reducedOnly=True,bounds_rho=None,
-                             reducedAdaptive=True, ord_AD=3, ad_knots=6,saveBetaHist=False,perform_PQL=True,WLS_solver='positive_weights'):
+                              reducedAdaptive=True, ord_AD=3, ad_knots=6,saveBetaHist=False,perform_PQL=True,WLS_solver='positive_weights'):
         if smooth_pen is None:
             smooth_pen = []
             for var in var_list:
@@ -1067,9 +1068,9 @@ class general_additive_model(object):
                                             der=sm_handler[var].der, measure=sm_handler[var].measure,
                                             ord_AD=ord_AD, ad_knots=ad_knots)
                         sm_handler[var].X = sm_handler[var]._eval_basis_temporal(sm_handler[var]._x, sm_handler[var].trial_idx,
-                                                                                 sm_handler[var].pre_trial_dur,
-                                                                                 sm_handler[var].post_trial_dur,
-                                                                                 sm_handler[var].time_bin)
+                                                                                  sm_handler[var].pre_trial_dur,
+                                                                                  sm_handler[var].post_trial_dur,
+                                                                                  sm_handler[var].time_bin)
                     else:
                         xx = sm_handler[var]._x
 
@@ -1089,8 +1090,8 @@ class general_additive_model(object):
                                     perform_PQL=perform_PQL, method=method,
                                     compute_AIC=False, gcv_sel_tol=gcv_sel_tol, random_init=random_init,
                                     use_dgcv=use_dgcv,smooth_pen=smooth_pen,fit_initial_beta=fit_initial_beta,
-                                               filter_trials=filter_trials,compute_MI=compute_MI,bounds_rho=bounds_rho,
-                                               saveBetaHist=saveBetaHist,WLS_solver=WLS_solver)
+                                                filter_trials=filter_trials,compute_MI=compute_MI,bounds_rho=bounds_rho,
+                                                saveBetaHist=saveBetaHist,WLS_solver=WLS_solver)
                 test_bool = np.ones(self.y.shape[0],dtype=bool)
             else:
                 reduced_model,test_bool = self.k_fold_crossval(fold_num, trial_num_vec, sub_list, max_iter=max_iter, tol=tol,
@@ -1105,7 +1106,7 @@ class general_additive_model(object):
 
         if pseudoR2_per_variable and (not reduced_model is None):
             reduced_model.variable_expl_variance = np.zeros(len(reduced_model.var_list)+1,
-                                         dtype={'names':('variable','pseudo-R2','var_expl'),
+                                          dtype={'names':('variable','pseudo-R2','var_expl'),
                                                 'formats':('U50',float,float)})
             reduced_model.variable_expl_variance['variable'][0] = 'all'
             reduced_model.variable_expl_variance['pseudo-R2'][0] = reduced_model.pseudo_r2
@@ -1207,7 +1208,7 @@ if __name__ == '__main__':
     family = d2variance_family(poissFam)
 
     gam_model = general_additive_model(sm_handler,var_list,y,
-                                           poissFam,fisher_scoring=False)
+                                            poissFam,fisher_scoring=False)
 
 
 
