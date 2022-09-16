@@ -6,7 +6,7 @@ Created on Wed Sep 14 09:36:11 2022
 @author: edoardo
 """
 
-from setuptools import setup, Extension
+from setuptools import setup, Extension, find_packages
 from setuptools import find_namespace_packages
 from Cython.Build import cythonize
 
@@ -16,12 +16,12 @@ with open(file="Readme.md", mode="r") as readme_handle:
     long_description = readme_handle.read()
 
 extensions=[
-         Extension('fast_summations',
-               sources=['GAM_library/fast_summations.pyx'],
+         Extension('PGAM/fast_summations',
+               sources=['src/PGAM/fast_summations.pyx'],
                extra_compile_args=['-fopenmp'],
                language='c'),
-         Extension('kron_cython',
-               sources=['GAM_library/kron_cython.pyx'],
+         Extension('PGAM/kron_cython',
+               sources=['src/PGAM/kron_cython.pyx'],
                extra_compile_args=['-fopenmp'],
                language='c')
      ]
@@ -43,7 +43,7 @@ setup(
     #   - MAJOR VERSION 0
     #   - MINOR VERSION 1
     #   - MAINTENANCE VERSION 0
-    version='0.1.3',
+    version='0.1.14',
 
     # Here is a small description of the library. This appears
     # when someone searches for the library on https://pypi.org/search.
@@ -69,14 +69,31 @@ setup(
         'opt_einsum==3.3.0',
         'pandas==1.3.3',
         #'pycuda==2022.1',
-        'PyYAML==5.4.1',
+        'PyYAML==6.0',
         'rpy2==3.4.4',
         'scikit_learn==1.1.2',
-        'scipy==1.5.3',
+        'scipy==1.6.3',
         'seaborn==0.11.2',
         'Send2Trash==1.8.0',
         'statsmodels==0.12.2'
     ],
+    #     install_requires=[
+    #     'Cython',
+    #     'dill',
+    #     'matplotlib',
+    #     'numba',
+    #     'numpy',
+    #     'opt_einsum',
+    #     'pandas',
+    #     #'pycuda==2022.1',
+    #     'PyYAML',
+    #     'rpy2',
+    #     'scikit_learn',
+    #     'scipy',
+    #     'seaborn',
+    #     'Send2Trash',
+    #     'statsmodels'
+    # ],
     ext_modules=cythonize(extensions),
     
     
@@ -85,7 +102,13 @@ setup(
     keywords='neuroscience, GAM, tuning function',
 
     # here are the packages I want "build."
-    packages=['GAM_library'],
+    packages=find_namespace_packages(
+        where='src',
+        include=['PGAM'],
+        exclude=['firefly_utils','fitting','preprocessing_pipeline','select_variables',
+                 'analyzing','JP','TMP']# alternatively: `exclude=['additional*']`
+        ),
+    package_dir={"": "src"},#['GAM_library'],
 
     # # here we specify any package data.
     # package_data={
