@@ -1,3 +1,0 @@
-PGAM
-PGAM/fast_summations
-PGAM/kron_cython
