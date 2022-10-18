@@ -874,7 +874,7 @@ if __name__ == '__main__':
     from spike_times_class import *
     from copy import deepcopy
     dat = loadmat('/Volumes/server/Data/Monkey2_newzdrive/Schro/Utah Array/Feb 20 2018/neural data/Pre-processing X E/m53s41.mat')
-    print(dat.keys())
+    # print(dat.keys())
     behav_stat_keys = 'behv_stats'
     lfps_key = 'lfps'
     units_key = 'units'

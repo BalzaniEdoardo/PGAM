@@ -289,7 +289,7 @@ for neuron in neuron_list:
     
 
 
-
+    
         
     link = deriv3_link(sm.genmod.families.links.log())
     poissFam = sm.genmod.families.family.Poisson(link=link)

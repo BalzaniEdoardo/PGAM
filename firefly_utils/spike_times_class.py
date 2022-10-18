@@ -69,7 +69,7 @@ class spike_counts(object):
                     try:
                         unpacked[k,:] = units[key][k].reshape(N,)
                     except ValueError:
-                        print('UNIT %d - could not assign %s'%(k,key))
+                        #print('UNIT %d - could not assign %s'%(k,key))
                         try:
                             try:
                                 unpacked = np.array(unpacked,dtype=float)
