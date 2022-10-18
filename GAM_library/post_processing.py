@@ -571,10 +571,11 @@ def compute_event_trig_counts(ev_receiver, pred_rate_receiver, idx_spk, rate_DT,
             rate_DT[delta_step[cc]] = rate_DT[delta_step[cc]] + pred_rate_receiver[k]
             tp_DT[delta_step[cc]] = tp_DT[delta_step[cc]] + 1
             cc += 1
-    return rate_DT, counts_DT, tp_DT]
+    return rate_DT, counts_DT, tp_DT
 
 
 def compute_tuning_temporal_fast(var, lam_s, sm_handler, fit, spk, filter_trials, trial_idx, bins, dt):
+
     spk_sender = np.array(np.squeeze(sm_handler[var]._x)[filter_trials], dtype=np.int64)
 
     filter_len = np.int64(fit.smooth_info[var]['time_pt_for_kernel'].shape[0])
