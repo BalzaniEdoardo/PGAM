@@ -13,8 +13,10 @@ Table of Contents
      * [Conda environment](#conda-environment)
      	* [Inspect and edit the PATH environment variable](#env-var)
      * [Docker image](#docker-image)
+     	* [Download and run the PGAM Docker image](#download-run)
      	* [Working with jupyter](#working-with-jupyter)
      	* [Running a script](#running-a-script)
+* [References](#refs) 
 <!---
 * [Usage](#usage)
    * [Notebooks](#notebooks)
@@ -22,7 +24,7 @@ Table of Contents
 * [References](#references)
 --->
 
-# Setup
+# Setup <a name="setup"></a>
 The package was implemented on macOS (Monterey version 12.5.1) and tested on Linux (RHEL version 8.4) and Windows 10. 
 It requires python (>=3.6), and R (>= 3.6). 
 
@@ -32,7 +34,7 @@ Below we will provide two recommended ways of setting up the package:
 1. Install all software requirements and create a dedicated [conda environment](#conda-environment)
 2. Download and run a [Docker image](#docker-image).
 
-## Conda environment
+## Conda environment <a name="conda-environment"></a>
 
 Instruction on how to set up a conda environment with the specified packages are provided below.
 
@@ -78,7 +80,7 @@ Test the installation by *cd* to the *PGAM/GAM_library* directory and run,
 	exit()
 ```
 
-### Inspect and edit the PATH environment variable
+### Inspect and edit the PATH environment variable <a name="env-var"></a>
 
 On **windows**:
 	
@@ -149,11 +151,11 @@ On **Linux**:
 4.	Restart your terminal.
 
   
-## Docker image
+## Docker image <a name="docker-image"></a>
 
 Downloading a Docker image and running it in a Docker container is very simple and makes the setup of the package trivial. However, working with docker containers requires some familiarity with the concept of docker container itself and the docker syntax (starting, stopping, and removing containers, mounting volumes, etc.); I would recommend checking out one of the many tutorials available online before starting to work with docker. 
 
-### Installing and running the PGAM Docker image
+### Download and run the PGAM Docker image <a name="download-run"></a>
 
 
 Download, install and start <a href="https://docs.docker.com/get-docker/"> Docker<a>. 
@@ -179,7 +181,7 @@ The command will run a Linux bash shell that allows you to inspect the image con
 
 You can delete a stopped container with the command  ```docker rm CONTAINER-ID``` . The container ID can be found with the command ```docker ps -a```, which will list all available containers, their IDs, the image that they run, and the command that they execute.
 
-### Working with jupyter
+### Working with jupyter <a name="working-with-jupyter"></a>
 
 Run the PGAM image in a container and launch jupyter notebook with the following command,
 
@@ -200,7 +202,7 @@ Open a browser, and browse to *localhost:8888/* to connect to jupyter. You can t
 The ```run``` command creates a new container each time, however, if you haven't removed an old container, it can be restarted with the command ```docker start CONTAINER-ID```. Inspect the inactive containers with ```docker ps -a```. You can stop a container with  ```docker stop CONTAINER-ID```
 
 
-### Running a script
+### Running a script <a name="running-a-script"></a>
 
 If you want to run *yourscript.py*  enter the code,
 
@@ -221,7 +223,7 @@ Note that eventual the inputs loaded by *yourscript.py* needs to be saved in *yo
 --->
 
 
-# References
+# References <a name="refs"></a>
 <a id="1">[1]</a> 
 <a href="https://proceedings.neurips.cc/paper/2020/hash/94d2a3c6dd19337f2511cdf8b4bf907e-Abstract.html">
 Balzani, Edoardo , et al., 

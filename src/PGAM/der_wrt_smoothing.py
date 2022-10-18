@@ -61,7 +61,7 @@ class d2variance_family(sm.genmod.families.Family):
                 print('3rd order deriv of variance function is ok!')
 
 
-#
+
 
 
 class deriv3_link(sm.genmod.families.links.Link):
