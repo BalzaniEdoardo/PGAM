@@ -99,6 +99,8 @@ for job_id in range(JOB,JOB+tot_fits):
             idx_prior = np.where(np.array(var_names) == exp_prior_sele)[0]
             bl = np.array(gam_raw_inputs[idx_prior], dtype=bool).reshape(-1,)
             trial_idx = trial_idx[bl]
+        else:
+            bl = np.ones(trial_idx.shape[0],dtype=bool)
 
         # unpack info
         try:

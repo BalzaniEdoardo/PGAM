@@ -154,7 +154,7 @@ class job_handler(QDialog, Ui_Dialog):
         try:
             self.sshConnect()
             self.scp.put(src, dst)
-            self.sshTypeCommand('cd %s \nls -lrt'%dst)
+            #self.sshTypeCommand('cd %s \nls -lrt'%dst)
                
         except Exception as e:
             print('could not scp "%s" with exception'%src)
@@ -280,7 +280,7 @@ class job_handler(QDialog, Ui_Dialog):
 
     def load_fit_list(self):
         self.old_fit_list = []
-        self.updated_fit_list = parse_fit_list(os.path.join(os.path.dirname(basedir), 'list_to_fit_GAM.mat'))
+        self.updated_fit_list = parse_fit_list(os.path.join(os.path.dirname(basedir), 'list_to_fit_GAM_Oct2022_expPrior.mat'))
         brain_region = np.zeros(self.updated_fit_list.shape[0], 'U20')
         animal_name = np.zeros(self.updated_fit_list.shape[0], 'U20')
         date = np.zeros(self.updated_fit_list.shape[0], 'U10')
@@ -336,12 +336,15 @@ class job_handler(QDialog, Ui_Dialog):
         self.listWidget_Log.addItem('done!')
         self.listWidget_Log.addItem('...loaded fit list')
         self.check_finished()
+        self.initCompleted = self.updated_fit_list['is_done'].sum()
+        self.totJob = self.updated_fit_list.shape[0]
+
         if self.isfirst and self.skipFinished:
             sel = np.where(~self.updated_fit_list['is_done'])[0]
             try:
                 last_done = np.where(self.updated_fit_list['is_done'])[0][-1]
             except:
-                last_done = -1   
+                last_done = -1
             idx_keep = sel > last_done
             self.updated_fit_list = self.updated_fit_list[sel[idx_keep]]
             
@@ -426,9 +429,10 @@ class job_handler(QDialog, Ui_Dialog):
 
     def refreshStatus(self):
         self.listWidget_status.clear()
-        self.listWidget_status.addItem('Tot. jobs: %d'%self.updated_fit_list.shape[0])
-        self.listWidget_status.addItem('Tot. completed: %d'%self.updated_fit_list['is_done'].sum())
-        self.listWidget_status.addItem('Percent. completed: %.1f'%(100*self.updated_fit_list['is_done'].mean()))
+        self.listWidget_status.addItem('Tot. jobs: %d'%self.totJob)
+        self.listWidget_status.addItem('Tot. completed: %d'%(self.initCompleted+self.updated_fit_list['is_done'].sum()))
+        ratio = (self.initCompleted+self.updated_fit_list['is_done'].sum())/self.totJob
+        self.listWidget_status.addItem('Percent. completed: %.1f'%(100*ratio))
 
 
 
@@ -474,7 +478,8 @@ class job_handler(QDialog, Ui_Dialog):
                     self.jobFinished.emit(True)
                     return
         self.timer.start(self.durTimerEmail)
-  
+        self.check_finished()
+        self.refreshStatus()
         print('\n')
 
         return run_job
@@ -513,6 +518,8 @@ class job_handler(QDialog, Ui_Dialog):
             for name in files:
                 if not re.search('gam_fit_useCoupling[0-1]_useSubPrior[0-1]_unt\d+',name):
                     continue
+                if name  =='gam_fit_useCoupling1_useSubPrior1_unt289_ACAd_CSP029_2021-06-16_002_x-614,0000000000000000.mat':
+                    cccccc=1
                 splits = name.split('.')[0].split('_')
                 if len(splits) == 11:
                     exp_prior = splits[0]
@@ -541,8 +548,8 @@ class job_handler(QDialog, Ui_Dialog):
                 boolean = boolean & (sub_table['use_coupling'] == use_cupling)
                 boolean = boolean & (sub_table['use_subjectivePrior'] == use_subPrior)
                 boolean = boolean & (sub_table['neuron_id'] == neu_id)
-                boolean = boolean & (np.abs(sub_table['x'] - xx) < 10**-12)
                 boolean = boolean & (sub_table['exp_prior'] == exp_prior)
+                boolean = boolean & (np.abs(sub_table['x'] - xx) < 10**-12)
                 if boolean.sum() > 1:
                     print(sub_table[boolean])
                     print('NOT UNIVOQUE NEURON ID')
