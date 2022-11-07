@@ -19,6 +19,7 @@ from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import make_scorer
 from scipy.io import savemat
 
+
 def pseudo_r2_compute(spk, family, modelX, params):#trans=False,vec=None,knots=None):
     
     if len(modelX.shape)==1:

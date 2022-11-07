@@ -101,6 +101,48 @@ def knots_cerate(x,var,session, hand_vel_temp=False,hist_filt_dur='short',
                 x_trans[(x_trans > 200) | (x_trans < 0)] = np.nan
             else:
                 x_trans[(x_trans > 400) | (x_trans < 0)] = np.nan
+    
+    elif var == 'rad_vel_diff':
+        if condition != 'controlgain':
+            knots = np.hstack((np.linspace(0,150,5)[:-1],np.linspace(150,200,3)))
+            knots = np.hstack((
+                [knots[0]] * 3,
+                knots,
+                [knots[-1]] * 3
+            ))
+            x_trans[(x_trans > 200) | (x_trans < 0)] = np.nan
+        else:
+            knots = np.linspace(0, 400, 11)
+            order = 1
+            penalty_type = 'EqSpaced'
+            # conditioin that holds when there is no gain
+            if (x_trans > 200).sum() / np.sum(~np.isnan(x_trans)) < 0.1:
+                idx_maxVel = np.where(knots == 200)[0][0]
+                knots = knots[:idx_maxVel+1]
+                x_trans[(x_trans > 200) | (x_trans < 0)] = np.nan
+            else:
+                x_trans[(x_trans > 400) | (x_trans < 0)] = np.nan
+    
+    elif var == 'rad_vel_ptb':
+        if condition != 'controlgain':
+            knots = np.linspace(-180,180,8)
+            knots = np.hstack((
+                [knots[0]] * 3,
+                knots,
+                [knots[-1]] * 3
+            ))
+            x_trans[(x_trans > 200) | (x_trans < 0)] = np.nan
+        else:
+            knots = np.linspace(0, 400, 11)
+            order = 1
+            penalty_type = 'EqSpaced'
+            # conditioin that holds when there is no gain
+            if (x_trans > 200).sum() / np.sum(~np.isnan(x_trans)) < 0.1:
+                idx_maxVel = np.where(knots == 200)[0][0]
+                knots = knots[:idx_maxVel+1]
+                x_trans[(x_trans > 200) | (x_trans < 0)] = np.nan
+            else:
+                x_trans[(x_trans > 400) | (x_trans < 0)] = np.nan
 
     
     elif var == 'ang_vel':
@@ -126,6 +168,56 @@ def knots_cerate(x,var,session, hand_vel_temp=False,hist_filt_dur='short',
                  knots = np.linspace(-65,65,6)
 
                  x_trans[np.abs(x_trans) > 65] = np.nan
+    
+    elif var == 'ang_vel_diff':
+       if condition != 'controlgain':
+           knots = np.linspace(-65,65,6)
+           knots = np.hstack((
+               [knots[0]] * 3,
+               knots,
+               [knots[-1]] * 3
+           ))
+       else:
+           knots = np.linspace(-91, 91, 8)
+           order = 1
+           penalty_type = 'EqSpaced'
+           # knots = np.hstack((
+           #     np.linspace(-100,-65,3),knots[1:-1],np.linspace(65,100,3)))
+       
+           # condition for gain == 2
+           if np.nanmax(x_trans) > 120:
+               x_trans[np.abs(x_trans) > 91] = np.nan
+           else:
+   
+                knots = np.linspace(-65,65,6)
+   
+                x_trans[np.abs(x_trans) > 65] = np.nan
+
+    elif var == 'ang_vel_ptb':
+       if condition != 'controlgain':
+           knots = np.linspace(-100,100,7)
+           knots = np.hstack((
+               [knots[0]] * 3,
+               knots,
+               [knots[-1]] * 3
+           ))
+       else:
+           knots = np.linspace(-91, 91, 8)
+           order = 1
+           penalty_type = 'EqSpaced'
+           # knots = np.hstack((
+           #     np.linspace(-100,-65,3),knots[1:-1],np.linspace(65,100,3)))
+       
+           # condition for gain == 2
+           if np.nanmax(x_trans) > 120:
+               x_trans[np.abs(x_trans) > 91] = np.nan
+           else:
+   
+                knots = np.linspace(-65,65,6)
+   
+                x_trans[np.abs(x_trans) > 65] = np.nan
+   
+    
     
     elif var == 'rad_path':
         knots = np.linspace(0,350,6)
@@ -202,8 +294,8 @@ def knots_cerate(x,var,session, hand_vel_temp=False,hist_filt_dur='short',
         is_temporal_kernel = True
     
     elif var =='t_ptb':
-        kernel_len = 401
-        knots = np.linspace(10**-6,200,10)
+        kernel_len = 801
+        knots = np.linspace(10**-6,400,10)
         knots = np.hstack(([knots[0]]*3,
                                 knots,
                                 [knots[-1]]*3

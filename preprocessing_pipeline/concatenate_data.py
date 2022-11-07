@@ -45,10 +45,10 @@ for root, dirs, files in os.walk(DIRECT, topdown=False):
 # concat_list = concat_list[ii+1:]
 # fld_list = fld_list[ii+1:]
 
-concat_list = ['m72s11']
+concat_list =  ['m51s120', 'm51s121', 'm51s122']#,'m53s50', 'm53s51'
 # concat_list = ['m72s2']
 
-sv_folder = '/Volumes/WD_Edo/firefly_analysis/LFP_band/concatenation_with_accel'
+sv_folder = '/Volumes/WD_Edo 1/firefly_analysis/LFP_band/concatenation_with_accel'
 
 # concat_list = []
 
@@ -67,7 +67,7 @@ ptrn = '^m\d+s\d+$'
 #         concat_list += [name.split('.')[0]]
 
 
-fld_list = ['/Volumes/WD_Edo/firefly_analysis/LFP_band/DATASET_accel/']*len(concat_list)
+fld_list = ['/Volumes/Balsip HD/dataset_firefly/']*len(concat_list)
 
 save = True
 send = True
@@ -82,9 +82,9 @@ send = True
 
 # path to preproc mat files
 #base_file = '/Volumes/WD Edo/firefly_analysis/LFP_band/DATASET/PPC+PFC+MST/'
-base_file = user_paths.get_path('local_concat','m44s174')
+#base_file = user_paths.get_path('local_concat','m44s174')
 
-base_file = '/Volumes/WD_Edo/firefly_analysis/LFP_band/DATASET_accel/'
+base_file = '/Volumes/Balsip HD/dataset_firefly/'
 baseflld = os.path.dirname(base_file)
 
 #result_fld = '/Volumes/WD Edo/firefly_analysis/LFP_band/results_radTarg/'
@@ -124,7 +124,7 @@ for session in concat_list:
         use_eye = 'right'
 
     if session in ['m51s43','m51s38','m51s41','m51s42','m51s40']:
-        fhLFP = '/Volumes/WD_Edo/firefly_analysis/LFP_band/DATASET_accel/lfps_%s.mat'%session
+        fhLFP = '/Volumes/WD_Edo 1/firefly_analysis/LFP_band/DATASET_accel/lfps_%s.mat'%session
     else:
         fhLFP = ''
     base_file = fld_list[cnt_concat]
@@ -173,15 +173,15 @@ for session in concat_list:
     #  SALVA IL TRIAL ID
     exp_data.set_filters('all', True)
 
-    if any(exp_data.info.trial_type['replay'] == 0): # replay triial are available
-        trial_all_id = exp_data.behav.trial_id[np.where(exp_data.filter)[0]]
-        repl_tr = []
-        for id in trial_all_id:
-            pair = np.where(exp_data.behav.trial_id == id)[0]
-            for tr in pair:
-                if exp_data.info.trial_type['replay'][tr] == 0:
-                    repl_tr += [tr]
-        exp_data.filter[np.array(repl_tr)] = True
+    # if any(exp_data.info.trial_type['replay'] == 0): # replay triial are available
+    #     trial_all_id = np.where(exp_data.filter)[0]
+    #     repl_tr = []
+    #     for id in trial_all_id:
+    #         pair = np.where(np.where(exp_data.filter)[0] == id)[0]
+    #         for tr in pair:
+    #             if exp_data.info.trial_type['replay'][tr] == 0:
+    #                 repl_tr += [tr]
+    #     exp_data.filter[np.array(repl_tr)] = True
 
     # # impose all replay trials
     # is_replay = any(exp_data.info.get_replay(0,skip_not_ok=False))
@@ -200,7 +200,7 @@ for session in concat_list:
 
     var_names = ('rad_vel','ang_vel','rad_path','ang_path','rad_target','ang_target',
                  'lfp_beta','lfp_alpha','lfp_theta','t_move','t_flyOFF','t_stop','t_reward','eye_vert','eye_hori',
-                 'hand_vel1','hand_vel2','rad_acc','ang_acc')
+                 'hand_vel1','hand_vel2','rad_acc','ang_acc','t_ptb')#'rad_vel_diff','rad_vel_ptb','ang_vel_diff','ang_vel_ptb'
                  #'lfp_alpha_power',
                  #'lfp_theta_power','lfp_beta_power')
     try:
@@ -287,10 +287,10 @@ for session in concat_list:
             print('...sending %s.npz to server'%session)
             sendfrom = sv_folder.replace(' ','\ ')
             dest_folder = user_paths.get_path('data_hpc')
-            if 'eb162' in dest_folder:
-                dest_folder=dest_folder.replace('eb162','jpn5')
+            if 'jpn5' in dest_folder:
+                dest_folder=dest_folder.replace('jpn5','eb162')
             # os.system('sshpass -p "%s" scp %s eb162@prince.hpc.nyu.edu:%s' % ('', os.path.join(sendfrom,'%s.npz'%session),dest_folder))
-            os.system('sshpass -p "%s" scp %s jpn5@greene.hpc.nyu.edu:%s' % ('savin1234!', os.path.join(sendfrom,'%s.npz'%session),dest_folder))
+            os.system('sshpass -p "%s" scp %s eb162@greene.hpc.nyu.edu:%s' % ('savin12345!', os.path.join(sendfrom,'%s.npz'%session),dest_folder))
         except Exception as e:
             print(e)
             print('could not send files to the HPC cluster')

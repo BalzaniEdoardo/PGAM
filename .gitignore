@@ -1,3 +1,8 @@
+src/
+JP/GAMTest.R
+.ipy*
+JP/MOUSE_ASD_scripts/*
+JP/MOUSE_FF/*
 *rename_fit.py
 *extractSess.m
 JP/debug/*

@@ -1,5 +1,5 @@
 import numpy as np
-import matplotlib.pylab as plt
+#import matplotlib.pylab as plt
 
 class spike_counts(object):
     def __init__(self,dat,units_key, time_aligned_to_beh=True):
@@ -16,6 +16,7 @@ class spike_counts(object):
         self.brain_area = self.unpack_struct_N_times_1(units,'brain_area')
         self.channel_id = self.unpack_struct_N_times_1(units,'channel_id')
         self.electrode_id = self.unpack_struct_N_times_1(units, 'electrode_id')
+        self.electrode_type = self.unpack_struct_N_times_1(units, 'electrode_type')
         # single identifier for the unit
         self.cluster_id = self.unpack_struct_N_times_1(units, 'cluster_id')
 
@@ -68,7 +69,7 @@ class spike_counts(object):
                     try:
                         unpacked[k,:] = units[key][k].reshape(N,)
                     except ValueError:
-                        print('UNIT %d - could not assign %s'%(k,key))
+                        #print('UNIT %d - could not assign %s'%(k,key))
                         try:
                             try:
                                 unpacked = np.array(unpacked,dtype=float)

@@ -75,7 +75,7 @@ class data_handler(object):
         return train,test
 
     def GPFA_YU_preprocessing(self, list_timepoints=None, var_list=[], pcaPrep=False, sqrtIfPCA=True,
-                              filt_window=None,smooth=True):
+                              filt_window=None,smooth=True,event_list=[]):
         if list_timepoints is None:
             list_timepoints = [('t_move','t_stop',75),
                                ('t_stop','t_reward',15)
@@ -108,6 +108,9 @@ class data_handler(object):
         tw_correlates = {}
         for var in var_list:
             tw_correlates[var] = np.zeros((n_trials, tot_tp)) * np.nan
+        
+        for var in event_list:
+            tw_correlates[var] = np.zeros((n_trials, tot_tp))
 
 
 
@@ -268,7 +271,17 @@ class data_handler(object):
                 non_nan = ~np.isnan(y_val)
                 intrp = interp1d(time_pts[non_nan], y_val[non_nan], bounds_error=False)
                 tw_correlates[var][indx_tr,:] = intrp(tp_matrix[indx_tr, :])
-
+            
+            for var in event_list:
+                #time_pts = self.behav.time_stamps[tr]
+                y_val = self.behav.events.__dict__[var][tr]
+                
+                for val in y_val:
+                    if np.isnan(val):
+                        continue
+                    t_iidx = (tp_matrix[indx_tr, :] >= val) & (tp_matrix[indx_tr, :] < val)
+                    if t_iidx.sum()>0:
+                        tw_correlates[indx_tr,t_iidx] = 1
 
         return tp_matrix, rate_tensor, sm_traj, raw_traj, fly_pos, tw_correlates, trial_use
 
@@ -399,12 +412,19 @@ class data_handler(object):
         var_dict = {}
 
         for var in varnames:
+            
             if var in event_names:
                 events = self.behav.events.__dict__[var]
+                if events is None:
+                    print('empty %s'%var)
+                    continue
                 var_dict[var] = self.behav.create_event_time_binned(events,time_stamps,t_start=t_start,t_stop=t_stop,select=self.filter)
 
             elif var in continuous_names:
                 continuous = self.behav.continuous.__dict__[var]
+                if continuous is None:
+                    print('empty %s'%var)
+                    continue
                 var_dict[var] = self.behav.cut_continuous( continuous, time_stamps, t_start=t_start, t_stop=t_stop,
                                                           select=self.filter,idx0=None,idx1=None)
             elif var == 'phase':
