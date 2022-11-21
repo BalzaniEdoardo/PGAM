@@ -311,8 +311,8 @@ class GAM_result(object):
                         tuning[cc] = np.nanmean(lam_s[idx])
                         var_tuning[cc] = np.nanpercentile(sigm2_s[idx], 90)
 
-                        sc_based_tuning[cc] = y[idx].mean()
-                        tot_s_vec[cc] = np.sum(idx)
+                        sc_based_tuning[cc] = np.nanmean(y[idx])
+                        tot_s_vec[cc] = np.nansum(idx)
                         # print(var, tuning)
                         try:
                             if tuning[cc] > 10 ** 4:
