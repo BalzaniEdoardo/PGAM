@@ -376,7 +376,7 @@ class data_handler(object):
 
         return bbin_ts, spikes, sm_traj, raw_traj, fly_pos, tw_correlates, trialId
 
-    def create_time_stamps(self, bin_sec):
+    def rebin_time_stamps(self, bin_sec):
         time_stamps = {}
         for tr in self.behav.time_stamps:
             ts = self.behav.time_stamps[tr]
@@ -581,7 +581,7 @@ if __name__ == '__main__':
     exp_data.set_filters('all', True)
 
     # rebin to 0.2 sec
-    ts = exp_data.create_time_stamps(0.2)
+    ts = exp_data.rebin_time_stamps(0.2)
 
     # select the stat/stop trial
     t_targ = dict_to_vec(exp_data.behav.events.t_targ)
