@@ -1,5 +1,6 @@
 import numpy as np
 import statsmodels.api as sm
+from scipy.interpolate import interp1d
 
 def create_dict_beahv(trialVec,var_type,field):
     """
@@ -522,7 +523,8 @@ class behavior_experiment(object):
             ii += 1
         return bin_event
 
-    def cut_continuous(self, continuous, edges, t_start=None, t_stop=None, select=None,idx0=None,idx1=None):
+    def cut_continuous(self, continuous, edges, t_start=None, t_stop=None, select=None,idx0=None,idx1=None,
+                       rebin=False):
 
         bin_continous = {}
         if not select is None:
@@ -540,32 +542,61 @@ class behavior_experiment(object):
             if idx1 is None:
                 i_idx1 = continuous[tr].shape[0]
 
-            continuous_tr = continuous[tr][idx0:i_idx1]
-            
+            if not rebin:
+                continuous_tr = continuous[tr][idx0:i_idx1]
 
-            # edge_tr = edges[tr]
-            # get the same numerosity as Kaushik
-            edge_tr = np.array(edges[tr][1:-1],dtype=float)
-            continuous_tr = continuous_tr[1:-1]
 
-            # if t_start is set to None it means that edges must not be cut
-            if t_start is None:
-                t0 = -np.inf
-                t1 = np.inf
+                # edge_tr = edges[tr]
+                # get the same numerosity as Kaushik
+                edge_tr = np.array(edges[tr][1:-1],dtype=float)
+                continuous_tr = continuous_tr[1:-1]
+
+                # if t_start is set to None it means that edges must not be cut
+                if t_start is None:
+                    t0 = -np.inf
+                    t1 = np.inf
+                else:
+                    # if start is a scalar, always takes times greater than t_start
+                    if np.isscalar(t_start):
+                        t0 = t_start
+                    # otherwise consider as start the time t0 indicated by the dictionary with t_starts
+                    else:
+                        t0 = float(t_start[tr])
+                    # same for t_stop
+                    if np.isscalar(t_stop):
+                        t1 = t_stop
+                    else:
+                        t1 = float(t_stop[tr])
+                try:
+                    bin_continous[ii] = continuous_tr[(edge_tr > t0) * (edge_tr < t1)]
+                except:
+                    xxx = 1
+
             else:
-                # if start is a scalar, always takes times greater than t_start
-                if np.isscalar(t_start):
-                    t0 = t_start
-                # otherwise consider as start the time t0 indicated by the dictionary with t_starts
+                edges_tr = np.array(edges[tr][1:-1], dtype=float)
+                if t_start is None:
+                    bins = edges_tr#np.hstack((edges_tr,np.inf))
                 else:
-                    t0 = float(t_start[tr])
-                # same for t_stop
-                if np.isscalar(t_stop):
-                    t1 = t_stop
-                else:
-                    t1 = float(t_stop[tr])
+                    # if start is a scalar, always takes times greater than t_start
+                    if np.isscalar(t_start):
+                        t0 = t_start
+                    # otherwise consider as start the time t0 indicated by the dictionary with t_starts
+                    else:
+                        t0 = float(t_start[tr])
+                    # same for t_stop
+                    if np.isscalar(t_stop):
+                        t1 = t_stop
+                    else:
+                        t1 = float(t_stop[tr])
+                    # this way we have the last bin that contains every spikes happened after t1
+                    # edges_tr = np.hstack((edges[tr],edges[tr][-1] + dt))
 
-            bin_continous[ii] = continuous_tr[(edge_tr > t0) * (edge_tr < t1)]
+                    # keep only the bins in the desired range
+                    bins = edges_tr[(edges_tr >= t0) * (edges_tr <= t1)]
+
+                interp = interp1d(self.time_stamps[tr], continuous[tr], fill_value='extrapolate')
+                bin_continous[ii] = interp(bins)
+
             ii += 1
         return bin_continous
 

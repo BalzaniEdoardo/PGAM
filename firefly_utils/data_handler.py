@@ -4,7 +4,7 @@ from behav_class import behavior_experiment,load_trial_types
 from lfp_class import lfp_class
 from copy import deepcopy
 from datetime import datetime
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 import statsmodels.api as sm
 from scipy.interpolate import interp1d
 
@@ -376,9 +376,21 @@ class data_handler(object):
 
         return bbin_ts, spikes, sm_traj, raw_traj, fly_pos, tw_correlates, trialId
 
+    def create_time_stamps(self, bin_sec):
+        time_stamps = {}
+        for tr in self.behav.time_stamps:
+            ts = self.behav.time_stamps[tr]
+            ts0 = np.floor(ts[0]/bin_sec)
+            ts1 = np.ceil(ts[-1]/bin_sec)
+            time_stamps[tr] = ts0 * bin_sec + bin_sec * np.arange(0, int(ts1+np.abs(ts0))+1)
+        return time_stamps
 
-    def concatenate_inputs(self,*varnames,t_start=None,t_stop=None):
-        time_stamps = deepcopy(self.behav.time_stamps)
+    def concatenate_inputs(self,*varnames,t_start=None,t_stop=None, time_stamps=None):
+        if time_stamps is None:
+            time_stamps = deepcopy(self.behav.time_stamps)
+            rebin = False
+        else:
+            rebin = True
 
         self.spikes.bin_spikes(time_stamps, t_start=t_start, t_stop=t_stop, select=self.filter)
 
@@ -418,15 +430,16 @@ class data_handler(object):
                 if events is None:
                     print('empty %s'%var)
                     continue
-                var_dict[var] = self.behav.create_event_time_binned(events,time_stamps,t_start=t_start,t_stop=t_stop,select=self.filter)
+                var_dict[var] = self.behav.create_event_time_binned(events,time_stamps,t_start=t_start,
+                                                                    t_stop=t_stop,select=self.filter)
 
             elif var in continuous_names:
                 continuous = self.behav.continuous.__dict__[var]
                 if continuous is None:
                     print('empty %s'%var)
                     continue
-                var_dict[var] = self.behav.cut_continuous( continuous, time_stamps, t_start=t_start, t_stop=t_stop,
-                                                          select=self.filter,idx0=None,idx1=None)
+                var_dict[var] = self.behav.cut_continuous(continuous, time_stamps, t_start=t_start, t_stop=t_stop,
+                                                          select=self.filter,idx0=None,idx1=None,rebin=rebin)
             elif var == 'phase':
                 # compute phase using hilbert transform in all trials (the filtering is applied with cut_continous)
                 all_tr = np.ones(self.lfp.n_trials,dtype=bool)
@@ -482,14 +495,6 @@ class data_handler(object):
                                                       self.spikes.brain_area)
                 var_dict[var] = self.lfp.cut_phase(amplitude, time_stamps, t_start=t_start, t_stop=t_stop,
                                                           select=self.filter,idx0=None,idx1=None)
-
-            # elif var == 'phase':
-                # # compute phase using hilbert transform in all trials (the filtering is applied with cut_continous)
-                # all_tr = np.ones(self.lfp.n_trials,dtype=bool)
-                # phase = self.lfp.extract_phase(all_tr,self.spikes.channel_id, self.spikes.brain_area)
-                # var_dict[var] = self.lfp.cut_phase(phase, time_stamps, t_start=t_start, t_stop=t_stop,
-                #                                           select=self.filter,idx0=None,idx1=None)
-
             else:
                 raise ValueError('variable %s is unknown'%var)
             if not (var in ['phase','lfp_beta','lfp_alpha','lfp_theta',
@@ -555,10 +560,10 @@ if __name__ == '__main__':
     from scipy.io import loadmat
     from behav_class import *
     print('start loading...')
-    dat = loadmat('/Volumes/WD Edo/firefly_analysis/LFP_band/DATASET/MST/m53s127_new.mat')
-    lfp_beta = loadmat('/Volumes/WD Edo/firefly_analysis/LFP_band/DATASET/MST/lfp_beta_m53s127.mat')
-    lfp_alpha = loadmat('/Volumes/WD Edo/firefly_analysis/LFP_band/DATASET/MST/lfp_alpha_m53s127.mat')
-    lfp_theta = loadmat('/Volumes/WD Edo/firefly_analysis/LFP_band/DATASET/MST/lfp_theta_m53s127.mat')
+    dat = loadmat('/Volumes/TOSHIBA EXT/dataset_firefly/m53s50.mat')
+    # lfp_beta = loadmat('/Volumes/TOSHIBA EXT/dataset_firefly/lfp_beta_m53s50.mat')
+    # lfp_alpha = loadmat('/Volumes/TOSHIBA EXT/dataset_firefly/lfp_alpha_m53s50.mat')
+    # lfp_theta = loadmat('/Volumes/TOSHIBA EXT/dataset_firefly/lfp_theta_m53s50.mat')
     print(dat.keys())
     behav_stat_key = 'behv_stats'
     spike_key = 'units'
@@ -567,35 +572,54 @@ if __name__ == '__main__':
 
     pre_trial_dur = 0.5
     post_trial_dur = 0.5
-    exp_data = data_handler(dat,behav_dat_key,spike_key,lfp_key,behav_stat_key,pre_trial_dur=pre_trial_dur,post_trial_dur=post_trial_dur,
-                            lfp_beta=lfp_beta['lfp_beta'],lfp_alpha=lfp_alpha['lfp_alpha'],extract_lfp_phase=True)
-    exp_data.set_filters('all',True)
-    train,test = exp_data.compute_train_and_test_filter(seed=3)
+    # exp_data = data_handler(dat,behav_dat_key,spike_key,lfp_key,behav_stat_key,pre_trial_dur=pre_trial_dur,post_trial_dur=post_trial_dur,
+    #                         lfp_beta=lfp_beta['lfp_beta'],lfp_alpha=lfp_alpha['lfp_alpha'],extract_lfp_phase=True)
+    exp_data = data_handler(dat, behav_dat_key, spike_key, lfp_key, behav_stat_key, pre_trial_dur=pre_trial_dur,
+                            post_trial_dur=post_trial_dur,
+                            lfp_beta=None, lfp_alpha=None, extract_lfp_phase=True)
 
+    exp_data.set_filters('all', True)
+
+    # rebin to 0.2 sec
+    ts = exp_data.create_time_stamps(0.2)
+
+    # select the stat/stop trial
     t_targ = dict_to_vec(exp_data.behav.events.t_targ)
     t_move = dict_to_vec(exp_data.behav.events.t_move)
-
     t_start = np.min(np.vstack((t_move,t_targ)),axis=0) - pre_trial_dur
     t_stop = dict_to_vec(exp_data.behav.events.t_end) + post_trial_dur
 
-    var_names = ['phase']# 'rad_vel','ang_vel','rad_path','ang_path','hand_vel1','hand_vel2','phase','t_move','t_flyOFF','t_stop','t_reward','rad_path','ang_path'
-    var_alias = {'rad_vel':'v',
-                 'ang_vel':'w',
-                 'rad_path':'d',
-                 'ang_path':'phi',
-                 'hand_vel1':'h1',
-                 'hand_vel2':'h2',
-                 'lfp_beta':'lfp_beta',
-                 'lfp_alpha': 'lfp_alpha',
-                 't_move':'move',
-                 't_flyOFF':'target_OFF',
-                 't_stop': 'stop',
-                 't_reward':'reward'}
-    # var_names = ['t_flyOFF','t_move']
-    var_names = ['lfp_alpha','lfp_beta','phase']
-    y,X,trial_idx = exp_data.concatenate_inputs(*var_names,t_start=t_start,t_stop=t_stop)
-    for key in X.keys():
-        print(key, X[key].shape)
+    # concatenate a cuple of variables with the 0.2 binning
+    var_names = 'rad_vel','t_move'
+    y,X,trial_idx = exp_data.concatenate_inputs(*var_names,t_start=t_start,t_stop=t_stop, time_stamps=ts)
+
+    # exp_data.set_filters('all',True)
+    # train,test = exp_data.compute_train_and_test_filter(seed=3)
+    #
+    # t_targ = dict_to_vec(exp_data.behav.events.t_targ)
+    # t_move = dict_to_vec(exp_data.behav.events.t_move)
+    #
+    # t_start = np.min(np.vstack((t_move,t_targ)),axis=0) - pre_trial_dur
+    # t_stop = dict_to_vec(exp_data.behav.events.t_end) + post_trial_dur
+    #
+    # var_names = ['phase']# 'rad_vel','ang_vel','rad_path','ang_path','hand_vel1','hand_vel2','phase','t_move','t_flyOFF','t_stop','t_reward','rad_path','ang_path'
+    # var_alias = {'rad_vel':'v',
+    #              'ang_vel':'w',
+    #              'rad_path':'d',
+    #              'ang_path':'phi',
+    #              'hand_vel1':'h1',
+    #              'hand_vel2':'h2',
+    #              'lfp_beta':'lfp_beta',
+    #              'lfp_alpha': 'lfp_alpha',
+    #              't_move':'move',
+    #              't_flyOFF':'target_OFF',
+    #              't_stop': 'stop',
+    #              't_reward':'reward'}
+    # # var_names = ['t_flyOFF','t_move']
+    # var_names = ['lfp_alpha','lfp_beta','phase']
+    # y,X,trial_idx = exp_data.concatenate_inputs(*var_names,t_start=t_start,t_stop=t_stop)
+    # for key in X.keys():
+    #     print(key, X[key].shape)
 
     # res = loadmat('/Users/edoardo/Work/Code/Angelaki-Savin/Kaushik/concatenated_trials.mat')
     # Yt=res['Yt']
