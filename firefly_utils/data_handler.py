@@ -560,7 +560,7 @@ if __name__ == '__main__':
     from scipy.io import loadmat
     from behav_class import *
     print('start loading...')
-    dat = loadmat('/Volumes/TOSHIBA EXT/dataset_firefly/m53s50.mat')
+    dat = loadmat('/Volumes/TOSHIBA EXT/dataset_firefly/m53s31.mat')
     # lfp_beta = loadmat('/Volumes/TOSHIBA EXT/dataset_firefly/lfp_beta_m53s50.mat')
     # lfp_alpha = loadmat('/Volumes/TOSHIBA EXT/dataset_firefly/lfp_alpha_m53s50.mat')
     # lfp_theta = loadmat('/Volumes/TOSHIBA EXT/dataset_firefly/lfp_theta_m53s50.mat')
