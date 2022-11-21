@@ -112,7 +112,11 @@ def parse_fit_list(filepath):
         if type(nn) == np.str_:
             exp_prior_tmp[cc] = nn.strip()
         else:
-            exp_prior_tmp[cc] = nn[0]
+            try:
+                exp_prior_tmp[cc] = nn[0].strip()
+            except:
+                assert(nn[0,0] in [20,80])
+                exp_prior_tmp[cc] = 'prior%d'%nn[0,0]
         cc+=1
     exp_prior = exp_prior_tmp
     path_file_tmp = []
