@@ -13,20 +13,22 @@ The repository includes a tutorial that showcase the main functionality of the m
 Table of Contents
 =================
 * [Setup](#setup)
-     * [Docker image](#docker-image)
+	* [Docker image](#docker-image)
 		* [Download and run the PGAM Docker image](#download-run)
-     		* [Working with jupyter](#working-with-jupyter)
-     		* [Running a script](#running-a-script)
-     * [Conda environment](#conda-environment)
-     	* [Inspect and edit the PATH environment variable](#env-var)
-    
+     	
+		* [Working with jupyter](#working-with-jupyter)
+     	
+		* [Running a script](#running-a-script)
+     	
+	* [Conda environment](#conda-environment)
+		* [Inspect and edit the PATH environment variable](#env-var)
+     		
+* [References](#refs) 
 <!---
 * [Usage](#usage)
    * [Notebooks](#notebooks)
    * [Model parameters](#model-parameters)
 --->
-* [References](#refs) 
-
 
 # Setup <a name="setup"></a>
 The package was implemented on macOS (Monterey version 12.5.1) and tested on Linux (RHEL version 8.4) and Windows 10. 
