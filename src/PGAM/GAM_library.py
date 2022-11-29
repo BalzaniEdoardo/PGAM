@@ -7,9 +7,8 @@ try:
 
             sys.path.append(sys.argv[1])
             print('path set to',sys.argv[1])
-
     else:
-        print('path',sys.path.append(sys.argv[1]),'do not exist')
+        pass
 except IndexError:
     pass
 from gam_data_handlers import *
@@ -34,7 +33,7 @@ try:
     import skcuda.linalg as cuda_linalg
     flagUseCuda = True
 except ModuleNotFoundError as e:
-    print(e)
+    #print(e)
     flagUseCuda = False
 
 
