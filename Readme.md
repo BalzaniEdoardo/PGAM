@@ -13,7 +13,7 @@ The repository includes a tutorial that showcase the main functionality of the m
 Table of Contents
 =================
 * [Setup](#setup)
-	* [Docker image](#docker-image)
+     * [Docker image](#docker-image)
 		* [Download and run the PGAM Docker image](#download-run)
      		* [Working with jupyter](#working-with-jupyter)
      		* [Running a script](#running-a-script)
