@@ -575,13 +575,13 @@ if __name__ == '__main__':
     # exp_data = data_handler(dat,behav_dat_key,spike_key,lfp_key,behav_stat_key,pre_trial_dur=pre_trial_dur,post_trial_dur=post_trial_dur,
     #                         lfp_beta=lfp_beta['lfp_beta'],lfp_alpha=lfp_alpha['lfp_alpha'],extract_lfp_phase=True)
     exp_data = data_handler(dat, behav_dat_key, spike_key, lfp_key, behav_stat_key, pre_trial_dur=pre_trial_dur,
-                            post_trial_dur=post_trial_dur,
+                            post_trial_dur=post_trial_dur,extract_fly_and_monkey_xy=True,
                             lfp_beta=None, lfp_alpha=None, extract_lfp_phase=True)
 
     exp_data.set_filters('all', True)
 
     # rebin to 0.2 sec
-    ts = exp_data.rebin_time_stamps(0.2)
+    ts = exp_data.rebin_time_stamps(0.1)
 
     # select the stat/stop trial
     t_targ = dict_to_vec(exp_data.behav.events.t_targ)
@@ -590,7 +590,7 @@ if __name__ == '__main__':
     t_stop = dict_to_vec(exp_data.behav.events.t_end) + post_trial_dur
 
     # concatenate a cuple of variables with the 0.2 binning
-    var_names = 'rad_vel','t_move'
+    var_names = 'rad_vel','x_monk','x_fly'
     y,X,trial_idx = exp_data.concatenate_inputs(*var_names,t_start=t_start,t_stop=t_stop, time_stamps=ts)
 
     # exp_data.set_filters('all',True)

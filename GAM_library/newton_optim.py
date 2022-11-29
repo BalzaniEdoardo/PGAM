@@ -83,7 +83,7 @@ def gcv_comp(rho, X, Q, R, endog,sm_handler,var_list,return_par='gcv',gamma=1.):
     U = np.delete(U, i_rem, 1)
     V_T = np.delete(V_T, i_rem, 0)
 
-    # compute the diag matrix with the singolar vals
+    # compute the diag matrix with the singular vals
     D = np.zeros((s.shape[0], s.shape[0]))
     di = np.diag_indices(s.shape[0])
     D[di] = s
