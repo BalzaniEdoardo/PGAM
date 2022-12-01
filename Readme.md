@@ -24,6 +24,7 @@ Table of Contents
 		* [Inspect and edit the PATH environment variable](#env-var)
      		
 * [References](#refs) 
+
 <!---
 * [Usage](#usage)
    * [Notebooks](#notebooks)
