@@ -1,3 +1,7 @@
+*.mat
+*.csl
+*.bib
+*.yml
 *.c
 *.so
 .ipynb_checkpoints/
