@@ -1209,7 +1209,7 @@ class smooths_handler(object):
         :param x_cov: list containing the input variable (the list will contain 1 vector per dimension of the variable)
         :param ord: int, the order of the base spline, the number of coefficient in the polinomial (ord =4 is cubic spline)
         :param lam: float, or list of float (smoothing  coefficients, leave None)
-        :param knots: list ot None. If list, each element of the list is a vector of knots locations for a specific dimension of the variable
+        :param knots: list or None. If list, each element of the list is a vector of knots locations for a specific dimension of the variable
         :param knots_num: int, used if no knots are specified, number of knots to be used
         :param perc_out_range: (set this to 0), obsolete... float between 0 and 1, percentage of knots out of the variable range (set to 0. is
         :param is_cyclic: list of bool, True if a variable dimension is cyclic
