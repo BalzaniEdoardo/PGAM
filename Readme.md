@@ -101,7 +101,13 @@ Files that the container saves in other directories of the virtual file system w
 
 The -p *local-port:container-port* option connects port 8888 of the container with that of the host operating system, allowing the container and the operating system to interact.
 
-Open a browser, and browse to *localhost:8888/* to connect to jupyter. You can test the library by working with the "PGAM Tutorial.ipynb" or you can create your own notebook. Files will be stored in the *your-notebook-folder*.
+Open a browser, and browse to 
+
+```html
+localhost:8888/
+```
+
+to connect to jupyter. You can test the library by working with the "PGAM Tutorial.ipynb" or you can create your own notebook. Files will be stored in the *your-notebook-folder*.
 
 
 
