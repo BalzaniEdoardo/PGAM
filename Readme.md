@@ -30,14 +30,15 @@ Table of Contents
      	
 	* [Conda environment](#conda-environment)
 		* [Inspect and edit the PATH environment variable](#env-var)
+
+* [Usage](#usage)
+
+  
      		
 * [References](#refs) 
 
-<!---
-* [Usage](#usage)
-   * [Notebooks](#notebooks)
-   * [Model parameters](#model-parameters)
---->
+
+
 
 # Setup <a name="setup"></a>
 The package was implemented on macOS (Monterey version 12.5.1) and tested on Linux (RHEL version 8.4) and Windows 10. 
@@ -242,13 +243,17 @@ On **Linux**:
 
 4.	Restart your terminal.
 
-<!---
+
 # Usage
+With the PGAM library provides two notebooks: 
 
-## Demo
+1. <a href = "PGAM_Tutorial.ipynb">PGAM_Tutorial.ipynb </a>
+2. <a href = "Standardized_PGAM_Fit_with_examples.ipynb"> Standardized_PGAM_Fit_with_examples.ipynb </a>
 
-## Notebook
---->
+The  first notebook aims to introduce the user to some concepts of GAM theory, showcase how the PGAM library implements those concepts with the aim of estimating tuning functions from spike count vectors. The main functionality of the library will be detailed as well as the parameters and inputs that the PGAM needs to set up the model and learn the model parameters. 
+
+With the second notebook we aim to provide a standardized pipeline for fitting experimental data that is general, require little programming skills, and can be easilty parallelized on High Performance Computing (HPC). We will detail how the user can run the pipeline through Docker and singularity (for HPC usage). The  singularity image can be downloaded <a href="https://osf.io/pcsav/">here</a>.
+
 
 # References <a name="refs"></a>
 <a id="1">[1]</a> 
