@@ -255,7 +255,7 @@ With the PGAM library, we provide two notebooks:
 
 The  first notebook aims to introduce the user to some concepts of GAM theory and showcase how the PGAM library implements those concepts with the aim of estimating tuning functions from spike count vectors. The main functionality of the library will be detailed as well as the parameters and inputs that the PGAM needs to set up the model and learn the model parameters. 
 
-With the second notebook we aim to provide a standardized pipeline for fitting experimental data. We aim for the pipeline to be general, require little programming skills, and can be easily parallelized on High Performance Computing (HPC). We will detail how the user can run the pipeline through Docker (for local usage) and singularity (for HPC usage). The  singularity image can be downloaded <a href="https://osf.io/pcsav/">here</a>.
+With the second notebook we aim to provide a standardized pipeline for fitting experimental data. We aim for the pipeline to be general, require little programming skills, and be easily parallelizable on High Performance Computing (HPC). We will detail how the user can run the pipeline through Docker (for local usage) and singularity (for HPC usage). The  singularity image can be downloaded <a href="https://osf.io/pcsav/">here</a>.
 
 
 # References <a name="refs"></a>
