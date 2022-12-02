@@ -2,12 +2,22 @@ Poisson Generalized Additive Model (PGAM)
 =====================================
 
 
-A PGAM for the estimation of neural tuning functions. Responses are represented in terms of B-splines regularized by a smoothing enforcing penalization. B-spline coefficients and regularization hyperparameters are jointly learned from the data by numerical optimization of a cross-validation score. The model infers marginal confidence bounds for the contribution of each feature to the neural response and uses such bounds to identify the minimal subset of features each neuron responds to. This implies that the model selects a subset of variables based on statistical testing, as opposed to time costly forward-backward selection, that may be unfeasible whe the number of regressors is large. See [[1]](#1) for a more technical details as well as benchmarking vs traditiional regularized GLMs. 
-
-<!-- add figure wth the time of fit and a captioin saying that for the GLM that entialed only the regularizer selection but not the covariate selection, while the GAM in that runtime does both regularizer and feature selection  -->
+A PGAM for the efficient estimation of neural tuning functions. Responses are represented in terms of B-splines regularized by a smoothing enforcing penalization. B-spline coefficients and regularization hyperparameters are jointly learned from the data by numerical optimization of a cross-validation score. The model infers marginal confidence bounds for the contribution of each feature to the neural response and uses such bounds to identify the minimal subset of features each neuron responds to. This implies that the model selects a subset of variables based on statistical testing, as opposed to time costly forward-backward selection, that may be unfeasible when the number of regressors is large. See [[1]](#1) for a more technical details as well as benchmarking vs traditional regularized GLMs. 
 
 
-The repository includes a tutorial that showcase the main functionality of the model, and familiarizes the user with the concepts of B-splines, the regularization and the model outputs.
+ ![PGAM-GLM-compare](figs/pgam-readme.png) 
+
+<!-- <object data="figs/pgam-readme.pdf" type="application/pdf" width="2000px" height="700px">
+    <embed src="figs/pgam-readme.pdf">
+        <p>This browser does not support PDFs. Please download the PDF to view it: <a href="figs/pgam-readme.pdf">Download PDF</a>.</p>
+    </embed>
+</object> -->
+
+<!-- add figure with the time of fit and a caption saying that for the GLM that entialed only the regularizer selection but not the covariate selection, while the GAM in that runtime does both regularizer and feature selection  -->
+
+
+The repository includes two tutorials. The first (PGAM_tutorial) is intended to familiarize users with B-splines and the regularization used in the code. It is meant to showcase how the model/code works, conceptually. The second tutorial (Standardized_PGAM_Fit_with_examples) is more practical, meant to show how to work the code. It details standard inputs and outputs from the model, and how to run it.
+
 
 
 Table of Contents
@@ -22,22 +32,24 @@ Table of Contents
      	
 	* [Conda environment](#conda-environment)
 		* [Inspect and edit the PATH environment variable](#env-var)
+
+* [Usage](#usage)
+
+  
      		
 * [References](#refs) 
-<!---
-* [Usage](#usage)
-   * [Notebooks](#notebooks)
-   * [Model parameters](#model-parameters)
---->
+
+
+
 
 # Setup <a name="setup"></a>
 The package was implemented on macOS (Monterey version 12.5.1) and tested on Linux (RHEL version 8.4) and Windows 10. 
 It requires python (>=3.6), and R (>= 3.6). 
 
 
-Below we will provide two recommended ways of setting up the package:
+Below we provide two recommended ways of setting up the package:
 
-1.  Download and run a [Docker image](#docker-image).
+1. Download and run a [Docker image](#docker-image).
 2. Install all software requirements and create a dedicated [conda environment](#conda-environment)
 
 
@@ -49,7 +61,7 @@ Downloading a Docker image and running it in a Docker container is very simple a
 ### Download and run the PGAM Docker image <a name="download-run"></a>
 
 
-Download, install and  <a href="https://docs.docker.com/get-docker/"> Docker<a>. 
+Download and install  <a href="https://docs.docker.com/get-docker/"> Docker<a>. 
 
 Start Docker. 
 
@@ -92,7 +104,13 @@ Files that the container saves in other directories of the virtual file system w
 
 The -p *local-port:container-port* option connects port 8888 of the container with that of the host operating system, allowing the container and the operating system to interact.
 
-Open a browser, and browse to *localhost:8888/* to connect to jupyter. You can test the library by working with the "PGAM Tutorial.ipynb" or you can create your own notebook. Files will be stored in the *your-notebook-folder*.
+Open a browser, and browse to 
+
+```html
+localhost:8888/
+```
+
+to connect to jupyter. You can test the library by working with the "PGAM Tutorial.ipynb" (see section below) or you can create your own notebook. Files will be stored in the *your-notebook-folder*.
 
 
 
@@ -227,13 +245,17 @@ On **Linux**:
 
 4.	Restart your terminal.
 
-<!---
-# Usage
 
-## Demo
+# Tutorials and Usage
+With the PGAM library, we provide two notebooks: 
 
-## Notebook
---->
+1. <a href = "PGAM_Tutorial.ipynb">PGAM_Tutorial.ipynb </a>
+2. <a href = "Standardized_PGAM_Fit_with_examples.ipynb"> Standardized_PGAM_Fit_with_examples.ipynb </a>
+
+The  first notebook aims to introduce the user to some concepts of GAM theory and showcase how the PGAM library implements those concepts with the aim of estimating tuning functions from spike count vectors. The main functionality of the library will be detailed as well as the parameters and inputs that the PGAM needs to set up the model and learn the model parameters. 
+
+With the second notebook we aim to provide a standardized pipeline for fitting experimental data. We aim for the pipeline to be general, require little programming skills, and can be easily parallelized on High Performance Computing (HPC). We will detail how the user can run the pipeline through Docker (for local usage) and singularity (for HPC usage). The  singularity image can be downloaded <a href="https://osf.io/pcsav/">here</a>.
+
 
 # References <a name="refs"></a>
 <a id="1">[1]</a> 

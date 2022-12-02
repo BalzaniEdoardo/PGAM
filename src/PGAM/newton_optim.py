@@ -8,13 +8,12 @@ from time import perf_counter
 useCuda = False
 try:
     if not useCuda:
-        raise ModuleNotFoundError('user not uses cuda')
+        raise ModuleNotFoundError('cuda not found!')
     import pycuda.autoinit
     import pycuda.gpuarray as gpuarray
     import skcuda.linalg as cuda_linalg
     flagUseCuda = True
 except ModuleNotFoundError as e:
-    print(e)
     flagUseCuda = False
 
 class weights_and_data(object):
