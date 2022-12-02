@@ -246,7 +246,8 @@ On **Linux**:
 4.	Restart your terminal.
 
 
-# <a name="usage"> </a>Tutorials and Usage With the PGAM library, we provide two notebooks: 
+# <a name="usage"> </a>Tutorials and Usage 
+With the PGAM library, we provide two notebooks: 
 
 1. <a href = "PGAM_Tutorial.ipynb">PGAM_Tutorial.ipynb </a>
 2. <a href = "Standardized_PGAM_Fit_with_examples.ipynb"> Standardized\_PGAM\_Fit\_with\_examples.ipynb </a>
