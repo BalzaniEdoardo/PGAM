@@ -33,7 +33,7 @@ Table of Contents
 	* [Conda environment](#conda-environment)
 		* [Inspect and edit the PATH environment variable](#env-var)
 
-* [Usage](#usage)
+* [Tutorials and Usage](#usage)
 
   
      		
@@ -167,7 +167,7 @@ Instruction on how to set up a conda environment with the specified packages are
 	```
 
 
-Test the installation by *cd* to the *PGAM/GAM_library* directory and run,
+Test the installation by *cd* to the *src/PGAM* directory and run,
 
 ```
 	python
@@ -246,11 +246,10 @@ On **Linux**:
 4.	Restart your terminal.
 
 
-# Tutorials and Usage
-With the PGAM library, we provide two notebooks: 
+# <a name="usage"> </a>Tutorials and Usage With the PGAM library, we provide two notebooks: 
 
 1. <a href = "PGAM_Tutorial.ipynb">PGAM_Tutorial.ipynb </a>
-2. <a href = "Standardized_PGAM_Fit_with_examples.ipynb"> Standardized_PGAM_Fit_with_examples.ipynb </a>
+2. <a href = "Standardized_PGAM_Fit_with_examples.ipynb"> Standardized\_PGAM\_Fit\_with\_examples.ipynb </a>
 
 The  first notebook aims to introduce the user to some concepts of GAM theory and showcase how the PGAM library implements those concepts with the aim of estimating tuning functions from spike count vectors. The main functionality of the library will be detailed as well as the parameters and inputs that the PGAM needs to set up the model and learn the model parameters. 
 
