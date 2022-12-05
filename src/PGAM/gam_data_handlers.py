@@ -1227,8 +1227,9 @@ class smooths_handler(object):
         :return:
         """
         if name in self.smooths_var:
-            print('Name "%s" already used!' % name)
-            return False
+            print('Name "%s" already used. Overwriting' % name)
+            self.smooths_var.remove(name)
+            self.smooths_dict.pop(name)
         self.smooths_var += [name]
         self.smooths_dict[name] = covarate_smooth(x_cov, ord=ord, knots=knots, knots_num=knots_num,
                                                   perc_out_range=perc_out_range, is_cyclic=is_cyclic, lam=lam,
