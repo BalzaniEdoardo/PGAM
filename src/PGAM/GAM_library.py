@@ -676,7 +676,7 @@ class general_additive_model(object):
         self.fisher_scoring = fisher_scoring
 
     def optim_gam(self, var_list, smooth_pen=None,max_iter=10**3,tol=1e-5,conv_criteria='gcv',
-                  perform_PQL=True,use_dgcv=False,method='Newton-CG',methodInit='Newton-CG',
+                  perform_PQL=True,use_dgcv=True,method='Newton-CG',methodInit='Newton-CG',
                   compute_AIC=False,random_init=False,bounds_rho=None,gcv_sel_tol=1e-10,fit_initial_beta=False,
                   filter_trials=None,compute_MI=False,saveBetaHist=False, WLS_solver='positive_weights'):
 
