@@ -190,6 +190,7 @@ def smPenalty_1D_derBased(knots, xmin, xmax, n_points, ord=4, der=1, outer_ok=Fa
     if not cyclic:
         D = splineDesign(knots, x, ord=ord, der=der, outer_ok=outer_ok)
     else:
+        x = x[1:-1]
         D = cSplineDes(knots, x, ord=ord, der=der)
     M = np.zeros((D.shape[1], D.shape[1]))
     for i in range(D.shape[1]):
