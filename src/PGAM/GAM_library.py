@@ -838,7 +838,7 @@ class general_additive_model(object):
                                 options={'disp':False})
                 res.x = np.clip(res.x,-25,30)
 
-                if res.success or ((init_score - res.fun) < init_score*np.finfo(float).eps):
+                if res.success or ((init_score - res.fun) > init_score*np.finfo(float).eps):
                     # set the new smooth pen
                     smooth_pen = np.exp(res.x)
 
@@ -859,6 +859,7 @@ class general_additive_model(object):
             self.sm_handler.set_smooth_penalties(smooth_pen, var_list)
 
             converged = np.abs(conv_score - old_conv_score) < tol * conv_score
+            converged = converged and (iteration > 3)
             old_conv_score = conv_score
             if iteration >= max_iter:
                 break
