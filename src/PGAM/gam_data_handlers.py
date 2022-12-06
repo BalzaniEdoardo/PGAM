@@ -1047,9 +1047,10 @@ class covarate_smooth(object):
             # any out of range?
             pp = (max_x.max() - min_x.min()) * perc_out_range
             knots[i] = np.linspace(min_x - pp, max_x + pp, knots_num)
-            kn0 = knots[i][0]
-            knend = knots[i][-1]
-            knots[i] = np.hstack(([kn0] * (self._ord - 1), knots[i], [knend] * (self._ord - 1)))
+            if not self.is_cyclic[i]:
+                kn0 = knots[i][0]
+                knend = knots[i][-1]
+                knots[i] = np.hstack(([kn0] * (self._ord - 1), knots[i], [knend] * (self._ord - 1)))
             i += 1
         return knots
 
