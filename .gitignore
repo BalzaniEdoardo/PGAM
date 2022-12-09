@@ -1,3 +1,4 @@
+demo/test_2D_fit_data.py
 demo/test_2D_fit.py
 *.mat
 *.csl
