@@ -999,7 +999,7 @@ class general_additive_model(object):
                                       use_dgcv=True,smooth_pen=None,fit_initial_beta=False,
 
                                       pseudoR2_per_variable=False,filter_trials=None,k_fold = False,fold_num=5,
-                                        trial_num_vec=None,compute_MI=True, k_fold_reducedOnly=True,bounds_rho=None,
+                                        trial_num_vec=None,compute_MI=False, k_fold_reducedOnly=True,bounds_rho=None,
                               reducedAdaptive=True, ord_AD=3, ad_knots=6,saveBetaHist=False,perform_PQL=True,WLS_solver='positive_weights'):
         if smooth_pen is None:
             smooth_pen = []
