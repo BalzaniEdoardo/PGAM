@@ -376,7 +376,7 @@ def gcv_hess_comp(rho, X, Q, R, endog, sm_handler, var_list, return_par='gcv',ga
     elif return_par == 'A':
         return A_hes
     else:
-        raise ValueError('unknow output specification')
+        raise ValueError('unknown output specification "%s"'%return_par)
 
 
 
