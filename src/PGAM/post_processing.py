@@ -91,7 +91,7 @@ def mutual_info_est(spk_counts, exog, fit, var, sm_handler, filter_trials, trial
         count_bins = count_bins[sel]
         tuning = tuning[sel]
         sc_based_tuning = sc_based_tuning[sel]
-        entropy_s = entropy_s[0,sel[0]]
+        entropy_s = entropy_s[sel[0]]
         bl_use = bl_use[sel[0]]
 
     prob_s = count_bins.flatten()[bl_use] / count_bins.flatten()[bl_use].sum()
