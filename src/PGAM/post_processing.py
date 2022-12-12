@@ -285,7 +285,7 @@ def compute_tuning_spatial(var, lam_s, sm_handler, fit, spk, filter_trials, bins
     vel_bins = []
     for i in range(vels.shape[1]):
         knots = fit.smooth_info[var]['knots'][i]
-        vel_bins.append(np.linspace(knots[0], knots[-2], bins + 1))
+        vel_bins.append(np.linspace(knots[0], knots[-1]-0.000001, bins + 1))
     digit_vels, XY = multidim_digitize(vels, vel_bins)
 
     tuning = np.zeros(XY[0].shape)*np.nan
