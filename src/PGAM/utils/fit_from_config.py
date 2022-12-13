@@ -64,28 +64,31 @@ def fit_from_config(fit_num, path_fit_list, frac_eval=0.2, save_as_mat=False):
     # create and populate the smooth handler object
     sm_handler = gdh.smooths_handler()
     for var in config_dict.keys():
-        print('adding %s...'%var)
+        print('adding %s...' % var)
         # check if var is a neuron or a variable
-        if var in variable_names:
-            x_var = np.squeeze(variables[:, np.array(variable_names) == var])
-        elif var in neu_names:
-            x_var = np.squeeze(counts[:, np.array(neu_names) == var])
-        else:
-            raise ValueError('Variable "%s" not found in the input data!'%var)
+        var_list = []
+        for join_var in config_dict[var]['join_var']:
+            if join_var in variable_names:
+                x_var = np.squeeze(variables[:, np.array(variable_names) == join_var])
+            elif join_var in neu_names:
+                x_var = np.squeeze(counts[:, np.array(neu_names) == join_var])
+            else:
+                raise ValueError('Variable "%s" not found in the input data!' % var)
+            var_list.append(x_var)
 
         knots = config_dict[var]['knots']
 
         if np.isscalar(knots):
             knots = None
         else:
-            knots = [np.array(knots)]
+            knots = np.array(knots)
 
         lam = config_dict[var]['lam']
         penalty_type = config_dict[var]['penalty_type']
         der = config_dict[var]['der']
         order = config_dict[var]['order']
         is_temporal_kernel = config_dict[var]['is_temporal_kernel']
-        is_cyclic =  config_dict[var]['is_cyclic']
+        is_cyclic = config_dict[var]['is_cyclic']
         knots_num = config_dict[var]['knots_num']
         kernel_length = config_dict[var]['kernel_length']
         kernel_direction = config_dict[var]['kernel_direction']
@@ -97,11 +100,10 @@ def fit_from_config(fit_num, path_fit_list, frac_eval=0.2, save_as_mat=False):
         else:
             label = var
 
-        sm_handler.add_smooth(label, [x_var], knots=knots, ord=order, is_temporal_kernel=is_temporal_kernel,
-                         trial_idx=trial_ids, is_cyclic=is_cyclic, penalty_type=penalty_type, der=der, lam=lam,
-                             knots_num=knots_num, kernel_length=kernel_length,kernel_direction=kernel_direction,
-                             time_bin=samp_period)
-
+        sm_handler.add_smooth(label, var_list, knots=knots, ord=order, is_temporal_kernel=is_temporal_kernel,
+                              trial_idx=trial_ids, is_cyclic=is_cyclic, penalty_type=penalty_type, der=der, lam=lam,
+                              knots_num=knots_num, kernel_length=kernel_length, kernel_direction=kernel_direction,
+                              time_bin=samp_period)
     link = sm.genmod.families.links.log()
     poissFam = sm.genmod.families.family.Poisson(link=link)
 
@@ -137,6 +139,7 @@ def fit_from_config(fit_num, path_fit_list, frac_eval=0.2, save_as_mat=False):
     else:
         np.savez(os.path.join(path_out, save_name+'.npz'), results=res)
     return res
+
 if __name__ == '__main__':
 
     #################################################
