@@ -136,7 +136,7 @@ def fit_from_config(fit_num, path_fit_list, frac_eval=0.2, save_as_mat=False):
         savemat(os.path.join(path_out, save_name+'.mat'), mdict={'results':res})
     else:
         np.savez(os.path.join(path_out, save_name+'.npz'), results=res)
-
+    return res
 if __name__ == '__main__':
 
     #################################################
