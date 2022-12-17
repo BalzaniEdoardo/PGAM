@@ -1037,12 +1037,16 @@ class covarate_smooth(object):
         """
         knots = np.zeros(self.dim, dtype=object)
         i = 0
-
+        #print(percentiles)
         for xx in self._x:
+            if self.is_cyclic[i]:
+                perc = [0,100]
+            else:
+                perc = percentiles
             # select range
             # centered knots
-            min_x = np.nanpercentile(xx, percentiles[0])
-            max_x = np.nanpercentile(xx, percentiles[1])
+            min_x = np.nanpercentile(xx, perc[0])
+            max_x = np.nanpercentile(xx, perc[1])
 
             # any out of range?
             pp = (max_x.max() - min_x.min()) * perc_out_range
@@ -1392,7 +1396,7 @@ class smooths_handler(object):
 
     def get_exog_mat_fast(self, name_list):
         # calculate col number
-        t0 = perf_counter()
+        # t0 = perf_counter()
         num_col = 1
         for name in name_list:
             num_col += self.smooths_dict[name].X.shape[1] - 1
@@ -1415,8 +1419,8 @@ class smooths_handler(object):
             count += X.shape[1]
 
             fullX[:, index_cov[name]] = X
-        t1 = perf_counter()
-        print('hstack:', t1 - t0, 'sec')
+        # t1 = perf_counter()
+        # print('hstack:', t1 - t0, 'sec')
 
         return fullX, index_cov
 
