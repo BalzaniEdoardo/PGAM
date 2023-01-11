@@ -492,15 +492,14 @@ def postprocess_results(neuron_id,counts, full_fit, reduced_fit, train_bool,
 
     dtypes = {
         'neuron_id':'U100',
+        'variable':'U100',
         'fr':float,
         'full_pseudo_r2_train':float,
         'full_pseudo_r2_eval':float,
         'reduced_pseudo_r2_train':float,
         'reduced_pseudo_r2_eval':float,
-        'variable':'U100',
         'pval':float,
         'reduced_pval':float,
-        'mutual_info':float,
         'x_rate_Hz':object,
         'y_rate_Hz_model':object,
         'y_rate_Hz_raw':object,
@@ -529,6 +528,7 @@ def postprocess_results(neuron_id,counts, full_fit, reduced_fit, train_bool,
         'beta_reduced':object,
         'intercept_full':float,
         'intercept_reduced':float,
+        'mutual_info':float
     }
     for name in info_save.keys():
         # set object as a type for unknown info save
