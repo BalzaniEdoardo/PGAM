@@ -25,7 +25,7 @@ from scipy.io import savemat
 np.random.seed(4)
 
 
-def fit_from_config(fit_num, path_fit_list, frac_eval=0.2, save_as_mat=False):
+def fit_from_config(fit_num, path_fit_list, frac_eval=0.2, save_as_mat=False, bins=10):
     # load fit info
     with open(path_fit_list, 'r') as stream:
         fit_dict = yaml.safe_load(stream)
@@ -126,7 +126,7 @@ def fit_from_config(fit_num, path_fit_list, frac_eval=0.2, save_as_mat=False):
 
     print('post-process fit results...')
     res = postprocess_results(neu_names[neuron_num], spk_counts, full, reduced, train_trials,
-                            sm_handler, poissFam, trial_ids, var_zscore_par=None, info_save=neu_info, bins=100)
+                            sm_handler, poissFam, trial_ids, var_zscore_par=None, info_save=neu_info, bins=bins)
 
 
     # saving the file: save_name will be expID_sessionID_neuID_configName
