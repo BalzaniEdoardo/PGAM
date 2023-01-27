@@ -1154,19 +1154,26 @@ class covarate_smooth(object):
 
         return Bx
 
-    def additive_model_preprocessing(self, penal_only=False, sparsebl=True):
+    def additive_model_preprocessing(self, penal_only=False, sparsebl=True, remove_col=True):
         Bx = self.compute_Bx()
 
         if penal_only:
-            return Bx[:, :-1]
+            if remove_col:
+                return Bx[:, :-1]
+            else:
+                return Bx
         # preprocess X in order to remove the undetermined intercept fit in an additive model
-        X = self.X[:, :-1]
+        if remove_col:
+            X = self.X[:, :-1]
 
-        Bx = Bx[:, :-1]
-        if type(X) is sparse.csr_matrix:
-            X = X.toarray() - self.colMean_X
+            Bx = Bx[:, :-1]
         else:
-            X = X - self.colMean_X
+            X = self.X
+
+        if type(X) is sparse.csr_matrix:
+            X = X.toarray() - np.nanmean(X.toarray(), axis=0)#self.colMean_X
+        else:
+            X = X - np.nanmean(X,axis=0)#self.colMean_X
         # nan time points set to zero so that <X, \beta> do not contribute
         X[self.nan_filter,:] = 0
         if sparsebl:
@@ -1402,12 +1409,14 @@ class smooths_handler(object):
         yagu = np.hstack((yagu, np.zeros(fullM.shape[0])))
         return Xagu, yagu, index_cov
 
-    def get_exog_mat_fast(self,name_list):
+    def get_exog_mat_fast(self,name_list, remove_col_for_temp=True):
         # calculate col number
         t0 = perf_counter()
         num_col = 1
         for name in name_list:
-            num_col += self.smooths_dict[name].X.shape[1] - 1
+            num_col += self.smooths_dict[name].X.shape[1] - 1*((remove_col_for_temp) or
+                                                               (not self.smooths_dict[name].is_temporal_kernel)
+                                                               )
         fullX = np.ones((self.smooths_dict[name].X.shape[0], num_col))
         index_cov = {}
         count = 1
@@ -1416,7 +1425,10 @@ class smooths_handler(object):
             sm_cov = self.smooths_dict[name]
 
             if len(name_list) > 0:
-                X, _ = sm_cov.additive_model_preprocessing(sparsebl=False)
+                if (not sm_cov.is_temporal_kernel) and remove_col_for_temp:
+                    X, _ = sm_cov.additive_model_preprocessing(sparsebl=False, remove_col=True)
+                else:
+                    X, _ = sm_cov.additive_model_preprocessing(sparsebl=False, remove_col=False)
             else:
                 X = sm_cov.X
                 X[sm_cov.nan_filter, :] = 0
