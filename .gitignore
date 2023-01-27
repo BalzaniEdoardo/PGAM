@@ -1,3 +1,6 @@
+*.bib
+*.yml
+*.csl
 src/
 JP/GAMTest.R
 .ipy*
