@@ -11,6 +11,7 @@ demo/test_2D_fit.py
 demo/exp_1_session_A_neuron_A_config_example_data.*
 .ipynb_checkpoints
 demo/example_data.npz
+.ipynb_checkpoints
 select_variables
 GAM_library/.DS_Store
 JP/
