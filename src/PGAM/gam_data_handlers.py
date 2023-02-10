@@ -190,6 +190,7 @@ def smPenalty_1D_derBased(knots, xmin, xmax, n_points, ord=4, der=1, outer_ok=Fa
     if not cyclic:
         D = splineDesign(knots, x, ord=ord, der=der, outer_ok=outer_ok)
     else:
+        x = x[1:-1]
         D = cSplineDes(knots, x, ord=ord, der=der)
     M = np.zeros((D.shape[1], D.shape[1]))
     for i in range(D.shape[1]):
@@ -1036,19 +1037,24 @@ class covarate_smooth(object):
         """
         knots = np.zeros(self.dim, dtype=object)
         i = 0
-
+        #print(percentiles)
         for xx in self._x:
+            if self.is_cyclic[i]:
+                perc = [0,100]
+            else:
+                perc = percentiles
             # select range
             # centered knots
-            min_x = np.nanpercentile(xx, percentiles[0])
-            max_x = np.nanpercentile(xx, percentiles[1])
+            min_x = np.nanpercentile(xx, perc[0])
+            max_x = np.nanpercentile(xx, perc[1])
 
             # any out of range?
             pp = (max_x.max() - min_x.min()) * perc_out_range
             knots[i] = np.linspace(min_x - pp, max_x + pp, knots_num)
-            kn0 = knots[i][0]
-            knend = knots[i][-1]
-            knots[i] = np.hstack(([kn0] * (self._ord - 1), knots[i], [knend] * (self._ord - 1)))
+            if not self.is_cyclic[i]:
+                kn0 = knots[i][0]
+                knend = knots[i][-1]
+                knots[i] = np.hstack(([kn0] * (self._ord - 1), knots[i], [knend] * (self._ord - 1)))
             i += 1
         return knots
 
@@ -1209,7 +1215,7 @@ class smooths_handler(object):
         :param x_cov: list containing the input variable (the list will contain 1 vector per dimension of the variable)
         :param ord: int, the order of the base spline, the number of coefficient in the polinomial (ord =4 is cubic spline)
         :param lam: float, or list of float (smoothing  coefficients, leave None)
-        :param knots: list ot None. If list, each element of the list is a vector of knots locations for a specific dimension of the variable
+        :param knots: list or None. If list, each element of the list is a vector of knots locations for a specific dimension of the variable
         :param knots_num: int, used if no knots are specified, number of knots to be used
         :param perc_out_range: (set this to 0), obsolete... float between 0 and 1, percentage of knots out of the variable range (set to 0. is
         :param is_cyclic: list of bool, True if a variable dimension is cyclic
@@ -1227,8 +1233,9 @@ class smooths_handler(object):
         :return:
         """
         if name in self.smooths_var:
-            print('Name "%s" already used!' % name)
-            return False
+            print('Name "%s" already used. Overwriting' % name)
+            self.smooths_var.remove(name)
+            self.smooths_dict.pop(name)
         self.smooths_var += [name]
         self.smooths_dict[name] = covarate_smooth(x_cov, ord=ord, knots=knots, knots_num=knots_num,
                                                   perc_out_range=perc_out_range, is_cyclic=is_cyclic, lam=lam,
@@ -1389,7 +1396,7 @@ class smooths_handler(object):
 
     def get_exog_mat_fast(self, name_list):
         # calculate col number
-        t0 = perf_counter()
+        # t0 = perf_counter()
         num_col = 1
         for name in name_list:
             num_col += self.smooths_dict[name].X.shape[1] - 1
@@ -1412,8 +1419,8 @@ class smooths_handler(object):
             count += X.shape[1]
 
             fullX[:, index_cov[name]] = X
-        t1 = perf_counter()
-        print('hstack:', t1 - t0, 'sec')
+        # t1 = perf_counter()
+        # print('hstack:', t1 - t0, 'sec')
 
         return fullX, index_cov
 

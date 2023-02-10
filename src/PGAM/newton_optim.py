@@ -8,13 +8,12 @@ from time import perf_counter
 useCuda = False
 try:
     if not useCuda:
-        raise ModuleNotFoundError('user not uses cuda')
+        raise ModuleNotFoundError('cuda not found!')
     import pycuda.autoinit
     import pycuda.gpuarray as gpuarray
     import skcuda.linalg as cuda_linalg
     flagUseCuda = True
 except ModuleNotFoundError as e:
-    print(e)
     flagUseCuda = False
 
 class weights_and_data(object):
@@ -377,7 +376,7 @@ def gcv_hess_comp(rho, X, Q, R, endog, sm_handler, var_list, return_par='gcv',ga
     elif return_par == 'A':
         return A_hes
     else:
-        raise ValueError('unknow output specification')
+        raise ValueError('unknown output specification "%s"'%return_par)
 
 
 

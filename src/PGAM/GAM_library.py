@@ -7,9 +7,8 @@ try:
 
             sys.path.append(sys.argv[1])
             print('path set to',sys.argv[1])
-
     else:
-        print('path',sys.path.append(sys.argv[1]),'do not exist')
+        pass
 except IndexError:
     pass
 from gam_data_handlers import *
@@ -34,7 +33,7 @@ try:
     import skcuda.linalg as cuda_linalg
     flagUseCuda = True
 except ModuleNotFoundError as e:
-    print(e)
+    #print(e)
     flagUseCuda = False
 
 
@@ -660,15 +659,13 @@ class GAM_result(object):
 
 
 class general_additive_model(object):
-    def __init__(self, sm_handler, var_list, y ,family,fisher_scoring=False):
+    def __init__(self, sm_handler, var_list, y ,family,fisher_scoring=True):
         """
 
         :param sm_handler:
         :param var_list:
         :param y:
-        :param smooth_pen:
         :param link: statsmoldels.genmod.families.links.link class
-        :param lam:
         :param fisher_scoring:
         """
 
@@ -679,7 +676,7 @@ class general_additive_model(object):
         self.fisher_scoring = fisher_scoring
 
     def optim_gam(self, var_list, smooth_pen=None,max_iter=10**3,tol=1e-5,conv_criteria='gcv',
-                  perform_PQL=True,use_dgcv=False,method='Newton-CG',methodInit='Newton-CG',
+                  perform_PQL=True,use_dgcv=True,method='Newton-CG',methodInit='Newton-CG',
                   compute_AIC=False,random_init=False,bounds_rho=None,gcv_sel_tol=1e-10,fit_initial_beta=False,
                   filter_trials=None,compute_MI=False,saveBetaHist=False, WLS_solver='positive_weights'):
 
@@ -841,7 +838,7 @@ class general_additive_model(object):
                                 options={'disp':False})
                 res.x = np.clip(res.x,-25,30)
 
-                if res.success or ((init_score - res.fun) < init_score*np.finfo(float).eps):
+                if res.success or ((init_score - res.fun) > init_score*np.finfo(float).eps):
                     # set the new smooth pen
                     smooth_pen = np.exp(res.x)
 
@@ -862,6 +859,7 @@ class general_additive_model(object):
             self.sm_handler.set_smooth_penalties(smooth_pen, var_list)
 
             converged = np.abs(conv_score - old_conv_score) < tol * conv_score
+            converged = converged and (iteration > 3)
             old_conv_score = conv_score
             if iteration >= max_iter:
                 break
@@ -1001,7 +999,7 @@ class general_additive_model(object):
                                       use_dgcv=True,smooth_pen=None,fit_initial_beta=False,
 
                                       pseudoR2_per_variable=False,filter_trials=None,k_fold = False,fold_num=5,
-                                        trial_num_vec=None,compute_MI=True, k_fold_reducedOnly=True,bounds_rho=None,
+                                        trial_num_vec=None,compute_MI=False, k_fold_reducedOnly=True,bounds_rho=None,
                               reducedAdaptive=True, ord_AD=3, ad_knots=6,saveBetaHist=False,perform_PQL=True,WLS_solver='positive_weights'):
         if smooth_pen is None:
             smooth_pen = []
