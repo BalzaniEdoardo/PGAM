@@ -996,7 +996,7 @@ class general_additive_model(object):
 
     def fit_full_and_reduced(self,var_list,th_pval=0.01,method = 'L-BFGS-B',tol=1e-8,conv_criteria='deviance',
                                       max_iter=10**3,gcv_sel_tol=10**-13,random_init=False,
-                                      use_dgcv=True,smooth_pen=None,fit_initial_beta=False,
+                                      use_dgcv=True,smooth_pen=None,fit_initial_beta=True,
 
                                       pseudoR2_per_variable=False,filter_trials=None,k_fold = False,fold_num=5,
                                         trial_num_vec=None,compute_MI=False, k_fold_reducedOnly=True,bounds_rho=None,
