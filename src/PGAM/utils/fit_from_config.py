@@ -55,7 +55,7 @@ def fit_from_config(fit_num, path_fit_list, frac_eval=0.2, save_as_mat=False, bi
         neu_info = {}
 
     with open(path_to_config, 'r') as stream:
-        config_dict = yaml.safe_load(stream)
+        config_dict = yaml.unsafe_load(stream)
 
     # create a train and eval set (approximately with the right frac of trials)
     train_trials = trial_ids % (np.round(1/frac_eval)) != 0
@@ -104,6 +104,12 @@ def fit_from_config(fit_num, path_fit_list, frac_eval=0.2, save_as_mat=False, bi
                               trial_idx=trial_ids, is_cyclic=is_cyclic, penalty_type=penalty_type, der=der, lam=lam,
                               knots_num=knots_num, kernel_length=kernel_length, kernel_direction=kernel_direction,
                               time_bin=samp_period)
+        
+    if all(trial_ids == trial_ids[0]):
+        print('chunk in blocks of 30sec for evaluation')
+        chunk_tp = int(30 /samp_period)
+        train_trials = (np.arange(train_trials.shape[0])//chunk_tp )% (np.round(1/frac_eval))!=0
+        
     link = sm.genmod.families.links.log()
     poissFam = sm.genmod.families.family.Poisson(link=link)
 
@@ -125,6 +131,9 @@ def fit_from_config(fit_num, path_fit_list, frac_eval=0.2, save_as_mat=False, bi
                                               filter_trials=train_trials)
 
     print('post-process fit results...')
+    if type(neu_info) is dict:
+        val = neu_info.pop(neu_names[neuron_num])
+        neu_info = {neu_names[neuron_num]:val}  
     res = postprocess_results(neu_names[neuron_num], spk_counts, full, reduced, train_trials,
                             sm_handler, poissFam, trial_ids, var_zscore_par=None, info_save=neu_info, bins=bins)
 
