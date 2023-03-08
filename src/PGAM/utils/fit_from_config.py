@@ -25,7 +25,7 @@ from scipy.io import savemat
 np.random.seed(4)
 
 
-def fit_from_config(fit_num, path_fit_list, frac_eval=0.2, save_as_mat=False, bins=10):
+def fit_from_config(fit_num, path_fit_list, frac_eval=0.2, save_as_mat=False, bins=10, firing_theshold_Hz=0.5):
     # load fit info
     with open(path_fit_list, 'r') as stream:
         fit_dict = yaml.safe_load(stream)
@@ -114,7 +114,17 @@ def fit_from_config(fit_num, path_fit_list, frac_eval=0.2, save_as_mat=False, bi
     poissFam = sm.genmod.families.family.Poisson(link=link)
 
     spk_counts = np.squeeze(counts[:, neuron_num])
-
+    if spk_counts.mean()/samp_period < firing_theshold_Hz:
+        string = 'FIT INFO:\nEXP ID: %s\nSESSION ID: %s\nNEURON NUM: %d\nINPUT DATA PATH: %s\nCONFIG PATH: %s\n\n'%(
+        experiment_ID,session_ID,neuron_num+1,path_to_input,path_to_config)
+        string += '\nFIRING RATE THRESHOLD: %f Hz\nINSUFFICIENT FIRING RATE OF %.4f Hz'%(firing_theshold_Hz,
+                                                                                        spk_counts.mean()/samp_period)
+        config_basename = os.path.basename(path_to_config).split('.')[0]
+        save_name = 'low_firing_%s_%s_%s_%s' % (experiment_ID, session_ID, neu_names[neuron_num], config_basename)
+        with open(os.path.join(path_out, save_name + '.txt'),'w') as fh:
+            fh.write(string)
+            fh.close()
+        return None
     # create the pgam model
     pgam = gamlib.general_additive_model(sm_handler,
                                   sm_handler.smooths_var, # list of coovarate we want to include in the model
