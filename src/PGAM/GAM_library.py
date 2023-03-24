@@ -723,8 +723,10 @@ class general_additive_model(object):
         iteration = 0
 
         # set the constant for dcv or gcv score
-        if use_dgcv:
+        if use_dgcv == True and (type(use_dgcv)==bool):
             gamma = 1.5
+        elif np.isscalar(use_dgcv) and not (type(use_dgcv)==bool):
+            gamma = use_dgcv
         else:
             gamma = 1.
 
