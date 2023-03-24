@@ -884,7 +884,7 @@ class general_additive_model(object):
                 break
         bhat = \
         mle_gradient_bassed_optim(np.log(smooth_pen), self.sm_handler, var_list, yfit, exog, self.family, phi_est=1, method='L-BFGS-B',
-                                  num_random_init=1, beta_zero=np.zeros(exog.shape[1]), tol=10 ** -8,max_iter=2000)[0]
+                                  num_random_init=1, beta_zero=bhat, tol=10 ** -8,max_iter=2000)[0]
         lin_pred = np.dot(exog[:n_obs, :], bhat)
         mu = f_weights_and_data.family.fitted(lin_pred)
         z, w = f_weights_and_data.get_params(mu)
