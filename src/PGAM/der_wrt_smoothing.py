@@ -360,7 +360,8 @@ def compute_deviance(y,eta,family):
     mu = family.link.inverse(eta)
     return family.deviance(y, mu)
 
-def mle_gradient_bassed_optim(rho,sm_handler, var_list,y,X,family,phi_est = 1, method='Newton-CG',num_random_init=1,beta_zero=None,tol=10**-8):
+def mle_gradient_bassed_optim(rho,sm_handler, var_list,y,X,family,phi_est = 1,
+                              method='Newton-CG',num_random_init=1,beta_zero=None,tol=10**-8,max_iter=1000):
     # two possible methods:
     # method = 'Newton-CG'
     # method='L-BFGS-B'
@@ -384,7 +385,8 @@ def mle_gradient_bassed_optim(rho,sm_handler, var_list,y,X,family,phi_est = 1, m
                 curr_min = tmp.fun
                 beta_zero = beta0.copy()
     #else:
-    res = minimize(func, beta_zero, method=method, jac=grad_func, hess=hess_func, tol=tol)
+    res = minimize(func, beta_zero, method=method, jac=grad_func, hess=hess_func, tol=tol,
+                   options={'maxiter':max_iter,'disp':True})
 
     return res.x,res,beta_zero
 

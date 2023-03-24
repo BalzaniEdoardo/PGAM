@@ -133,7 +133,7 @@ def alignRateForMI(y,lam_s, var, sm_handler, smooth_info, time_bin, filter_trial
     return mi, tmp_val
 
 class GAM_result(object):
-    def __init__(self,model,family,fit_OLS,smooth_pen,n_obs,index_var,sm_handler,var_list,y, compute_AIC=True,
+    def __init__(self,model,family,beta,smooth_pen,n_obs,index_var,sm_handler,var_list,y, compute_AIC=True,
                   filtwidth=10,trial_idx=None,pre_trial_dur=0.2,post_trial_dur=0.2,time_bin=0.006,compute_mutual_info=False,
                   filter_trials=None,beta_hist=None):
         # save the model results
@@ -151,7 +151,7 @@ class GAM_result(object):
             self.beta_hist = beta_hist
 
         # self.gam_fit = fit_OLS # has all the data inside !! no good
-        self.beta = fit_OLS.params
+        self.beta = beta
 
         # get the translation constant used for identifiability constraints
         self.transl_tuning = {}
@@ -710,7 +710,7 @@ class general_additive_model(object):
             rho = np.log(smooth_pen)
             # newton based optim of the likelihood
             bhat = mle_gradient_bassed_optim(rho, self.sm_handler, var_list, yfit, exog, self.family, phi_est=1, method=methodInit,
-                                            num_random_init=1, beta_zero=None, tol=10 ** -8)[0]
+                                            num_random_init=1, beta_zero=np.zeros(exog.shape[1]), tol=10 ** -8)[0]
             lin_pred = np.dot(exog[:n_obs, :], bhat)
             mu = f_weights_and_data.family.fitted(lin_pred)
         else:
@@ -882,8 +882,22 @@ class general_additive_model(object):
                 pre_trial_dur = self.sm_handler[var].pre_trial_dur
                 post_trial_dur = self.sm_handler[var].post_trial_dur
                 break
+        bhat = \
+        mle_gradient_bassed_optim(np.log(smooth_pen), self.sm_handler, var_list, yfit, exog, self.family, phi_est=1, method='L-BFGS-B',
+                                  num_random_init=1, beta_zero=np.zeros(exog.shape[1]), tol=10 ** -8,max_iter=2000)[0]
+        lin_pred = np.dot(exog[:n_obs, :], bhat)
+        mu = f_weights_and_data.family.fitted(lin_pred)
+        z, w = f_weights_and_data.get_params(mu)
+        self.sm_handler.set_smooth_penalties(smooth_pen, var_list)
+        pen_matrix = self.sm_handler.get_penalty_agumented(var_list)
+        Xagu = np.vstack((exog, pen_matrix))
+        yagu = np.zeros(Xagu.shape[0])
+        yagu[:n_obs] = z
+        wagu = np.ones(Xagu.shape[0])
+        wagu[:n_obs] = w
+        model = sm.WLS(yagu, Xagu, wagu)
 
-        gam_results = GAM_result(model,self.family,fit_OLS,smooth_pen,
+        gam_results = GAM_result(model,self.family, bhat, smooth_pen,
                                         n_obs,index_var,self.sm_handler,var_list,
                                         yfit,compute_AIC,trial_idx=trial_idx,pre_trial_dur=pre_trial_dur,
                                   post_trial_dur=post_trial_dur,time_bin=time_bin,compute_mutual_info=compute_MI,
