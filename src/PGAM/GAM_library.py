@@ -882,9 +882,9 @@ class general_additive_model(object):
                 pre_trial_dur = self.sm_handler[var].pre_trial_dur
                 post_trial_dur = self.sm_handler[var].post_trial_dur
                 break
-        bhat = \
-        mle_gradient_bassed_optim(np.log(smooth_pen), self.sm_handler, var_list, yfit, exog, self.family, phi_est=1, method='L-BFGS-B',
-                                  num_random_init=1, beta_zero=bhat, tol=10 ** -8,max_iter=2000)[0]
+        # bhat = \
+        # mle_gradient_bassed_optim(np.log(smooth_pen), self.sm_handler, var_list, yfit, exog, self.family, phi_est=1, method='L-BFGS-B',
+        #                           num_random_init=1, beta_zero=bhat, tol=10 ** -8,max_iter=2000)[0]
         lin_pred = np.dot(exog[:n_obs, :], bhat)
         mu = f_weights_and_data.family.fitted(lin_pred)
         z, w = f_weights_and_data.get_params(mu)
