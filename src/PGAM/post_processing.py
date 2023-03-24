@@ -528,7 +528,8 @@ def postprocess_results(neuron_id,counts, full_fit, reduced_fit, train_bool,
         'beta_reduced':object,
         'intercept_full':float,
         'intercept_reduced':float,
-        'mutual_info':float
+        'mutual_info':float,
+        'penalization':object
     }
     for name in info_save.keys():
         # set object as a type for unknown info save
@@ -570,6 +571,7 @@ def postprocess_results(neuron_id,counts, full_fit, reduced_fit, train_bool,
 
 
         results['variable'][cc] = var
+        results['penalization'][cc] = sm_handler[var].lam
         # results['trial_type'][cc] = trial_type
         results['full_pseudo_r2_train'][cc] = full_fit.pseudo_r2
         results['full_pseudo_r2_eval'][cc], exog_full = pseudo_r2_comp(counts, full_fit, sm_handler, family,
