@@ -1152,17 +1152,28 @@ class covarate_smooth(object):
 
     def additive_model_preprocessing(self, penal_only=False, sparsebl=True):
         Bx = self.compute_Bx()
-
-        if penal_only:
-            return Bx[:, :-1]
-        # preprocess X in order to remove the undetermined intercept fit in an additive model
-        X = self.X[:, :-1]
-
-        Bx = Bx[:, :-1]
-        if type(X) is sparse.csr_matrix:
-            X = X.toarray() - self.colMean_X
+        if self.X.shape[1] != 1:
+            if penal_only:
+                return Bx[:, :-1]
+            # preprocess X in order to remove the undetermined intercept fit in an additive model
+            X = self.X[:, :-1]
+    
+            Bx = Bx[:, :-1]
+            if type(X) is sparse.csr_matrix:
+                X = X.toarray() - self.colMean_X
+            else:
+                X = X - self.colMean_X
         else:
-            X = X - self.colMean_X
+            if penal_only:
+                return Bx
+            # preprocess X in order to remove the undetermined intercept fit in an additive model
+            X = self.X
+    
+            Bx = Bx
+            if type(X) is sparse.csr_matrix:
+                X = X.toarray()
+            else:
+                X = X
         # nan time points set to zero so that <X, \beta> do not contribute
         X[self.nan_filter, :] = 0
         if sparsebl:
