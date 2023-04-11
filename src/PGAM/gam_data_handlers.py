@@ -746,7 +746,11 @@ def basisAndPenalty_EqSpaced(x, knots, is_cyclic=None, ord=4, sparseX=True, spli
         else:
             # this will raise valueError if x is not contained in the knots
             Xs += [splineDesign(knots[k], x[k], ord=ord, der=0, outer_ok=True)]
-            Bs += [smPenalty_1D_BSpline(Xs[k].shape[1])]
+            # trivial case of a single step element
+            if Xs[k].shape[1] == 1:
+                Bs += [sparse.csr_matrix([[1.]], dtype=np.float64)]
+            else:
+                Bs += [smPenalty_1D_BSpline(Xs[k].shape[1])]
             Ms += [np.dot(Bs[-1].T, Bs[-1])]
 
         basis_dim += [Xs[k].shape[1]]
