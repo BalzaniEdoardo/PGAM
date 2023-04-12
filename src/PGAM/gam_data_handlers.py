@@ -1545,7 +1545,7 @@ def compute_Sjs(sm_handler, var_list):
     if len(var_list) > 0:
         ii = 1
     for var in var_list:
-        tot_dim += sm_handler[var].X.shape[1] - ii
+        tot_dim += sm_handler[var].X.shape[1] - ii * (sm_handler[var].X.shape[1] != 1)
 
     cc = 1
     for var in var_list:

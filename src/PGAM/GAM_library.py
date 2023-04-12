@@ -157,7 +157,10 @@ class GAM_result(object):
         self.transl_tuning = {}
         for var in var_list:
             mdl_matrix = sm_handler[var].X
-            beta_var = np.hstack((self.beta[index_var[var]],[0]))
+            if mdl_matrix.shape[1] != 1:# if a column as been removed
+                beta_var = np.hstack((self.beta[index_var[var]],[0]))
+            else:
+                beta_var = self.beta[index_var[var]]
             if (type(mdl_matrix) is sparse.coo_matrix) or (type(mdl_matrix) is sparse.csr_matrix):
                 mdl_matrix = mdl_matrix.toarray()
             self.transl_tuning[var] = np.mean(np.dot(mdl_matrix,beta_var))
@@ -838,6 +841,7 @@ class general_additive_model(object):
 
                 res = minimize(gcv_func,rho0,method=method,jac=gcv_grad,hess=gcv_hess,tol=gcv_sel_tol,bounds=bounds_rho,
                                 options={'disp':False})
+                #print('\niter %d - DGCV optimization results:\n'%iteration,res)
                 res.x = np.clip(res.x,-25,30)
 
                 if res.success or ((init_score - res.fun) > init_score*np.finfo(float).eps):
