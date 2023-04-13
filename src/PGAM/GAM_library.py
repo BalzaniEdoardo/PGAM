@@ -528,7 +528,7 @@ class GAM_result(object):
                                   pre_trial_dur=pre_trial_dur,trial_idx=trial_idx,domain_fun=self.domain_fun[var_name])
         nan_filter = np.array(np.sum(np.isnan(np.array(X)), axis=0), dtype=bool)
         # mean center and remove col if more than 1 smooth in the AM
-        if len(self.var_list) > 0:
+        if len(self.var_list) > 0 and fX.shape[1] != 1:
             fX = np.array(fX[:, :-1] - np.mean(fX[~nan_filter, :-1], axis=0))
         fX[nan_filter,:] = 0
         # select the parameters for the desired smooths and compute the smooth value
