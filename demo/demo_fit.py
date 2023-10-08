@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pylab as plt
 import sys, inspect, os
 
-path = os.path.join( '../GAM_library')
+path = '/Users/ebalzani/Code/Demo_PGAM/PGAM/src/PGAM'
 sys.path.append(path)
 print(path)
 from GAM_library import *
