@@ -5,8 +5,8 @@ Created on Tue Dec 29 15:09:13 2020
 
 @author: edoardo
 """
-import os,inspect,sys,re
-print (inspect.getfile(inspect.currentframe()))
+import os,inspect, sys, re
+print(inspect.getfile(inspect.currentframe()))
 thisPath = os.path.dirname(inspect.getfile(inspect.currentframe()))
 
 if os.path.exists('/scratch/jpn5/GAM_Repo/GAM_library/'):
@@ -129,25 +129,25 @@ except Exception as ex:
     cond_value_list = list_condition[JOB:JOB + tot_fits]['value']
     pop_size_max = yt.shape[1]
 
-if  'ptb' in list_condition['condition']:
+if 'ptb' in list_condition['condition']:
      cond_knots = 'ptb'
-elif  'controlgain' in list_condition['condition']:
+elif 'controlgain' in list_condition['condition']:
      cond_knots = 'controlgain'
-elif  'density' in list_condition['condition']:
+elif 'density' in list_condition['condition']:
      cond_knots = 'density'
 else:
     cond_knots = None
     # neuron = neuron_list[0]
     
-numfit=0
+numfit = 0
 for neuron in neuron_list:
     cond_type = cond_type_list[numfit]
     cond_value = cond_value_list[numfit]
-    numfit+=1
+    numfit += 1
     
     if cond_type == 'odd':
         all_trs = np.arange(trial_type.shape[0])
-        all_trs = all_trs[trial_type['all']==1]
+        all_trs = all_trs[trial_type['all'] == 1]
         if cond_value == 1:
             idx_subselect = all_trs[1::2]
         else:
@@ -186,7 +186,7 @@ for neuron in neuron_list:
         # for now skip
         # if var !='spike_hist':
         #     continue
-        if var=='hand_vel1' or var == 'hand_vel2':
+        if var == 'hand_vel1' or var == 'hand_vel2':
             continue
         
         if var in ['lfp_beta', 'lfp_alpha', 'lfp_theta']:
