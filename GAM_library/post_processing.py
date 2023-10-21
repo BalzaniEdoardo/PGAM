@@ -54,24 +54,24 @@ def compute_tuning(spk, fit, exog, var, sm_handler, filter_trials, trial_idx, dt
         #                                                                   filter_trials, trial_idx, bins, dt)
         filter_len = np.int64(fit.smooth_info[var]['time_pt_for_kernel'].shape[0])
         if fit.smooth_info[var]['kernel_direction'] == 0:
-            time_sec, tuning2, counts2 = compute_tuning_centered(sm_handler[var]._x[0, filter_trials],
+            x_axis, tuning, counts = compute_tuning_centered(sm_handler[var]._x[0, filter_trials],
                                               lam_s,filter_len,
                                               bins,trial_idx[filter_trials],
                                               fit.time_bin
                                               )
-            _, sc_based_tuning2, counts2 = compute_tuning_centered(sm_handler[var]._x[0, filter_trials],
+            _, sc_based_tuning, _ = compute_tuning_centered(sm_handler[var]._x[0, filter_trials],
                                               spk[filter_trials], filter_len,
                                               bins, trial_idx[filter_trials],
                                               fit.time_bin
                                               )
         else:
             direction = fit.smooth_info[var]['kernel_direction']
-            time_sec, tuning2, counts2 = compute_tuning_directional(sm_handler[var]._x[0, filter_trials],
+            x_axis, tuning, counts = compute_tuning_directional(sm_handler[var]._x[0, filter_trials],
                                                         lam_s, filter_len,
                                                         bins, trial_idx[filter_trials],
                                                         fit.time_bin,
                                                         direction=direction)
-            _, sc_based_tuning2, counts2 = compute_tuning_directional(sm_handler[var]._x[0, filter_trials],
+            _, sc_based_tuning, _ = compute_tuning_directional(sm_handler[var]._x[0, filter_trials],
                                                     sm_handler["spike_hist"]._x[0, filter_trials],
                                                     filter_len,
                                                     bins, trial_idx[filter_trials],
@@ -963,6 +963,7 @@ def compute_tuning_centered(events, rate, filter_len, bins, trial_idx, dt):
         filter_len, rate,
         trial_idx
     )
+    bins = min(bins, filter_len)
     center_event = np.arange(rate_align.shape[1]) - filter_len // 2
     time_idx = np.round(center_event * bins / filter_len)
     time_idx[-1] = time_idx[-2]
@@ -980,13 +981,13 @@ def compute_tuning_centered(events, rate, filter_len, bins, trial_idx, dt):
 def compute_tuning_directional(events, rate, filter_len, bins, trial_idx, dt, direction=1):
     rate_align = align_rates_directional(
         events,
-        filter_len, rate,
+        filter_len//2, rate,
         trial_idx
     )
+    bins = min(bins, filter_len//2)
     center_event = np.arange(rate_align.shape[1])
-    time_idx = np.round(center_event * bins / filter_len)
-    time_idx[-1] = time_idx[-2]
-    time_idx[0] = time_idx[1]
+    time_idx = np.round(center_event * bins / (filter_len//2))
+
     unq_times = np.unique(time_idx)
     tuning = np.zeros(unq_times.shape[0])
     counts = np.zeros(unq_times.shape[0])
