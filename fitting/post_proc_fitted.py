@@ -20,7 +20,7 @@ if not os.path.exists("/scratch/jpn5/GAM_Repo/GAM_library/"):
     is_cluster = False
     job_id = 0
     table_path = "/Users/ebalzani/Code/Demo_PGAM/fit_list.npy"
-    save_path = Path("/Users/ebalzani/Code/Demo_PGAM/results/m53s113/")
+    save_path = Path("/Users/ebalzani/Code/Demo_PGAM/results/m44s187/")
 
 
 else:
@@ -264,3 +264,4 @@ for row in table_fit:
 
     fhName = 'ff_postproc_%s_%s_%.4f_c%d.mat'%(session, cond_type, cond_value, neuron)
     savemat(save_path / fhName, mdict={"pgam_results": results})
+    break
