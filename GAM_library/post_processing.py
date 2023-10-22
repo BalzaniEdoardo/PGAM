@@ -813,69 +813,6 @@ def compute_tuning_temporal_fast(var, lam_s, sm_handler, fit, spk, filter_trials
     counts_DT = counts_DT / tp_DT
     return edges, rate_DT / dt, counts_DT / dt, tp_DT
 
-#
-# @njit
-# def compute_centered_mean(non_zero_indices, rate, sum_vec, tp_vec, bins, length_set):
-#     for idx in non_zero_indices:
-#         for bin_idx in range(bins):
-#             i0 = idx + (bin_idx - bins // 2) * length_set
-#             i1 = idx + (bin_idx - bins // 2 + 1) * length_set
-#
-#             # Bounds check
-#             if i1 < 0:
-#                 continue
-#             if i0 >= len(rate):
-#                 continue
-#             i0 = max(0, i0)
-#             i1 = min(len(rate), i1)
-#
-#             # Update sum and time-point vectors
-#             sum_vec[bin_idx] = sum_vec[bin_idx] #+ np.sum(events[i0:i1])
-#             tp_vec[bin_idx] = tp_vec[bin_idx] + i1 - i0
-#             if (i0 <= idx) and (i1 > idx):
-#                 sum_vec[bin_idx] = sum_vec[bin_idx] - rate[idx]
-#                 tp_vec[bin_idx] = tp_vec[bin_idx] - 1
-#
-#     return sum_vec, tp_vec
-#
-#
-# @njit
-# def compute_reverse_directional_mean(non_zero_indices, rate, sum_vec, tp_vec, bins, length_set):
-#     for idx in non_zero_indices:
-#         for bin_idx in range(bins):
-#             i1 = idx - bin_idx * length_set
-#             i0 = idx - (bin_idx + 1) * length_set
-#
-#             # Bounds check
-#             i0 = min(0, i0)
-#             if i1 < 0:
-#                 continue
-#
-#             # Update sum and time-point vectors
-#             sum_vec[bins - bin_idx - 1] = sum_vec[bins - bin_idx - 1] + np.sum(rate[i0:i1])
-#             tp_vec[bins - bin_idx - 1] = tp_vec[bins - bin_idx - 1] + i1 - i0
-#
-#     return sum_vec, tp_vec
-#
-#
-# @njit
-# def compute_directional_mean(non_zero_indices, rate, sum_vec, tp_vec, bins, length_set):
-#     for idx in non_zero_indices:
-#         for bin_idx in range(bins):
-#             i0 = idx + bin_idx * length_set + 1
-#             i1 = idx + (bin_idx + 1) * length_set + 1
-#
-#             # Bounds check
-#             if i0 >= len(rate):
-#                 continue
-#             i1 = min(len(rate), i1)
-#
-#             # Update sum and time-point vectors
-#             sum_vec[bin_idx] = sum_vec[bin_idx] + np.sum(rate[i0:i1])
-#             tp_vec[bin_idx] = tp_vec[bin_idx] + i1 - i0
-#
-#     return sum_vec, tp_vec
-
 
 def align_rates_directional(events, filter_len, rate, trial_idx):
     event_idx = np.where(events > 0)[0]
