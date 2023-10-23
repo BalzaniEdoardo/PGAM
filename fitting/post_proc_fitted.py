@@ -26,10 +26,10 @@ if not os.path.exists("/scratch/jpn5/GAM_Repo/GAM_library/"):
 else:
     is_cluster = True
     # check where is the firefly_utils folder in the container
-    sys.path.append("/<path to firefly_utils>")
+    # sys.path.append("/<path to f:refly_utils>")
     job_id = int(sys.argv[1]) - 1
-    table_path = "fit_list_table.npy"
-    save_path = Path("/scratch/jpn5/PGAM_result_to_table/")
+    table_path = "fit_list.npy"
+    save_path = Path("/scratch/eb162/postproc_gam_to_matlab/matlab_processed/")
 save_path.mkdir(parents=True, exist_ok=True)
 from copy import deepcopy
 
@@ -39,7 +39,7 @@ import scipy.stats as sts
 from data_handler import *
 import gam_data_handlers as gdh
 from knots_constructor import knots_cerate
-from path_class import get_paths_class
+#from path_class import get_paths_class
 from scipy.io import loadmat
 from utils_loading import unpack_preproc_data
 
@@ -51,7 +51,7 @@ import post_processing as postproc
 
 folder_name = deepcopy(thisPath)
 
-tot_fits = 50
+tot_fits = 36
 plot_res = False
 fit_fully_coupled = False
 use_k_fold = True
@@ -64,11 +64,11 @@ print(folder_name)
 print(" ")
 main_dir = os.path.dirname(folder_name)
 
-user_paths = get_paths_class()
 if not is_cluster:
+    user_paths = get_paths_class()
     path_to_concat = user_paths.get_path("local_concat")
 else:
-    path_to_concat = user_paths.get_path("data_hpc")
+    path_to_concat = "/scratch/eb162/dataset_firefly/" 
 
 # select the job to be run
 table_fit = np.load(table_path, allow_pickle=True)
@@ -129,7 +129,15 @@ for row in table_fit:
         electrode_id,
         cluster_id,
     ) = unpack_preproc_data(fhName, par_list)
-    all_vars = np.hstack((var_names, ['lfp_beta', 'lfp_alpha', 'lfp_theta', 'spike_hist']))
+    
+    # load fits
+    with open(path_fit, 'rb') as fh:
+        fit_dict = dill.load(fh)
+    full = fit_dict['full']
+    reduced = fit_dict['reduced']
+    
+    all_vars = full.var_list
+
     cond_knots = preproc.get_cond_knots(trial_type)
 
     # retrieve trials
@@ -144,11 +152,7 @@ for row in table_fit:
     sm_handler_test = gdh.smooths_handler()
     for var in all_vars:
 
-        if var == 'hand_vel1' or var == 'hand_vel2':
-            continue
-        if (cond_type != 'ptb') and (var == 't_ptb'):
-            continue
-        if var == 'rad_path_from_xy':
+        if var.startswith("neu_"):
             continue
 
         print(f"adding {var}...")
@@ -188,7 +192,8 @@ for row in table_fit:
                 trial_idx
             )
 
-    neuron_keep = preproc.filter_neurons(cont_rate_filter, unit_type, presence_rate_filter, isi_v_filter, yt)
+    neuron_keep = [int(var.split('_')[1]) for var in all_vars if var.startswith("neu_")]
+    #neuron_keep = preproc.filter_neurons(cont_rate_filter, unit_type, presence_rate_filter, isi_v_filter, yt)
 
     for other in neuron_keep:
         if other == neuron:
@@ -225,11 +230,7 @@ for row in table_fit:
                 trial_idx
             )
 
-    with open(path_fit, 'rb') as fh:
-        fit_dict = dill.load(fh)
 
-    full = fit_dict['full']
-    reduced = fit_dict['reduced']
     if set(full.var_list) != set(sm_handler.smooths_var):
         var_diff = set(sm_handler.smooths_var).union(full.var_list) -\
                    set(full.var_list).intersection(sm_handler.smooths_var)
@@ -262,6 +263,6 @@ for row in table_fit:
         bins=15
     )
 
-    fhName = 'ff_postproc_%s_%s_%.4f_c%d.mat'%(session, cond_type, cond_value, neuron)
+    fhName = '%s/ff_postproc_%s_%s_%.4f_c%d.mat'%(session, session, cond_type, cond_value, neuron)
     savemat(save_path / fhName, mdict={"pgam_results": results})
-    break
+    

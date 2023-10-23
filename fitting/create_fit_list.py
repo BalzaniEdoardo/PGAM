@@ -25,7 +25,7 @@ for root, dirs, fhs in os.walk(base_fld):
         full_path = os.path.join(root, fhName)
         _, _, session, neu, cond_type, cond_value = fhName.split("_")
         neu = int(neu.strip("c"))
-        cond_value = float(cond_value.split(".")[0])
+        cond_value = float(cond_value.split(".dill")[0])
         table['path'][cnt_files] = full_path
         table['session'][cnt_files] = session
         table['neuron'][cnt_files] = neu
