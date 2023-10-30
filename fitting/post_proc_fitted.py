@@ -21,7 +21,7 @@ if not os.path.exists("/scratch/jpn5/GAM_Repo/GAM_library/"):
     job_id = 0
     table_path = "/Users/ebalzani/Code/Demo_PGAM/fit_list.npy"
     save_path = Path("/Users/ebalzani/Code/Demo_PGAM/results/m44s187/")
-
+    from path_class import get_paths_class
 
 else:
     is_cluster = True
@@ -39,7 +39,7 @@ import scipy.stats as sts
 from data_handler import *
 import gam_data_handlers as gdh
 from knots_constructor import knots_cerate
-#from path_class import get_paths_class
+#
 from scipy.io import loadmat
 from utils_loading import unpack_preproc_data
 
@@ -51,7 +51,7 @@ import post_processing as postproc
 
 folder_name = deepcopy(thisPath)
 
-tot_fits = 36
+tot_fits = 27
 plot_res = False
 fit_fully_coupled = False
 use_k_fold = True
@@ -152,6 +152,12 @@ for row in table_fit:
     sm_handler_test = gdh.smooths_handler()
     for var in all_vars:
 
+#         if var == 'hand_vel1' or var == 'hand_vel2':
+#             continue
+#         if (cond_type != 'ptb') and (var == 't_ptb'):
+#             continue
+#         if var == 'rad_path_from_xy':
+#             continue
         if var.startswith("neu_"):
             continue
 
@@ -212,6 +218,7 @@ for row in table_fit:
             knots_cerate(x, 'spike_hist', session, hist_filt_dur=filt_len,
                          exclude_eye_position=['m44s213', 'm53s133', 'm53s134', 'm53s105', 'm53s182'])
 
+        #knots = full.smooth_info[f"neu_{other}"]['knots'].flatten()
         var = 'neu_%d' % other
         if include_var:
             sm_handler = preproc.include_variable_without_split(
