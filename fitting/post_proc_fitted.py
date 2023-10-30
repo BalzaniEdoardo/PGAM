@@ -19,8 +19,8 @@ if not os.path.exists("/scratch/jpn5/GAM_Repo/GAM_library/"):
     sys.path.append(os.path.join(os.path.dirname(thisPath), "firefly_utils"))
     is_cluster = False
     job_id = 0
-    table_path = "/Users/ebalzani/Code/Demo_PGAM/fit_list.npy"
-    save_path = Path("/Users/ebalzani/Code/Demo_PGAM/results/m44s187/")
+    table_path = "/Users/ebalzani/Desktop/debug_pgam_hpc/fit_list.npy"
+    save_path = Path("/Users/ebalzani/Desktop/debug_pgam_hpc/")
     from path_class import get_paths_class
 
 else:
@@ -67,8 +67,10 @@ main_dir = os.path.dirname(folder_name)
 if not is_cluster:
     user_paths = get_paths_class()
     path_to_concat = user_paths.get_path("local_concat")
+    if not os.path.exists(path_to_concat):
+        path_to_concat = "/Users/ebalzani/Desktop/debug_pgam_hpc"
 else:
-    path_to_concat = "/scratch/eb162/dataset_firefly/" 
+    path_to_concat = "/scratch/eb162/dataset_firefly/"
 
 # select the job to be run
 table_fit = np.load(table_path, allow_pickle=True)
@@ -131,8 +133,13 @@ for row in table_fit:
     ) = unpack_preproc_data(fhName, par_list)
     
     # load fits
-    with open(path_fit, 'rb') as fh:
-        fit_dict = dill.load(fh)
+    try:
+        with open(path_fit, 'rb') as fh:
+            fit_dict = dill.load(fh)
+    except:
+        path_fit = "/Users/ebalzani/Desktop/debug_pgam_hpc/fit_results_m53s123_c57_reward_0.0000.dill"
+        with open(path_fit, 'rb') as fh:
+            fit_dict = dill.load(fh)
     full = fit_dict['full']
     reduced = fit_dict['reduced']
     

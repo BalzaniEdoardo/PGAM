@@ -45,7 +45,7 @@ def compute_tuning(spk, fit, exog, var, sm_handler, filter_trials, trial_idx, dt
     if type(fit.family.link) == sm.genmod.families.links.log:
         sigma2 = np.einsum('ij,jk,ik->i', exog[filter_trials], fit.cov_beta, exog[filter_trials],
                            optimize=True)
-        lam_s = np.exp(mu + sigma2 * 0.5)
+        lam_s = fit.family.fitted(mu)#np.exp(mu + sigma2 * 0.5)
     else:  # do not consider uncertainty on the beta...
         lam_s = fit.family.fitted(mu)
 
