@@ -72,7 +72,7 @@ def compute_tuning(spk, fit, exog, var, sm_handler, filter_trials, trial_idx, dt
                                                         fit.time_bin,
                                                         direction=direction)
             _, sc_based_tuning, _ = compute_tuning_directional(sm_handler[var]._x[0, filter_trials],
-                                                    sm_handler["spike_hist"]._x[0, filter_trials],
+                                                    spk[filter_trials],
                                                     filter_len,
                                                     bins, trial_idx[filter_trials],
                                                     fit.time_bin,
