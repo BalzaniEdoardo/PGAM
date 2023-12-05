@@ -15,7 +15,7 @@ user_paths = get_paths_class()
 use_server = 'server'
 # =============================================================================
 # Here you should give the base directory that contains the .mat
-# the code will walk through alll subdirectory, and if it will find a
+# the code will walk through all subdirectories, and if it will find a
 # mat file with the correct name it will list it as a file to be concatenated
 #
 # =============================================================================

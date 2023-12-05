@@ -39,14 +39,12 @@ def load_eye_pos(trials_behv,use_eye=None):
     eye_vert = {}
     for key in eye_hori_left.keys():
 
-
         if (use_eye is None) or (use_eye == 'right'):
             use_eye = 'right'
             if np.prod(np.isnan(eye_hori_right[key])):
                 eye_hori[key] = eye_hori_left[key]
             else:
                 eye_hori[key] = eye_hori_right[key]
-
 
             if np.prod(np.isnan(eye_vert_right[key])):
                 eye_vert[key] = eye_vert_left[key]
@@ -65,52 +63,6 @@ def load_eye_pos(trials_behv,use_eye=None):
                 eye_vert[key] = eye_vert_left[key]
 
     return eye_hori,eye_vert, use_eye
-
-# def load_eye_pos_cartesian(trials_behv,use_eye=None):
-#     """
-#     Description
-#     ===========
-#         This function loads horizontal end vertical eye position in time per each trial. It returns a dict with
-#         keys the trials and values the time series of eye positions.
-#     """
-#     # Extraxt the dictionary from the nested matlab structure
-#     eye_x_left = create_dict_beahv(trials_behv, 'continuous', 'xlep')
-#     eye_x_right = create_dict_beahv(trials_behv, 'continuous', 'xrep')
-#
-#     eye_y_left = create_dict_beahv(trials_behv, 'continuous', 'ylep')
-#     eye_y_right = create_dict_beahv(trials_behv, 'continuous', 'yrep')
-#
-#     # check if right or left eye has been tracked and save the horizontal position
-#     eye_x = {}
-#     eye_y = {}
-#     for key in eye_x_left.keys():
-#
-#
-#         if (use_eye is None) or (use_eye == 'right'):
-#             if np.prod(np.isnan(eye_x_right[key])):
-#                 eye_x[key] = eye_x_left[key]
-#             else:
-#                 eye_x[key] = eye_x_right[key]
-#
-#
-#             if np.prod(np.isnan(eye_y_right[key])):
-#                 eye_y[key] = eye_y_left[key]
-#             else:
-#                 eye_y[key] = eye_y_right[key]
-#
-#         elif use_eye == 'left':
-#             if np.prod(np.isnan(eye_x_left[key])):
-#                 eye_x[key] = eye_x_right[key]
-#             else:
-#                 eye_x[key] = eye_x_left[key]
-#
-#             if np.prod(np.isnan(eye_y_left[key])):
-#                 eye_y[key] = eye_y_right[key]
-#             else:
-#                 eye_y[key] = eye_y[key]
-#
-#     return eye_x,eye_y
-
 
 class emptyStruct(object):
     def __init__(self):
@@ -152,8 +104,13 @@ class behavior_experiment(object):
         if 'trial_id' in trials_behv.dtype.names:
             self.trial_id = np.squeeze(np.hstack(trials_behv['trial_id']))
 
+        (self.continuous.hori_monkey_rel_to_stop_ego,
+         self.continuous.vert_monkey_rel_to_stop_ego,
+         self.continuous.hori_monkey_rel_to_targ_ego,
+         self.continuous.vert_monkey_rel_to_targ_ego) = pos_rel_ego(trials_behv, dat['prs'])
+
         # sample freq for the behavior
-        self.dt =  dt
+        self.dt = dt
         # duration of the pre/post-trial (experiment dependent)
         self.pre_trial_dur = pre_trial_dur
         self.post_trial_dur = post_trial_dur
@@ -165,7 +122,15 @@ class behavior_experiment(object):
         self.time_stamps = create_dict_beahv(trials_behv,'continuous','ts')
 
         # extract eye position
-        self.continuous.eye_hori, self.continuous.eye_vert, self.use_eye = load_eye_pos(trials_behv,use_eye=use_eye)
+        self.continuous.eye_hori, self.continuous.eye_vert, self.use_eye = load_eye_pos(trials_behv, use_eye=use_eye)
+        self.continuous.eye_hori_vel = {
+            tr: np.hstack([[np.nan], np.diff(self.continuous.eye_hori[tr])])/dt for tr in self.continuous.eye_hori
+        }
+        self.continuous.eye_vert_vel = {
+            tr: np.hstack([[np.nan], np.diff(self.continuous.eye_vert[tr])])/dt for tr in self.continuous.eye_vert
+        }
+
+
         # extrct virtualr real velocity (cm/s)
         self.continuous.rad_vel = create_dict_beahv(trials_behv,'continuous','v')
         self.continuous.ang_vel = create_dict_beahv(trials_behv, 'continuous', 'w')
@@ -192,6 +157,8 @@ class behavior_experiment(object):
         # integrate radial and angular path
         self.continuous.rad_path = self.itegrate_path(self.continuous.rad_vel)
         self.continuous.ang_path = self.itegrate_path(self.continuous.ang_vel)
+
+
         try:
             self.continuous.true_hor_mean = self.extract_eye_track(behav_stat,info)
         except:
@@ -833,18 +800,119 @@ def pair_replay_and_active(trials_behv):
             print('unable to extract pairs,uncorrelated inter event intervals')
             return
 
-        pair = np.zeros(((e1_active - e0_active)),dtype={'names':('active','replay'),'formats':(float,float)})
+        pair = np.zeros(e1_active - e0_active, dtype={'names': ('active', 'replay'), 'formats': (float, float)})
         pair['active'] = active_idx
         pair['replay'] = repl_idx
 
         pair_trials = np.hstack((pair_trials, pair))
     return pair_trials
 
+
+def pos_rel_ego(trials_behv: np.ndarray, prs: np.ndarray) -> tuple[dict, dict, dict, dict]:
+    n_trials = trials_behv['continuous'].shape[0]
+    x_stop_monkey = np.zeros(n_trials)
+    y_stop_monkey = np.zeros(n_trials)
+    hori_monkey_rel_to_stop = {}
+    vert_monkey_rel_to_stop = {}
+    hori_targ_ego = {}
+    vert_targ_ego = {}
+
+    height_z = -float(dat['prs']['height'][0, 0])
+    interocular_dist_delta = float(dat['prs']["interoculardist"]/2)
+
+    cum_angle, rotation = compute_cumulative_angle_and_rotation(trials_behv, prs)
+
+
+    for i in range(n_trials):
+        time = trials_behv['continuous'][i]['ts'][0, 0].squeeze()
+        t_targ = float(trials_behv['events'][i]['t_targ'][0, 0])
+        t_stop = float(trials_behv['events'][i]['t_stop'][0, 0])
+
+        # sample number of stopping time
+        indx_beg = np.searchsorted(time, t_targ)
+        indx_stop = np.searchsorted(time, t_stop)
+        x_fly = np.nanmedian(trials_behv['continuous'][i]['xfp'][0, 0].squeeze()[indx_beg:indx_stop])
+        y_fly = np.nanmedian(trials_behv['continuous'][i]['yfp'][0, 0].squeeze()[indx_beg:indx_stop])
+
+
+        # final monkey position
+        x_stop_monkey[i] = trials_behv['continuous'][i]['xmp'][0, 0].squeeze()[indx_stop]
+        y_stop_monkey[i] = trials_behv['continuous'][i]['ymp'][0, 0].squeeze()[indx_stop]
+
+        # position relative to stop
+        xsp_rel = x_stop_monkey[i] - trials_behv['continuous'][i]['xmp'][0, 0].squeeze()
+        ysp_rel = y_stop_monkey[i] - trials_behv['continuous'][i]['ymp'][0, 0].squeeze()
+        xysp_rel = np.einsum("ijt,tj -> ti", rotation[i], np.c_[xsp_rel, ysp_rel])
+        xysp_rel[xysp_rel[:, 1] < 0, 1] = np.nan
+
+        # fly position relative to monkey
+        hori_monkey_rel_to_stop[i], vert_monkey_rel_to_stop[i] = world2eye(
+            xysp_rel[:, 0], xysp_rel[:, 1], height_z, interocular_dist_delta)
+
+        # monkey pos relative to fly
+        xfp_rel = x_fly - trials_behv['continuous'][i]['xmp'][0, 0].squeeze()
+        yfp_rel = y_fly - trials_behv['continuous'][i]['ymp'][0, 0].squeeze()
+        xyfp_rel = np.einsum("ijt,tj -> ti", rotation[i], np.c_[xfp_rel, yfp_rel])
+        xyfp_rel[xyfp_rel[:, 1] < 0, 1] = np.nan
+        hori_targ_ego[i], vert_targ_ego[i] = world2eye(xyfp_rel[:, 0], xyfp_rel[:, 1],
+                                                             height_z, interocular_dist_delta)
+
+    return hori_monkey_rel_to_stop, vert_monkey_rel_to_stop, hori_targ_ego, vert_targ_ego
+
+
+def compute_cumulative_angle_and_rotation(trials, params):
+    # unpack variables
+    dt = float(params['dt'][0, 0])
+    # get ts dict
+    ts = [trials['continuous'][tr]['ts'][0, 0].squeeze() for tr in range(trials.shape[0])]
+    ts = {key: value for key, value in zip(range(trials.shape[0]), ts)}
+    # get ang_vel dict
+    ang_vel = [trials['continuous'][tr]['w'][0, 0].squeeze() / 180 * np.pi for tr in range(trials.shape[0])]
+    ang_vel = {key: value for key, value in zip(range(trials.shape[0]), ang_vel)}
+
+    for tr in ang_vel:
+        ang_vel[tr][np.isnan(ang_vel[tr])] = 0
+
+    cum_angle = {tr: np.cumsum((ts[tr] > 0) * ang_vel[tr]) * dt for tr in ang_vel}
+    rotation = {tr:
+                np.array([[np.cos(cum_angle[tr]), -np.sin(cum_angle[tr])],
+                          [np.sin(cum_angle[tr]), np.cos(cum_angle[tr])]])
+                for tr in cum_angle
+                }
+    return cum_angle, rotation
+
+
+def world2eye(xsp_rel, ysp_rel, height_z, interocular_dist_delta):
+    """
+    Transform coordinates.
+
+    Parameters
+    ----------
+    xsp_rel
+    ysp_rel
+    height_z
+    interocular_dist_delta
+
+    Returns
+    -------
+
+    """
+    yle = np.arctan2(xsp_rel + interocular_dist_delta, np.sqrt(ysp_rel ** 2 + height_z ** 2))
+    yre = np.arctan2(xsp_rel - interocular_dist_delta, np.sqrt(ysp_rel ** 2 + height_z ** 2))
+    zle = np.arctan2(height_z, np.sqrt(ysp_rel ** 2 + (xsp_rel + interocular_dist_delta) ** 2))
+    zre = np.arctan2(height_z, np.sqrt(ysp_rel ** 2 + (xsp_rel - interocular_dist_delta) ** 2))
+
+    # transform tp deg and average across eyes
+    ver_mean = np.nanmean(np.c_[zle, zre], axis=1) * 180 / np.pi
+    hor_mean = np.nanmean(np.c_[yle, yre], axis=1) * 180 / np.pi
+    return hor_mean, ver_mean
+
+
 if __name__ == '__main__':
     from scipy.io import loadmat
     from spike_times_class import *
     from copy import deepcopy
-    dat = loadmat('/Volumes/server/Data/Monkey2_newzdrive/Schro/Utah Array/Feb 20 2018/neural data/Pre-processing X E/m53s41.mat')
+    dat = loadmat("/Users/ebalzani/Desktop/matlab_coord_trans/m53s132.mat")
     print(dat.keys())
     behav_stat_keys = 'behv_stats'
     lfps_key = 'lfps'
@@ -852,7 +920,7 @@ if __name__ == '__main__':
     behav_dat_key = 'trials_behv'
 
     beh_all = behavior_experiment(dat,behav_dat_key,behav_stat_keys)
-    info = load_trial_types(dat[behav_stat_keys].flatten(),dat[behav_dat_key].flatten())
+    info = load_trial_types(dat[behav_stat_keys].flatten(), dat[behav_dat_key].flatten())
     # beh_stat = dat[behav_stat_keys].flatten()
     # trial_type = load_trial_types(beh_stat)
     # idxOther = trial_type.get_all(False)

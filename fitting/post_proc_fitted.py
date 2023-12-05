@@ -11,7 +11,7 @@ thisPath = os.path.dirname(inspect.getfile(inspect.currentframe()))
 # with the pgam installed, and the folder with firefly-utils also added
 # to the file system.
 # else use local
-if not os.path.exists("/scratch/jpn5/GAM_Repo/GAM_library/"):
+if not os.path.exists("/scratch/jpn5/"):
     sys.path.append(os.path.join(os.path.dirname(thisPath), "GAM_library"))
     sys.path.append(
         os.path.join(os.path.dirname(thisPath), "preprocessing_pipeline/util_preproc")
@@ -39,7 +39,7 @@ import scipy.stats as sts
 from data_handler import *
 import gam_data_handlers as gdh
 from knots_constructor import knots_cerate
-#
+#from path_class import get_paths_class
 from scipy.io import loadmat
 from utils_loading import unpack_preproc_data
 
@@ -51,7 +51,7 @@ import post_processing as postproc
 
 folder_name = deepcopy(thisPath)
 
-tot_fits = 27
+tot_fits = 7
 plot_res = False
 fit_fully_coupled = False
 use_k_fold = True
@@ -67,10 +67,8 @@ main_dir = os.path.dirname(folder_name)
 if not is_cluster:
     user_paths = get_paths_class()
     path_to_concat = user_paths.get_path("local_concat")
-    if not os.path.exists(path_to_concat):
-        path_to_concat = "/Users/ebalzani/Desktop/debug_pgam_hpc"
 else:
-    path_to_concat = "/scratch/eb162/dataset_firefly/"
+    path_to_concat = "/scratch/eb162/dataset_firefly/" 
 
 # select the job to be run
 table_fit = np.load(table_path, allow_pickle=True)
@@ -225,7 +223,6 @@ for row in table_fit:
             knots_cerate(x, 'spike_hist', session, hist_filt_dur=filt_len,
                          exclude_eye_position=['m44s213', 'm53s133', 'm53s134', 'm53s105', 'm53s182'])
 
-        #knots = full.smooth_info[f"neu_{other}"]['knots'].flatten()
         var = 'neu_%d' % other
         if include_var:
             sm_handler = preproc.include_variable_without_split(
