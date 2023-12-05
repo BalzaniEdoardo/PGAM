@@ -1,5 +1,6 @@
 import numpy as np
 import statsmodels.api as sm
+from typing import Tuple
 
 def create_dict_beahv(trialVec,var_type,field):
     """
@@ -808,7 +809,7 @@ def pair_replay_and_active(trials_behv):
     return pair_trials
 
 
-def pos_rel_ego(trials_behv: np.ndarray, prs: np.ndarray) -> tuple[dict, dict, dict, dict]:
+def pos_rel_ego(trials_behv: np.ndarray, prs: np.ndarray) -> Tuple[dict, dict, dict, dict]:
     n_trials = trials_behv['continuous'].shape[0]
     x_stop_monkey = np.zeros(n_trials)
     y_stop_monkey = np.zeros(n_trials)
@@ -817,8 +818,8 @@ def pos_rel_ego(trials_behv: np.ndarray, prs: np.ndarray) -> tuple[dict, dict, d
     hori_targ_ego = {}
     vert_targ_ego = {}
 
-    height_z = -float(dat['prs']['height'][0, 0])
-    interocular_dist_delta = float(dat['prs']["interoculardist"]/2)
+    height_z = -float(prs['height'][0, 0])
+    interocular_dist_delta = float(prs["interoculardist"]/2)
 
     cum_angle, rotation = compute_cumulative_angle_and_rotation(trials_behv, prs)
 
@@ -912,7 +913,7 @@ if __name__ == '__main__':
     from scipy.io import loadmat
     from spike_times_class import *
     from copy import deepcopy
-    dat = loadmat("/Users/ebalzani/Desktop/matlab_coord_trans/m53s132.mat")
+    dat = loadmat(r"D:\Savin-Angelaki\saved\mat_files\m53s132.mat")
     print(dat.keys())
     behav_stat_keys = 'behv_stats'
     lfps_key = 'lfps'
