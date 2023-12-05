@@ -385,7 +385,7 @@ def extract_presecnce_rate(occupancy_bin_sec,occupancy_rate_th,unit_info,session
     unit_info['mean_firing_rate_Hz'] = np.zeros(N)
 
     # first extract utah array
-    sorted_fold = path_user.get_path('cluster_data',session)
+    sorted_fold = path_user.get_path('server_data',session)
     if use_server:
         sorted_fold = sorted_fold.replace('server',use_server)
     spike_times, spike_clusters, spike_templates, amplitudes, templates, channel_map, clusterIDs, cluster_quality= \
