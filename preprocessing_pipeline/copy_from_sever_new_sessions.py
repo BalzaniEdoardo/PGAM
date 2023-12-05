@@ -28,7 +28,7 @@ for session in ['m53s51']:
     if 'm91' in session:
             continue
 
-    path = path_gen.get_path('cluster_array_data',session)
+    path = path_gen.get_path('server_array_data',session)
     path = os.path.dirname(os.path.dirname(path))
     full_path = os.path.join(path,fld_name)
     print(full_path)

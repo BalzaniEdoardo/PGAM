@@ -49,7 +49,7 @@ for session in session_list:
     try:
         base_file = os.path.join(gen_path.get_path('mat_preproc', session),'%s.mat'%session)
     except:
-        basedir = os.path.join(os.path.dirname(gen_path.get_path('cluster_data', session)),'Pre-processing X E')
+        basedir = os.path.join(os.path.dirname(gen_path.get_path('server_data', session)),'Pre-processing X E')
         base_file = os.path.join(basedir, '%s.mat' % session)
     # sv_folder = '/Volumes/WD Edo/firefly_analysis/LFP_band/DATASET/%s/' % excel_file['Area Recorded'][idx_session]
     # if not os.path.exists(sv_folder):

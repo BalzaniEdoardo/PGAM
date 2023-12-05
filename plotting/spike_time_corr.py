@@ -321,7 +321,7 @@ for session in concat_list:
         lead_electrode_missing = np.hstack((lead_electrode_missing,tmp))
     elif ba in ['PPC','PFC']: # tot time in sec
         # first extract utah array
-        sorted_fold = path_user.get_path('cluster_data',session)
+        sorted_fold = path_user.get_path('server_data',session)
         spike_times, spike_clusters, spike_templates, amplitudes, templates, channel_map, clusterIDs, cluster_quality = \
             load_kilosort_data(sorted_fold, \
                            utah_array_sampling_fq, \

@@ -89,7 +89,7 @@ for root, dirs, files in os.walk("/Volumes/WD Edo/firefly_analysis/LFP_band/DATA
             # if type(lst_array) == str:
             #     lst_linear = []
                 
-            # sorted_fold = path_user.get_path('cluster_data',session)
+            # sorted_fold = path_user.get_path('server_data',session)
             
             
             # for send_fh in list_copy:

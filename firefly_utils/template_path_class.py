@@ -9,6 +9,7 @@ get path script
 """
 from python_monkey_info import monkey_info_class
 
+
 class get_paths_class(object):
     def __init__(self):
         # path to allen institute code
@@ -16,8 +17,8 @@ class get_paths_class(object):
         # path to npz local data folder
         self.local_concat = '/Users/ebalzani/Desktop/concat_dataset_firefly'
         # path to were data are stored in the cluster divided by array and matrix
-        self.cluster_data_basepath = '/Volumes/server/Data/Monkey2_newzdrive/%s/neural data/Sorted'
-        self.cluster_data_basepath_array = '/Volumes/server/Data/Monkey2_newzdrive/%s/neural data/PLEXON FILES/Sorted/'
+        self.server_data_basepath = '/Volumes/server/Data/Monkey2_newzdrive/%s/neural data/Sorted'
+        self.server_data_basepath_array = '/Volumes/server/Data/Monkey2_newzdrive/%s/neural data/PLEXON FILES/Sorted/'
         
         # path to the monkey info folder
         monkey_info_path = '/Users/ebalzani/Code/Demo_PGAM/'
@@ -35,17 +36,13 @@ class get_paths_class(object):
             return self.ecephys_spike_sorting
         elif path_type == 'local_concat':
             return self.local_concat
-        elif path_type == 'cluster_array_data':
-            sorted_fold = self.cluster_data_basepath_array % self.monkey_info.get_folder(session)
+        elif path_type == 'server_array_data':
+            sorted_fold = self.server_data_basepath_array % self.monkey_info.get_folder(session)
             return sorted_fold
-        elif path_type == 'cluster_data':
-            sorted_fold = self.cluster_data_basepath % self.monkey_info.get_folder(session)
+        elif path_type == 'server_data':
+            sorted_fold = self.server_data_basepath % self.monkey_info.get_folder(session)
             return sorted_fold
         elif path_type == 'data_hpc':
             return self.data_hpc
         elif path_type == 'code_hpc':
             return self.code_hpc
-        
-        
-       
-        
