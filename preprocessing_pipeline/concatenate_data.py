@@ -52,7 +52,7 @@ ptrn = '^m\d+s\d+.mat$'
 ptrn = '^m\d+s\d+$'
 
 
-fld_list = ['/Volumes/WD_Edo/firefly_analysis/LFP_band/DATASET_accel/']*len(concat_list)
+fld_list = [DIRECT]*len(concat_list)
 
 save = True
 send = True
