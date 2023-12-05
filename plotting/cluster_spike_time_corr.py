@@ -499,7 +499,7 @@ spikes_cut,electrode_id,brain_area = merge_spike_times_x_electrode(exp_data, spi
 
 
 # first extract utah array
-sorted_fold = path_user.get_path('cluster_data',session)
+sorted_fold = path_user.get_path('server_data',session)
 if not os.path.exists(sorted_fold):
     sorted_fold = '/scratch/eb162/sorted/%s'%session
 spike_times, spike_clusters, spike_templates, amplitudes, templates, channel_map, clusterIDs, cluster_quality = \
