@@ -1,8 +1,7 @@
 import numpy as np
-from python_monkey_info import monkey_info_class
-import os,sys
-from path_class import get_paths_class
-user_path_gen = get_paths_class()
+import os
+#from path_class import get_paths_class
+#user_path_gen = get_paths_class()
 # list_all_dir = [x[0] for x in os.walk(user_path_gen.get_path('ecephys_spike_sorting'))]
 #
 # for dir_name in list_all_dir:
@@ -338,21 +337,18 @@ def compute_amplitude_tc(ampl_spk,time_spk,bin_sec,tot_time):
 
 def extract_presecnce_rate_Uprobe(occupancy_bin_sec,occupancy_rate_th,unit_info,session,
                                   path_user,linearprobe_sampling_fq,use_server='server'):
-    sorted_fold = path_user.get_path('cluster_data', session)
+    sorted_fold = path_user.get_path('server_data', session)
     if use_server:
         sorted_fold = sorted_fold.replace('/Volumes/server/Data/Monkey2_newzdrive',use_server)
     N = unit_info['brain_area'].shape[0]
     unit_info['presence_rate'] = np.zeros(N)
     unit_info['mean_firing_rate_Hz'] = np.zeros(N)
-    # unit_info['dip_pval'] = np.zeros(unit_info['brain_area'].shape[0])
-
-
 
     # first extract utah array
     # sorted_fold = base_sorted_fold % monkey_info.get_folder(session)
-    spike_times, spike_clusters, spike_templates, amplitudes, templates, channel_map, clusterIDs, cluster_quality= \
-        load_kilosort_data(sorted_fold, \
-                           linearprobe_sampling_fq, \
+    spike_times, spike_clusters, spike_templates, amplitudes, templates, channel_map, clusterIDs, cluster_quality = \
+        load_kilosort_data(sorted_fold,
+                           linearprobe_sampling_fq,
                            use_master_clock=False,
                            include_pcs=False)
     # tot time in sec
@@ -362,8 +358,6 @@ def extract_presecnce_rate_Uprobe(occupancy_bin_sec,occupancy_rate_th,unit_info,
     num_bins_occ = int(np.floor((max_time - min_time) / occupancy_bin_sec))
     # index of the utah array in the stacked files
     # select_array = (unit_info['brain_area'] == 'PPC') + (unit_info['brain_area'] == 'PFC')
-
-
 
     for unit in np.unique(unit_info['cluster_id']):
         # extract the index of the unit in the stacked file
@@ -382,8 +376,6 @@ def extract_presecnce_rate_Uprobe(occupancy_bin_sec,occupancy_rate_th,unit_info,
     return unit_info
 
 
-
-
 def extract_presecnce_rate(occupancy_bin_sec,occupancy_rate_th,unit_info,session,
                            path_user,utah_array_sappling_fq,linearprobe_sampling_fq,use_server=None):
     # monkey_info = monkey_info_class()
@@ -391,10 +383,6 @@ def extract_presecnce_rate(occupancy_bin_sec,occupancy_rate_th,unit_info,session
     N = unit_info['brain_area'].shape[0]
     unit_info['presence_rate'] = np.zeros(N)
     unit_info['mean_firing_rate_Hz'] = np.zeros(N)
-
-    # unit_info['dip_pval'] = np.zeros(unit_info['brain_area'].shape[0])
-
-
 
     # first extract utah array
     sorted_fold = path_user.get_path('cluster_data',session)
