@@ -259,11 +259,22 @@ for session in concat_list:
     # compute additional quality metrics
     try:
         if ('m72' in session) or ('m73' in session):
-            res['unit_info'] = extract_presecnce_rate_Uprobe(occupancy_bin_sec,occupancy_rate_th,res['unit_info'],session,
-                                                             user_paths,linearprobe_sampling_fq,use_server=False)
+            res['unit_info'] = extract_presecnce_rate_Uprobe(
+                occupancy_bin_sec,occupancy_rate_th,res['unit_info'],
+                session,
+                user_paths,
+                linearprobe_sampling_fq,
+                use_server=False
+            )
         else:
-            res['unit_info'] = extract_presecnce_rate(occupancy_bin_sec,occupancy_rate_th,res['unit_info'],session,
-                           user_paths,utah_array_sampling_fq,linearprobe_sampling_fq,use_server=False)
+            res['unit_info'] = extract_presecnce_rate(
+                occupancy_bin_sec,
+                occupancy_rate_th,res['unit_info'],session,
+                user_paths,utah_array_sampling_fq,
+                linearprobe_sampling_fq,
+                use_server=False
+            )
+
     except Exception as e:
         print(e)
         print('skip %s'%session)

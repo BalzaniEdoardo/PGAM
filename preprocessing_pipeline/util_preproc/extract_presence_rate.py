@@ -377,7 +377,7 @@ def extract_presecnce_rate_Uprobe(occupancy_bin_sec,occupancy_rate_th,unit_info,
 
 
 def extract_presecnce_rate(occupancy_bin_sec,occupancy_rate_th,unit_info,session,
-                           path_user,utah_array_sappling_fq,linearprobe_sampling_fq,use_server=None):
+                           path_user,utah_array_sappling_fq, linearprobe_sampling_fq, use_server=None):
     # monkey_info = monkey_info_class()
 
     N = unit_info['brain_area'].shape[0]
@@ -389,8 +389,8 @@ def extract_presecnce_rate(occupancy_bin_sec,occupancy_rate_th,unit_info,session
     if use_server:
         sorted_fold = sorted_fold.replace('server',use_server)
     spike_times, spike_clusters, spike_templates, amplitudes, templates, channel_map, clusterIDs, cluster_quality= \
-        load_kilosort_data(sorted_fold, \
-                           utah_array_sappling_fq, \
+        load_kilosort_data(sorted_fold,
+                           utah_array_sappling_fq,
                            use_master_clock=False,
                            include_pcs=False)
     # tot time in sec
