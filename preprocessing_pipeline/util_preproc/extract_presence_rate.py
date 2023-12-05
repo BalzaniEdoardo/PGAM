@@ -335,11 +335,12 @@ def compute_amplitude_tc(ampl_spk,time_spk,bin_sec,tot_time):
         ampl_median[ii] = np.median(ampl_spk[idx_spk==ii])
     return ampl_median
 
-def extract_presecnce_rate_Uprobe(occupancy_bin_sec,occupancy_rate_th,unit_info,session,
+def extract_presecnce_rate_Uprobe(occupancy_bin_sec, occupancy_rate_th, unit_info, session,
                                   path_user,linearprobe_sampling_fq,use_server='server'):
     sorted_fold = path_user.get_path('server_data', session)
     if use_server:
         sorted_fold = sorted_fold.replace('/Volumes/server/Data/Monkey2_newzdrive',use_server)
+
     N = unit_info['brain_area'].shape[0]
     unit_info['presence_rate'] = np.zeros(N)
     unit_info['mean_firing_rate_Hz'] = np.zeros(N)
