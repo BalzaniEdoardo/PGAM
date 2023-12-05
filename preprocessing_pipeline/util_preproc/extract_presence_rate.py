@@ -317,8 +317,6 @@ def saveCompressed(fh, **namedict):
                                                  allow_pickle=True)
 
 
-
-
 def compute_amplitude_tc(ampl_spk,time_spk,bin_sec,tot_time):
     bin_num = int(np.ceil(tot_time / bin_sec))
     ampl_median = np.zeros(bin_num) * np.nan
