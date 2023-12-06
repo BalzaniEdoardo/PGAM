@@ -48,12 +48,16 @@ def splineDesign(knots, x, ord=4, der=0, outer_ok=False):
             if any(dkn > 0):
                 reps_end = max(0, ord - np.where(dkn > 0)[0][0] - 1)
             else:
-                reps_end = np.nan  # this should give an error, since all knots are the same
+                reps_end = (
+                    np.nan
+                )  # this should give an error, since all knots are the same
             idx = [0] * (ord - 1) + list(range(nk)) + [nk - 1] * reps_end
             knots = knots[idx]
         else:
-            raise ValueError("the 'x' data must be in the range %f to %f unless you set outer_ok==True'" % (
-                knots[ord - 1], knots[nk - ord]))
+            raise ValueError(
+                "the 'x' data must be in the range %f to %f unless you set outer_ok==True'"
+                % (knots[ord - 1], knots[nk - ord])
+            )
     else:
         reps_start = 0
         reps_end = 0
@@ -92,15 +96,15 @@ def cSplineDes(knots, x, ord=4, der=0):
     x = np.array(x)
     nk = knots.shape[0]
     if ord < 2:
-        raise ValueError('order too low')
-    if (nk < ord):
-        raise ValueError('too few knots')
+        raise ValueError("order too low")
+    if nk < ord:
+        raise ValueError("too few knots")
     knots.sort()
     k1 = knots[0]
     if x.min() < k1 or x.max() > knots[-1]:
-        raise ValueError('x out of range')
+        raise ValueError("x out of range")
     xc = knots[nk - ord]
-    knots = np.hstack((k1 - knots[-1] + knots[nk - ord:nk - 1], knots))
+    knots = np.hstack((k1 - knots[-1] + knots[nk - ord : nk - 1], knots))
     ind = x > xc
     X1 = splineDesign(knots, x, ord=ord, der=der, outer_ok=True)
     x[ind] = x[ind] - knots.max() + k1
@@ -111,15 +115,15 @@ def cSplineDes(knots, x, ord=4, der=0):
 
 
 def smPenalty_1D_BSpline(k):
-    P = - np.eye(k) + np.diag(np.ones(k - 1), 1)
-    P = P[:k - 1, :]
+    P = -np.eye(k) + np.diag(np.ones(k - 1), 1)
+    P = P[: k - 1, :]
     M = np.dot(P.T, P)
     return sparse.csr_matrix(M, dtype=np.float64)
 
 
 def smPenalty_1D_cyclicBSpline(k):
-    P = - np.eye(k) + np.diag(np.ones(k - 1), 1)
-    P = P[:k - 1, :]
+    P = -np.eye(k) + np.diag(np.ones(k - 1), 1)
+    P = P[: k - 1, :]
     M = np.dot(P.T, P)
     M[0, :] = np.roll(M[1, :], -1)
     M[-1, :] = np.roll(M[-2, :], 1)
@@ -146,31 +150,48 @@ def smoothPen_sqrt(M):
 
 
 def non_eqSpaced_diff_pen(knots, order, outer_ok=False, cyclic=False):
-    assert (all(knots[:order] == knots[0]))
-    assert (all(knots[-order:] == knots[-1]))
+    assert all(knots[:order] == knots[0])
+    assert all(knots[-order:] == knots[-1])
     if order == 1:
         int_knots = knots
     else:
-        int_knots = knots[order - 1: -(order - 1)]
+        int_knots = knots[order - 1 : -(order - 1)]
 
     if not cyclic:
         Ak = splineDesign(knots, int_knots, ord=order, der=0, outer_ok=False)
-        Amid = splineDesign(knots, int_knots[:-2] + int_knots[2:] - int_knots[1:-1], ord=order, der=0, outer_ok=False)
+        Amid = splineDesign(
+            knots,
+            int_knots[:-2] + int_knots[2:] - int_knots[1:-1],
+            ord=order,
+            der=0,
+            outer_ok=False,
+        )
     else:
         Ak = cSplineDes(knots, int_knots, ord=order, der=0)
-        Amid = cSplineDes(knots, int_knots[:-2] + int_knots[2:] - int_knots[1:-1], ord=order, der=0)
+        Amid = cSplineDes(
+            knots, int_knots[:-2] + int_knots[2:] - int_knots[1:-1], ord=order, der=0
+        )
 
     B = np.zeros((Ak.shape[0] - 2, Ak.shape[1]))
 
     for i in range(Ak.shape[1]):
-        B[:, i] = (Ak[:-2, i] - Ak[1:-1, i] - Amid[:, i] + Ak[2:, i])
+        B[:, i] = Ak[:-2, i] - Ak[1:-1, i] - Amid[:, i] + Ak[2:, i]
 
     M = sparse.csr_matrix(np.dot(B.T, B))
     return M, B
 
 
-def smPenalty_1D_derBased(knots, xmin, xmax, n_points, ord=4, der=1, outer_ok=False, cyclic=False,
-                          measure=None):
+def smPenalty_1D_derBased(
+    knots,
+    xmin,
+    xmax,
+    n_points,
+    ord=4,
+    der=1,
+    outer_ok=False,
+    cyclic=False,
+    measure=None,
+):
     """
     Derivative based penalty
     :param knots:
@@ -206,10 +227,25 @@ def smPenalty_1D_derBased(knots, xmin, xmax, n_points, ord=4, der=1, outer_ok=Fa
     return M, Bx
 
 
-def adaptiveSmoother_1D_derBased(knots, xmin, xmax, n_points, ord_AD=3, ad_smooth_basis_size=4, ord=4, der=2,
-                                 outer_ok=False, cyclic=False):
+def adaptiveSmoother_1D_derBased(
+    knots,
+    xmin,
+    xmax,
+    n_points,
+    ord_AD=3,
+    ad_smooth_basis_size=4,
+    ord=4,
+    der=2,
+    outer_ok=False,
+    cyclic=False,
+):
     knots_ADSM = np.hstack(
-        ([xmin] * (ord_AD - 1), np.linspace(xmin, xmax, ad_smooth_basis_size), [xmax] * (ord_AD - 1)))
+        (
+            [xmin] * (ord_AD - 1),
+            np.linspace(xmin, xmax, ad_smooth_basis_size),
+            [xmax] * (ord_AD - 1),
+        )
+    )
     x = np.linspace(xmin, xmax, n_points)
 
     if cyclic:
@@ -237,61 +273,77 @@ def adaptiveSmoother_1D_derBased(knots, xmin, xmax, n_points, ord_AD=3, ad_smoot
     return M_list, Bx
 
 
-@jit(nopython=True,parallel=False)
-def sumtriangles( xy, z, triangles ):
-    """ integrate scattered data, given a triangulation
-    zsum, areasum = sumtriangles( xy, z, triangles )
-    In:
-        xy: npt, dim data points in 2d, 3d ...
-        z: npt data values at the points, scalars or vectors
-        triangles: ntri, dim+1 indices of triangles or simplexes, as from
-http://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.Delaunay.html
-    Out:
-        zsum: sum over all triangles of (area * z at midpoint).
-            Thus z at a point where 5 triangles meet
-            enters the sum 5 times, each weighted by that triangle's area / 3.
-        areasum: the area or volume of the convex hull of the data points.
-            For points over the unit square, zsum outside the hull is 0,
-            so zsum / areasum would compensate for that.
-            Or, make sure that the corners of the square or cube are in xy.
+@jit(nopython=True, parallel=False)
+def sumtriangles(xy, z, triangles):
+    """integrate scattered data, given a triangulation
+        zsum, areasum = sumtriangles( xy, z, triangles )
+        In:
+            xy: npt, dim data points in 2d, 3d ...
+            z: npt data values at the points, scalars or vectors
+            triangles: ntri, dim+1 indices of triangles or simplexes, as from
+    http://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.Delaunay.html
+        Out:
+            zsum: sum over all triangles of (area * z at midpoint).
+                Thus z at a point where 5 triangles meet
+                enters the sum 5 times, each weighted by that triangle's area / 3.
+            areasum: the area or volume of the convex hull of the data points.
+                For points over the unit square, zsum outside the hull is 0,
+                so zsum / areasum would compensate for that.
+                Or, make sure that the corners of the square or cube are in xy.
     """
-        # z concave or convex => under or overestimates
+    # z concave or convex => under or overestimates
     npt, dim = xy.shape
     ntri, dim1 = triangles.shape
     # assert npt == len(z), "shape mismatch: xy %s z %s" % (xy.shape, z.shape)
     # assert dim1 == dim+1, "triangles ? %s" % triangles.shape
-    zsum = 0#np.zeros( z[0].shape )
+    zsum = 0  # np.zeros( z[0].shape )
     areasum = 0
-    dimfac = np.prod( np.arange( 1, dim+1 ))
+    dimfac = np.prod(np.arange(1, dim + 1))
     for tri in triangles:
         corners = xy[tri]
         t = corners[1:] - corners[0]
         if dim == 2:
-            area = np.abs( t[0,0] * t[1,1] - t[0,1] * t[1,0] ) / 2
+            area = np.abs(t[0, 0] * t[1, 1] - t[0, 1] * t[1, 0]) / 2
         else:
-            area = np.abs( np.linalg.det( t )) / dimfac  # v slow
+            area = np.abs(np.linalg.det(t)) / dimfac  # v slow
         zsum += area * np.mean(z[tri])
         areasum += area
     return (zsum, areasum)
 
-def smPenalty_Disk(knot_list, n_points,
-                   ord=4, der=1, outer_ok=False, cyclic=[False, False],
-                   measure=None, check_tri=False, domain_fun=lambda x: np.ones(x.shape, dtype=bool)):
-    if len(knot_list) != 2:
-        raise ValueError('not implemented for D != 2')
 
+def smPenalty_Disk(
+    knot_list,
+    n_points,
+    ord=4,
+    der=1,
+    outer_ok=False,
+    cyclic=[False, False],
+    measure=None,
+    check_tri=False,
+    domain_fun=lambda x: np.ones(x.shape, dtype=bool),
+):
+    if len(knot_list) != 2:
+        raise ValueError("not implemented for D != 2")
 
     # get basis dim
     if not cyclic[0]:
-        spdes_x = lambda x: splineDesign(knot_list[0], x, ord=ord, der=0, outer_ok=outer_ok)
-        spdes_der_x = lambda x: splineDesign(knot_list[0], x, ord=ord, der=der, outer_ok=outer_ok)
+        spdes_x = lambda x: splineDesign(
+            knot_list[0], x, ord=ord, der=0, outer_ok=outer_ok
+        )
+        spdes_der_x = lambda x: splineDesign(
+            knot_list[0], x, ord=ord, der=der, outer_ok=outer_ok
+        )
     else:
         spdes_x = lambda x: cSplineDes(knot_list[0], x, ord=ord, der=0)
         spdes_der_x = lambda x: cSplineDes(knot_list[0], x, ord=ord, der=der)
 
     if not cyclic[1]:
-        spdes_y = lambda y: splineDesign(knot_list[1], y, ord=ord, der=0, outer_ok=outer_ok)
-        spdes_der_y = lambda y: splineDesign(knot_list[1], y, ord=ord, der=der, outer_ok=outer_ok)
+        spdes_y = lambda y: splineDesign(
+            knot_list[1], y, ord=ord, der=0, outer_ok=outer_ok
+        )
+        spdes_der_y = lambda y: splineDesign(
+            knot_list[1], y, ord=ord, der=der, outer_ok=outer_ok
+        )
     else:
         spdes_y = lambda y: cSplineDes(knot_list[1], y, ord=ord, der=0)
         spdes_der_y = lambda y: cSplineDes(knot_list[1], y, ord=ord, der=der)
@@ -303,12 +355,16 @@ def smPenalty_Disk(knot_list, n_points,
     y_grid = []
     for ix in range(knots_x.shape[0] - 1):
         xmin, xmax = knots_x[ix], knots_x[ix + 1]
-        x_grid = np.hstack((x_grid, np.linspace(xmin, xmax, n_points // (knots_x.shape[0] - 1))[:-1]))
+        x_grid = np.hstack(
+            (x_grid, np.linspace(xmin, xmax, n_points // (knots_x.shape[0] - 1))[:-1])
+        )
     x_grid = np.hstack((x_grid, knots_x[-1:]))
 
     for iy in range(knots_y.shape[0] - 1):
         ymin, ymax = knots_y[iy], knots_y[iy + 1]
-        y_grid = np.hstack((y_grid, np.linspace(ymin, ymax, n_points // (knots_y.shape[0] - 1))[:-1]))
+        y_grid = np.hstack(
+            (y_grid, np.linspace(ymin, ymax, n_points // (knots_y.shape[0] - 1))[:-1])
+        )
     y_grid = np.hstack((y_grid, knots_y[-1:]))
 
     # create mash grid
@@ -327,18 +383,19 @@ def smPenalty_Disk(knot_list, n_points,
 
     if check_tri:
         import matplotlib.pylab as plt
+
         xx, yy = np.meshgrid(knots_x, knots_y)
         plt.scatter(X[::1], Y[::1])
-        plt.scatter(xx, yy, color='r')
+        plt.scatter(xx, yy, color="r")
         plt.triplot(XY[:, 0], XY[:, 1], tri.simplices)
 
     # contaiiner for derivatives
-    Sx = np.array(spdes_der_x(X), dtype=np.double, order='C')
-    Sy = np.array(spdes_y(Y), dtype=np.double, order='C')
+    Sx = np.array(spdes_der_x(X), dtype=np.double, order="C")
+    Sy = np.array(spdes_y(Y), dtype=np.double, order="C")
     bxxa = kron_cython.rowwise_kron_cython(Sx, Sy)
 
-    Sx = np.array(spdes_x(X), dtype=np.double, order='C')
-    Sy = np.array(spdes_der_y(Y), dtype=np.double, order='C')
+    Sx = np.array(spdes_x(X), dtype=np.double, order="C")
+    Sy = np.array(spdes_der_y(Y), dtype=np.double, order="C")
     bayy = kron_cython.rowwise_kron_cython(Sx, Sy)
     del Sx, Sy
 
@@ -352,7 +409,7 @@ def smPenalty_Disk(knot_list, n_points,
             Jx[k1, k2] = sumtriangles(XY, bxxa[:, k1] * bxxa[:, k2], tri.simplices)[0]
             Jy[k1, k2] = sumtriangles(XY, bayy[:, k1] * bayy[:, k2], tri.simplices)[0]
             t1 = perf_counter()
-            print('%d/%d' % (k, bayy.shape[1] * (bayy.shape[1] + 1) / 2), t1 - t0)
+            print("%d/%d" % (k, bayy.shape[1] * (bayy.shape[1] + 1) / 2), t1 - t0)
             k += 1
 
     Jx = Jx + np.triu(Jx, 1).T
@@ -375,7 +432,6 @@ def smPenalty_ND_spline(*Ms):
     J = []
 
     for k in range(N):
-
         KP = Ms[k]
         for j in range(k):
             I = sparse.csr_matrix(np.eye(Ms[j].shape[0], dtype=np.float64))
@@ -447,11 +503,11 @@ def multiRowWiseKron(*M, sparseX=True):
 
     if type(KP) != np.ndarray:
         KP = KP.toarray()
-    KP = np.array(KP, dtype=np.double, order='C')
+    KP = np.array(KP, dtype=np.double, order="C")
     for X in M[1:]:
         if type(X) != np.ndarray:
             X = X.toarray()
-        X = np.array(X, dtype=np.double, order='C')
+        X = np.array(X, dtype=np.double, order="C")
         if use_fast_kron:
             KP = kron_cython.rowwise_kron_cython(KP, X)
         else:
@@ -463,34 +519,100 @@ def multiRowWiseKron(*M, sparseX=True):
         return KP
 
 
-def basisAndPenalty(x, knots, xmin=None, xmax=None, penalty_type='EqSpaced', der=1, n_points=10 ** 4, is_cyclic=None,
-                    ord=4, sparseX=True, measure=None, ord_AD=3, ad_knots=4,
-                    domain_fun=lambda x: np.ones(x.shape, dtype=bool), compute_pen=True,
-                    prercomp_SandB=None):
-    if penalty_type == 'EqSpaced':
-        return basisAndPenalty_EqSpaced(x, knots, is_cyclic=None, ord=ord, sparseX=sparseX, split_range=None)
+def basisAndPenalty(
+    x,
+    knots,
+    xmin=None,
+    xmax=None,
+    penalty_type="EqSpaced",
+    der=1,
+    n_points=10**4,
+    is_cyclic=None,
+    ord=4,
+    sparseX=True,
+    measure=None,
+    ord_AD=3,
+    ad_knots=4,
+    domain_fun=lambda x: np.ones(x.shape, dtype=bool),
+    compute_pen=True,
+    prercomp_SandB=None,
+):
+    if penalty_type == "EqSpaced":
+        return basisAndPenalty_EqSpaced(
+            x, knots, is_cyclic=None, ord=ord, sparseX=sparseX, split_range=None
+        )
 
-    elif penalty_type == 'diff':
-        return basisAndPenalty_diff(x, knots, is_cyclic=is_cyclic, outer_ok=True, order=ord, sparseX=sparseX,
-                                    split_range=None)
+    elif penalty_type == "diff":
+        return basisAndPenalty_diff(
+            x,
+            knots,
+            is_cyclic=is_cyclic,
+            outer_ok=True,
+            order=ord,
+            sparseX=sparseX,
+            split_range=None,
+        )
 
-    elif penalty_type == 'der':
-        return basisAndPenalty_deriv(x, knots, xmin, xmax, n_points, ord=ord, der=der, outer_ok=True,
-                                     is_cyclic=is_cyclic, sparseX=sparseX,
-                                     measure=measure)
-    elif penalty_type == 'adaptive':
-        return basisAndPenalty_Adaptive(x, knots, xmin, xmax, n_points, ord_AD=ord_AD, ad_smooth_basis_size=ad_knots,
-                                        ord=ord, der=der, outer_ok=True, is_cyclic=is_cyclic, sparseX=sparseX,
-                                        )
-    elif penalty_type == 'der_2Ddomain':
-        return basisAndPenalty_disk(x, knots, 200, ord=ord, der=der, outer_ok=True,
-                                    is_cyclic=is_cyclic, sparseX=sparseX, extra_pen=1, domain_fun=domain_fun,
-                                    compute_pen=compute_pen,
-                                    prercomp_SandB=prercomp_SandB)
+    elif penalty_type == "der":
+        return basisAndPenalty_deriv(
+            x,
+            knots,
+            xmin,
+            xmax,
+            n_points,
+            ord=ord,
+            der=der,
+            outer_ok=True,
+            is_cyclic=is_cyclic,
+            sparseX=sparseX,
+            measure=measure,
+        )
+    elif penalty_type == "adaptive":
+        return basisAndPenalty_Adaptive(
+            x,
+            knots,
+            xmin,
+            xmax,
+            n_points,
+            ord_AD=ord_AD,
+            ad_smooth_basis_size=ad_knots,
+            ord=ord,
+            der=der,
+            outer_ok=True,
+            is_cyclic=is_cyclic,
+            sparseX=sparseX,
+        )
+    elif penalty_type == "der_2Ddomain":
+        return basisAndPenalty_disk(
+            x,
+            knots,
+            200,
+            ord=ord,
+            der=der,
+            outer_ok=True,
+            is_cyclic=is_cyclic,
+            sparseX=sparseX,
+            extra_pen=1,
+            domain_fun=domain_fun,
+            compute_pen=compute_pen,
+            prercomp_SandB=prercomp_SandB,
+        )
 
 
-def basisAndPenalty_deriv(x, knots, xmin, xmax, n_points, ord=4, der=1, outer_ok=True,
-                          is_cyclic=False, sparseX=True, extra_pen=1, measure=None):
+def basisAndPenalty_deriv(
+    x,
+    knots,
+    xmin,
+    xmax,
+    n_points,
+    ord=4,
+    der=1,
+    outer_ok=True,
+    is_cyclic=False,
+    sparseX=True,
+    extra_pen=1,
+    measure=None,
+):
     """
 
     :param x: input covariate, can be >1 dim (exponential increase number of param with dim)
@@ -521,9 +643,17 @@ def basisAndPenalty_deriv(x, knots, xmin, xmax, n_points, ord=4, der=1, outer_ok
             Xs += [cSplineDes(knots[k], x[k], ord=ord, der=0)]
         else:
             Xs += [splineDesign(knots[k], x[k], ord=ord, der=0, outer_ok=True)]
-        M0, B0 = smPenalty_1D_derBased(knots[k], xmin[k], xmax[k], n_points, ord=ord, der=der, outer_ok=outer_ok,
-                                       cyclic=is_cyclic[k],
-                                       measure=measure)
+        M0, B0 = smPenalty_1D_derBased(
+            knots[k],
+            xmin[k],
+            xmax[k],
+            n_points,
+            ord=ord,
+            der=der,
+            outer_ok=outer_ok,
+            cyclic=is_cyclic[k],
+            measure=measure,
+        )
 
         Bs += [B0]
         Ms += [M0]
@@ -553,10 +683,20 @@ def basisAndPenalty_deriv(x, knots, xmin, xmax, n_points, ord=4, der=1, outer_ok
     return X, B_list, S_list, basis_dim
 
 
-def basisAndPenalty_disk(x, knots, n_points, ord=4, der=1, outer_ok=True,
-                         is_cyclic=False, sparseX=True, extra_pen=1, domain_fun=lambda x: np.ones(x.shape, dtype=bool),
-                         compute_pen=True,
-                         prercomp_SandB=None):
+def basisAndPenalty_disk(
+    x,
+    knots,
+    n_points,
+    ord=4,
+    der=1,
+    outer_ok=True,
+    is_cyclic=False,
+    sparseX=True,
+    extra_pen=1,
+    domain_fun=lambda x: np.ones(x.shape, dtype=bool),
+    compute_pen=True,
+    prercomp_SandB=None,
+):
     """
 
     :param x: input covariate, can be >1 dim (exponential increase number of param with dim)
@@ -577,7 +717,7 @@ def basisAndPenalty_disk(x, knots, n_points, ord=4, der=1, outer_ok=True,
     dim_spline = len(x)
     if is_cyclic is None:
         is_cyclic = np.zeros(dim_spline, dtype=bool)
-    assert (len(x) == 2)
+    assert len(x) == 2
     Xs = []
     Bs = []
     Ms = []
@@ -590,12 +730,19 @@ def basisAndPenalty_disk(x, knots, n_points, ord=4, der=1, outer_ok=True,
         else:
             Xs += [splineDesign(knots[k], x[k], ord=ord, der=0, outer_ok=True)]
 
-
         basis_dim += [Xs[k].shape[1]]
     if compute_pen:
         if prercomp_SandB is None:
-            S_list = smPenalty_Disk(knots, n_points, ord=ord, der=der, outer_ok=outer_ok,
-                                    cyclic=is_cyclic, check_tri=False, domain_fun=domain_fun)
+            S_list = smPenalty_Disk(
+                knots,
+                n_points,
+                ord=ord,
+                der=der,
+                outer_ok=outer_ok,
+                cyclic=is_cyclic,
+                check_tri=False,
+                domain_fun=domain_fun,
+            )
             Bs = [smoothPen_sqrt(S_list[0]), smoothPen_sqrt(S_list[1])]
             B_list = Bs
             if extra_pen:
@@ -608,9 +755,8 @@ def basisAndPenalty_disk(x, knots, n_points, ord=4, der=1, outer_ok=True,
                 S_list += [np.dot(Utilde, Utilde.T)]
                 B_list += [Utilde.T]
         else:
-            S_list = prercomp_SandB['S_list']
-            B_list = prercomp_SandB['B_list']
-
+            S_list = prercomp_SandB["S_list"]
+            B_list = prercomp_SandB["B_list"]
 
     else:
         B_list = None
@@ -624,9 +770,21 @@ def basisAndPenalty_disk(x, knots, n_points, ord=4, der=1, outer_ok=True,
     return X, B_list, S_list, basis_dim
 
 
-def basisAndPenalty_Adaptive(x, knots, xmin, xmax, n_points, ord_AD=3, ad_smooth_basis_size=4, ord=4, der=1,
-                             outer_ok=True,
-                             is_cyclic=False, sparseX=True, extra_pen=1):
+def basisAndPenalty_Adaptive(
+    x,
+    knots,
+    xmin,
+    xmax,
+    n_points,
+    ord_AD=3,
+    ad_smooth_basis_size=4,
+    ord=4,
+    der=1,
+    outer_ok=True,
+    is_cyclic=False,
+    sparseX=True,
+    extra_pen=1,
+):
     """
     Create an adaptive penalty by expanding the penalty measure with a low-dim spline basis
     useful if the smoothness level is non-constant.
@@ -647,7 +805,7 @@ def basisAndPenalty_Adaptive(x, knots, xmin, xmax, n_points, ord_AD=3, ad_smooth
     """
     FLOAT_EPS = np.finfo(float).eps
     dim_spline = len(x)
-    assert (dim_spline == 1)
+    assert dim_spline == 1
     if is_cyclic is None:
         is_cyclic = np.zeros(dim_spline, dtype=bool)
 
@@ -657,9 +815,18 @@ def basisAndPenalty_Adaptive(x, knots, xmin, xmax, n_points, ord_AD=3, ad_smooth
         Xs += [cSplineDes(knots[0], x[0], ord=ord, der=0)]
     else:
         Xs += [splineDesign(knots[0], x[0], ord=ord, der=0, outer_ok=True)]
-    S_list, B_list = adaptiveSmoother_1D_derBased(knots[0], xmin[0], xmax[0], n_points, ord_AD=ord_AD,
-                                                  ad_smooth_basis_size=ad_smooth_basis_size, ord=ord, der=der,
-                                                  outer_ok=outer_ok, cyclic=is_cyclic[0])
+    S_list, B_list = adaptiveSmoother_1D_derBased(
+        knots[0],
+        xmin[0],
+        xmax[0],
+        n_points,
+        ord_AD=ord_AD,
+        ad_smooth_basis_size=ad_smooth_basis_size,
+        ord=ord,
+        der=der,
+        outer_ok=outer_ok,
+        cyclic=is_cyclic[0],
+    )
 
     basis_dim = [Xs[0].shape[1]]
     if extra_pen:
@@ -677,7 +844,9 @@ def basisAndPenalty_Adaptive(x, knots, xmin, xmax, n_points, ord_AD=3, ad_smooth
     return X, B_list, S_list, basis_dim
 
 
-def basisAndPenalty_diff(x, knots, is_cyclic=None, order=4, outer_ok=True, sparseX=True, split_range=None):
+def basisAndPenalty_diff(
+    x, knots, is_cyclic=None, order=4, outer_ok=True, sparseX=True, split_range=None
+):
     """
     Description
     ===========
@@ -689,7 +858,7 @@ def basisAndPenalty_diff(x, knots, is_cyclic=None, order=4, outer_ok=True, spars
 
     """
     dim_spline = len(x)
-    assert (split_range is None)
+    assert split_range is None
     if is_cyclic is None:
         is_cyclic = np.zeros(dim_spline, dtype=bool)
 
@@ -698,7 +867,9 @@ def basisAndPenalty_diff(x, knots, is_cyclic=None, order=4, outer_ok=True, spars
     Ms = []
     basis_dim = []
     for k in range(dim_spline):
-        M, B = non_eqSpaced_diff_pen(knots[k], order, outer_ok=outer_ok, cyclic=is_cyclic[k])
+        M, B = non_eqSpaced_diff_pen(
+            knots[k], order, outer_ok=outer_ok, cyclic=is_cyclic[k]
+        )
         if is_cyclic[k]:
             Xs += [cSplineDes(knots[k], x[k], ord=order, der=0)]
             # Xs[k] will be of shape (n samples x spline dimension)
@@ -719,7 +890,9 @@ def basisAndPenalty_diff(x, knots, is_cyclic=None, order=4, outer_ok=True, spars
     return X, B_list, S_list, basis_dim
 
 
-def basisAndPenalty_EqSpaced(x, knots, is_cyclic=None, ord=4, sparseX=True, split_range=None):
+def basisAndPenalty_EqSpaced(
+    x, knots, is_cyclic=None, ord=4, sparseX=True, split_range=None
+):
     """
     Description
     ===========
@@ -731,7 +904,7 @@ def basisAndPenalty_EqSpaced(x, knots, is_cyclic=None, ord=4, sparseX=True, spli
 
     """
     dim_spline = len(x)
-    assert (split_range is None)
+    assert split_range is None
     if is_cyclic is None:
         is_cyclic = np.zeros(dim_spline, dtype=bool)
 
@@ -751,7 +924,7 @@ def basisAndPenalty_EqSpaced(x, knots, is_cyclic=None, ord=4, sparseX=True, spli
             Xs += [splineDesign(knots[k], x[k], ord=ord, der=0, outer_ok=True)]
             # trivial case of a single step element
             if Xs[k].shape[1] == 1:
-                Bs += [sparse.csr_matrix([[1.]], dtype=np.float64)]
+                Bs += [sparse.csr_matrix([[1.0]], dtype=np.float64)]
             else:
                 Bs += [smPenalty_1D_BSpline(Xs[k].shape[1])]
             Ms += [np.dot(Bs[-1].T, Bs[-1])]
@@ -766,29 +939,31 @@ def basisAndPenalty_EqSpaced(x, knots, is_cyclic=None, ord=4, sparseX=True, spli
     return X, B_list, S_list, basis_dim
 
 
-def basis_temporal(X, basis_kernel, trial_idx, pre_trial_dur, post_trial_dur, time_bin, sparseX=True):
+def basis_temporal(
+    X, basis_kernel, trial_idx, pre_trial_dur, post_trial_dur, time_bin, sparseX=True
+):
     # # x list of length 1 (1-dim temporal filter)
     if trial_idx is None:
         if len(X) > 1:
-            raise ValueError('temporal kernel signal to be filtered should be 1-dim')
+            raise ValueError("temporal kernel signal to be filtered should be 1-dim")
         x = X[0]
         Xc = np.zeros((x.shape[0], basis_kernel.shape[1]))
         for k in range(basis_kernel.shape[1]):
             kern_vec = basis_kernel[:, k].flatten()
-            Xc[:, k] = signal.fftconvolve(x, kern_vec, mode='same')
+            Xc[:, k] = signal.fftconvolve(x, kern_vec, mode="same")
     else:
         x = X[0]
         Xc = np.zeros((x.shape[0], basis_kernel.shape[1]))
         skip_start = int(np.ceil(pre_trial_dur / time_bin))
         skip_end = int(np.ceil(post_trial_dur / time_bin))
         if (trial_idx is None) or len(trial_idx) == 0:
-            raise ValueError('must indicate trial indices for temp kernel')
+            raise ValueError("must indicate trial indices for temp kernel")
         for k in range(basis_kernel.shape[1]):
             kern_vec = basis_kernel[:, k].flatten()
             for tr in np.unique(trial_idx):
                 sel = np.where(trial_idx == tr)[0]
-                sel = sel[skip_start:sel.shape[0] - skip_end]
-                sel_conv = signal.fftconvolve(x[sel], kern_vec, mode='same')
+                sel = sel[skip_start : sel.shape[0] - skip_end]
+                sel_conv = signal.fftconvolve(x[sel], kern_vec, mode="same")
                 Xc[sel, k] = sel_conv
     if sparseX:
         return sparse.csr_matrix(Xc)
@@ -826,28 +1001,48 @@ def fit_penalised_LS(y, X, M, sp):
 
 
 class covarate_smooth(object):
-    def __init__(self, x_cov, ord=4, knots=None, knots_num=15, perc_out_range=0.0, is_cyclic=None, lam=None,
-                 is_temporal_kernel=False,
-                 kernel_direction=0, kernel_length=21, knots_percentiles=(0, 100), penalty_type='EqSpaced', der=None,
-                 trial_idx=None, time_bin=None, pre_trial_dur=None, post_trial_dur=None, penalty_measure=None,
-                 event_input=True,
-                 ord_AD=3, ad_knots=4, domain_fun=lambda x: np.ones(x.shape, dtype=bool), prercomp_SandB=None,
-                 repeat_extreme_knots=True):
+    def __init__(
+        self,
+        x_cov,
+        ord=4,
+        knots=None,
+        knots_num=15,
+        perc_out_range=0.0,
+        is_cyclic=None,
+        lam=None,
+        is_temporal_kernel=False,
+        kernel_direction=0,
+        kernel_length=21,
+        knots_percentiles=(0, 100),
+        penalty_type="EqSpaced",
+        der=None,
+        trial_idx=None,
+        time_bin=None,
+        pre_trial_dur=None,
+        post_trial_dur=None,
+        penalty_measure=None,
+        event_input=True,
+        ord_AD=3,
+        ad_knots=4,
+        domain_fun=lambda x: np.ones(x.shape, dtype=bool),
+        prercomp_SandB=None,
+        repeat_extreme_knots=True,
+    ):
         """
-            x_cov: n-dim sampled points in which to evaluate the basis function
-            ord: number of coefficient of the spline (spline degree + 1)
-            knots: list of knots to be used to constuct the spline basis
-            knots_num: if knots are not given, number of equispaced knots to be generated
-            perc_out_range: percentage of knots that are outside the x_cov range
-            is_cyclic: (None set all covariates to non-cyclic), boolean vector flagging which coordinate is cyclic
-            lam: smooth weight per coordinate
-            is_temporal_kernek: boolean, if true convolve x with basis
-            kernel_direction: used if is_temporal_kernel is true
-                values:
-                    - 0: if bidirectional
-                    - -1: if negative
-                    - 1: if positive
-            measure: a function defined on [0,1] that will be rescaled linearly to [min(knots),max(knots)]
+        x_cov: n-dim sampled points in which to evaluate the basis function
+        ord: number of coefficient of the spline (spline degree + 1)
+        knots: list of knots to be used to constuct the spline basis
+        knots_num: if knots are not given, number of equispaced knots to be generated
+        perc_out_range: percentage of knots that are outside the x_cov range
+        is_cyclic: (None set all covariates to non-cyclic), boolean vector flagging which coordinate is cyclic
+        lam: smooth weight per coordinate
+        is_temporal_kernek: boolean, if true convolve x with basis
+        kernel_direction: used if is_temporal_kernel is true
+            values:
+                - 0: if bidirectional
+                - -1: if negative
+                - 1: if positive
+        measure: a function defined on [0,1] that will be rescaled linearly to [min(knots),max(knots)]
 
         """
         self.der = der
@@ -869,7 +1064,7 @@ class covarate_smooth(object):
         if self.post_trial_dur is None:
             self.post_trial_dur = 0
 
-        if np.isscalar(self.der) and self.der < 2 or self.penalty_type == 'EqSpaced':
+        if np.isscalar(self.der) and self.der < 2 or self.penalty_type == "EqSpaced":
             self.extra_pen = 0  # no extra lambda term
         else:
             self.extra_pen = 1
@@ -881,7 +1076,9 @@ class covarate_smooth(object):
         self.set_cyclic(is_cyclic)
 
         if is_temporal_kernel:
-            self._set_knots_temporal(knots_num, kernel_length, kernel_direction, knots=knots)
+            self._set_knots_temporal(
+                knots_num, kernel_length, kernel_direction, knots=knots
+            )
 
             self.eval_basis = self._eval_basis_temporal
             self.set_knots = self._set_knots_temporal
@@ -889,15 +1086,20 @@ class covarate_smooth(object):
 
         else:
             # set knots
-            self._set_knots_spatial(knots, knots_num=knots_num,
-                                    perc_out_range=perc_out_range,
-                                    percentiles=knots_percentiles,
-                                    is_cyclic=is_cyclic,
-                                    repeat_extreme_knots=repeat_extreme_knots)
+            self._set_knots_spatial(
+                knots,
+                knots_num=knots_num,
+                perc_out_range=perc_out_range,
+                percentiles=knots_percentiles,
+                is_cyclic=is_cyclic,
+                repeat_extreme_knots=repeat_extreme_knots,
+            )
 
             self.eval_basis = self._eval_basis_spatial
             self.set_knots = self._set_knots_spatial
-            self.eval_basis_and_penalty = lambda: self._eval_basis_and_penalty_spatial(prercomp_SandB=prercomp_SandB)
+            self.eval_basis_and_penalty = lambda: self._eval_basis_and_penalty_spatial(
+                prercomp_SandB=prercomp_SandB
+            )
 
         # set measure for non-uniform penalties
         if not penalty_measure is None:
@@ -906,7 +1108,14 @@ class covarate_smooth(object):
             self.measure = lambda x: 1
 
         # eval the smooths and the penalty
-        self.X, self.B_list, self.S_list, self.colMean_X, self.basis_dim, self.basis_kernel = self.eval_basis_and_penalty()
+        (
+            self.X,
+            self.B_list,
+            self.S_list,
+            self.colMean_X,
+            self.basis_dim,
+            self.basis_kernel,
+        ) = self.eval_basis_and_penalty()
 
         self.set_lam(lam)
 
@@ -919,7 +1128,10 @@ class covarate_smooth(object):
 
         is_equal = is_equal and self._ord == other._ord
         is_equal = is_equal and self.is_temporal_kernel == other.is_temporal_kernel
-        if 'kernel_direction' in self.__dict__.keys() and 'kernel_direction' in other.__dict__.keys():
+        if (
+            "kernel_direction" in self.__dict__.keys()
+            and "kernel_direction" in other.__dict__.keys()
+        ):
             is_equal = is_equal and self.kernel_direction == other.kernel_direction
 
         is_equal = is_equal and all(self.is_cyclic == other.is_cyclic)
@@ -929,64 +1141,94 @@ class covarate_smooth(object):
         if self.time_pt_for_kernel is None:
             is_equal = is_equal and (other.time_pt_for_kernel is None)
         else:
-            is_equal = is_equal and all(self.time_pt_for_kernel == other.time_pt_for_kernel)
-        is_equal = is_equal and all((self.X == other.X).__dict__['data'])
+            is_equal = is_equal and all(
+                self.time_pt_for_kernel == other.time_pt_for_kernel
+            )
+        is_equal = is_equal and all((self.X == other.X).__dict__["data"])
         is_equal = is_equal and self.basis_dim == other.basis_dim
         if self.basis_kernel is None:
             is_equal = is_equal and (other.basis_kernel is None)
         else:
-            is_equal = is_equal and all((self.basis_kernel == other.basis_kernel).__dict__['data'])
+            is_equal = is_equal and all(
+                (self.basis_kernel == other.basis_kernel).__dict__["data"]
+            )
 
         cc = 0
         for B in self.B_list:
-            is_equal = is_equal and all((B == other.B_list[cc]).__dict__['data'])
+            is_equal = is_equal and all((B == other.B_list[cc]).__dict__["data"])
             cc += 1
         return is_equal
 
-    def _set_knots_spatial(self, knots, knots_num=None, perc_out_range=None,
-                           is_cyclic=[False], percentiles=(2, 98), repeat_extreme_knots=False):
+    def _set_knots_spatial(
+        self,
+        knots,
+        knots_num=None,
+        perc_out_range=None,
+        is_cyclic=[False],
+        percentiles=(2, 98),
+        repeat_extreme_knots=False,
+    ):
         """
-            Set new knots
+        Set new knots
         """
         if knots is None:
-            self.knots = self.computeKnots(knots_num, perc_out_range, percentiles=percentiles)
+            self.knots = self.computeKnots(
+                knots_num, perc_out_range, percentiles=percentiles
+            )
         else:
             if len(knots) != self.dim:
-                raise ValueError('need a knot for every dimention of the covariate smooth')
+                raise ValueError(
+                    "need a knot for every dimention of the covariate smooth"
+                )
             self.knots = np.zeros(self.dim, dtype=object)
             for i in range(self.dim):
                 if (not is_cyclic[i]) and repeat_extreme_knots:
-                    if any(knots[i][:self._ord] != knots[i][0]):
-                        knots[i] = np.hstack(([knots[i][0]] * (self._ord - 1), knots[i]))
-                    if any(knots[i][-self._ord:] != knots[i][-1]):
-                        knots[i] = np.hstack((knots[i], [knots[i][-1]] * (self._ord - 1)))
+                    if any(knots[i][: self._ord] != knots[i][0]):
+                        knots[i] = np.hstack(
+                            ([knots[i][0]] * (self._ord - 1), knots[i])
+                        )
+                    if any(knots[i][-self._ord :] != knots[i][-1]):
+                        knots[i] = np.hstack(
+                            (knots[i], [knots[i][-1]] * (self._ord - 1))
+                        )
                 self.knots[i] = np.array(knots[i])
         self.time_pt_for_kernel = None
 
-    def _set_knots_temporal(self, knots_num, kernel_length, kernel_direction, knots=None):
+    def _set_knots_temporal(
+        self, knots_num, kernel_length, kernel_direction, knots=None
+    ):
         if kernel_length % 2 == 0:
             kernel_length += 1
         if not knots is None:
             if len(knots) != 1:
                 raise ValueError(
-                    'temporal kernel have 1D response funciton, a list containing one input vector is required')
+                    "temporal kernel have 1D response funciton, a list containing one input vector is required"
+                )
             knots = knots[0]
 
         repeats = self._ord - 1
-        kernel_length = kernel_length #+ self._ord + 1
+        kernel_length = kernel_length  # + self._ord + 1
         if kernel_direction == 0:
             if knots is None:
                 times = np.linspace(1 - kernel_length, kernel_length - 1, kernel_length)
-                knots = np.hstack(([-(kernel_length - 1)] * repeats,
-                                   np.linspace(-(kernel_length - 1), (kernel_length - 1), knots_num),
-                                   [(kernel_length - 1)] * repeats))
+                knots = np.hstack(
+                    (
+                        [-(kernel_length - 1)] * repeats,
+                        np.linspace(
+                            -(kernel_length - 1), (kernel_length - 1), knots_num
+                        ),
+                        [(kernel_length - 1)] * repeats,
+                    )
+                )
             else:
                 times = np.linspace(knots[0], knots[-1], kernel_length)
 
         elif kernel_direction == 1:
             if knots is None:
                 int_knots = np.linspace(0.000001, knots_num, knots_num)
-                knots = np.hstack(([int_knots[0]] * repeats, int_knots, [(int_knots[-1])] * repeats))
+                knots = np.hstack(
+                    ([int_knots[0]] * repeats, int_knots, [(int_knots[-1])] * repeats)
+                )
 
             times_pos = np.linspace(0, knots[-1], (kernel_length + 1) // 2)
             times_neg = np.linspace(-knots[-1], -times_pos[1], (kernel_length - 1) // 2)
@@ -995,7 +1237,9 @@ class covarate_smooth(object):
         elif kernel_direction == -1:
             if knots is None:
                 int_knots = np.linspace(0.000001, knots_num, knots_num)
-                knots = np.hstack(([int_knots[0]] * repeats, int_knots, [(int_knots[-1])] * repeats))
+                knots = np.hstack(
+                    ([int_knots[0]] * repeats, int_knots, [(int_knots[-1])] * repeats)
+                )
                 knots = -knots[::-1]
 
             # else:
@@ -1010,7 +1254,7 @@ class covarate_smooth(object):
 
     def set_cyclic(self, is_cyclic):
         """
-            Set whose coordinate is cyclic
+        Set whose coordinate is cyclic
         """
         if is_cyclic is None:
             self.is_cyclic = np.zeros(self.dim, dtype=bool)
@@ -1019,14 +1263,14 @@ class covarate_smooth(object):
         else:
             is_cyclic = np.array(is_cyclic)
             if not is_cyclic.dtype.type is np.bool_:
-                raise ValueError('is_cyclic must be numpy array of bool')
+                raise ValueError("is_cyclic must be numpy array of bool")
             if is_cyclic.shape[0] != self.dim:
-                raise ValueError('is_cyclic must have a value for every covariate')
+                raise ValueError("is_cyclic must have a value for every covariate")
             self.is_cyclic = is_cyclic
 
     def set_lam(self, lam):
         """
-            Set smoothing penalty per coordinate
+        Set smoothing penalty per coordinate
         """
         if lam is None:
             self.lam = 0.05 * np.ones(len(self.S_list))
@@ -1034,20 +1278,22 @@ class covarate_smooth(object):
             self.lam = lam * np.ones(len(self.S_list))
         else:
             if len(lam) != len(self.S_list):
-                print('lam len:', len(lam), 'pen len', len(self.S_list))
-                raise ValueError('Smoothing penalty should correspond to the penalty matrix that are linearly summed')
+                print("lam len:", len(lam), "pen len", len(self.S_list))
+                raise ValueError(
+                    "Smoothing penalty should correspond to the penalty matrix that are linearly summed"
+                )
             self.lam = np.array(lam)
 
     def computeKnots(self, knots_num, perc_out_range, percentiles=(2, 98)):
         """
-            Compute equispaced knots based on input data values (cover all the data range)
+        Compute equispaced knots based on input data values (cover all the data range)
         """
         knots = np.zeros(self.dim, dtype=object)
         i = 0
-        #print(percentiles)
+        # print(percentiles)
         for xx in self._x:
             if self.is_cyclic[i]:
-                perc = [0,100]
+                perc = [0, 100]
             else:
                 perc = percentiles
             # select range
@@ -1061,13 +1307,15 @@ class covarate_smooth(object):
             if not self.is_cyclic[i]:
                 kn0 = knots[i][0]
                 knend = knots[i][-1]
-                knots[i] = np.hstack(([kn0] * (self._ord - 1), knots[i], [knend] * (self._ord - 1)))
+                knots[i] = np.hstack(
+                    ([kn0] * (self._ord - 1), knots[i], [knend] * (self._ord - 1))
+                )
             i += 1
         return knots
 
     def _eval_basis_and_penalty_spatial(self, prercomp_SandB=None):
         """
-                    Evaluate the basis in the datum and compute the penalty and X col means
+        Evaluate the basis in the datum and compute the penalty and X col means
         """
         self.xmin = np.zeros(len(self.knots))
         self.xmax = np.zeros(len(self.knots))
@@ -1075,17 +1323,27 @@ class covarate_smooth(object):
         for cc in range(self.knots.shape[0]):
             self.xmin[cc] = self.knots[cc][0]
             self.xmax[cc] = self.knots[cc][-1]
-        X, B, S, basis_dim = basisAndPenalty(self._x, self.knots, is_cyclic=self.is_cyclic, ord=self._ord,
-                                             penalty_type=self.penalty_type, xmin=self.xmin, xmax=self.xmax,
-                                             der=self.der,
-                                             measure=self.measure, ord_AD=self.ord_AD,
-                                             ad_knots=self.ad_knots, domain_fun=self.domain_fun,
-                                             prercomp_SandB=prercomp_SandB)
-        colMean_X = np.mean(np.array(X[:, :-1].toarray()[~self.nan_filter, :], dtype=np.double), axis=0)
+        X, B, S, basis_dim = basisAndPenalty(
+            self._x,
+            self.knots,
+            is_cyclic=self.is_cyclic,
+            ord=self._ord,
+            penalty_type=self.penalty_type,
+            xmin=self.xmin,
+            xmax=self.xmax,
+            der=self.der,
+            measure=self.measure,
+            ord_AD=self.ord_AD,
+            ad_knots=self.ad_knots,
+            domain_fun=self.domain_fun,
+            prercomp_SandB=prercomp_SandB,
+        )
+        colMean_X = np.mean(
+            np.array(X[:, :-1].toarray()[~self.nan_filter, :], dtype=np.double), axis=0
+        )
         return X, B, S, colMean_X, basis_dim, None
 
     def _eval_basis_and_penalty_temporal(self):
-
         self.xmin = np.zeros(len(self.knots))
         self.xmax = np.zeros(len(self.knots))
 
@@ -1093,20 +1351,43 @@ class covarate_smooth(object):
             self.xmin[cc] = self.knots[cc][0]
             self.xmax[cc] = self.knots[cc][-1]
 
-        self.basis_kernel, B, S, basis_dim = basisAndPenalty(np.array([self.time_pt_for_kernel]), self.knots,
-                                                             is_cyclic=self.is_cyclic, ord=self._ord,
-                                                             der=self.der, xmin=self.xmin, xmax=self.xmax,
-                                                             penalty_type=self.penalty_type,
-                                                             measure=self.measure, ord_AD=self.ord_AD,
-                                                             ad_knots=self.ad_knots, domain_fun=None)
-        X = self._eval_basis_temporal(self._x, self.trial_idx, self.pre_trial_dur, self.post_trial_dur, self.time_bin)
-        colMean_X = np.mean(np.array(X[:, :-1].toarray()[~self.nan_filter, :], dtype=np.double), axis=0)
+        self.basis_kernel, B, S, basis_dim = basisAndPenalty(
+            np.array([self.time_pt_for_kernel]),
+            self.knots,
+            is_cyclic=self.is_cyclic,
+            ord=self._ord,
+            der=self.der,
+            xmin=self.xmin,
+            xmax=self.xmax,
+            penalty_type=self.penalty_type,
+            measure=self.measure,
+            ord_AD=self.ord_AD,
+            ad_knots=self.ad_knots,
+            domain_fun=None,
+        )
+        X = self._eval_basis_temporal(
+            self._x,
+            self.trial_idx,
+            self.pre_trial_dur,
+            self.post_trial_dur,
+            self.time_bin,
+        )
+        colMean_X = np.mean(
+            np.array(X[:, :-1].toarray()[~self.nan_filter, :], dtype=np.double), axis=0
+        )
         return X, B, S, colMean_X, basis_dim, self.basis_kernel
 
-    def set_new_covariate(self, x_cov, knots=None, knots_num=None, perc_out_range=None, kernel_length=None,
-                          kernel_direction=None):
+    def set_new_covariate(
+        self,
+        x_cov,
+        knots=None,
+        knots_num=None,
+        perc_out_range=None,
+        kernel_length=None,
+        kernel_direction=None,
+    ):
         """
-            Set new kovariates and refresh the results
+        Set new kovariates and refresh the results
         """
         if self.is_temporal_kernel:
             self.set_knots(knots_num, kernel_length, kernel_direction)
@@ -1114,10 +1395,19 @@ class covarate_smooth(object):
             self.set_knots(knots, knots_num=knots_num, perc_out_range=perc_out_range)
         self._x = np.array(x_cov)
         self.nan_filter = np.array(np.sum(np.isnan(self._x), axis=0), dtype=bool)
-        self.X, self.B_list, self.S_list, self.colMean_X, self.basis_dim, self.basis_kernel = self.eval_basis_and_penalty()
+        (
+            self.X,
+            self.B_list,
+            self.S_list,
+            self.colMean_X,
+            self.basis_dim,
+            self.basis_kernel,
+        ) = self.eval_basis_and_penalty()
 
     def compute_Bx(self):
-        if self.dim == 1 and (self.penalty_type in ['EqSpaced', 'diff'] or self.der <= 1):
+        if self.dim == 1 and (
+            self.penalty_type in ["EqSpaced", "diff"] or self.der <= 1
+        ):
             Bx = np.sqrt(self.lam[0]) * self.B_list[0]
 
         else:
@@ -1160,7 +1450,7 @@ class covarate_smooth(object):
                 return Bx[:, :-1]
             # preprocess X in order to remove the undetermined intercept fit in an additive model
             X = self.X[:, :-1]
-    
+
             Bx = Bx[:, :-1]
             if type(X) is sparse.csr_matrix:
                 X = X.toarray() - self.colMean_X
@@ -1171,7 +1461,7 @@ class covarate_smooth(object):
                 return Bx
             # preprocess X in order to remove the undetermined intercept fit in an additive model
             X = self.X
-    
+
             Bx = Bx
             if type(X) is sparse.csr_matrix:
                 X = X.toarray()
@@ -1184,34 +1474,44 @@ class covarate_smooth(object):
         return X, Bx
 
     def mean_center(self, X):
-
         return np.array(X[:, :-1] - np.mean(X[~self.nan_filter, :-1], axis=0))
 
     def _eval_basis_spatial(self, X):
         """
-            Evaluate the basis function
+        Evaluate the basis function
         """
-        fX, _, _, _ = basisAndPenalty(X, self.knots, is_cyclic=self.is_cyclic, ord=self._ord, der=self.der,
-                                      penalty_type=self.penalty_type, xmin=self.xmin, xmax=self.xmax,
-                                      measure=self.measure, compute_pen=False)
+        fX, _, _, _ = basisAndPenalty(
+            X,
+            self.knots,
+            is_cyclic=self.is_cyclic,
+            ord=self._ord,
+            der=self.der,
+            penalty_type=self.penalty_type,
+            xmin=self.xmin,
+            xmax=self.xmax,
+            measure=self.measure,
+            compute_pen=False,
+        )
         return fX
 
-    def _eval_basis_temporal(self, X, trial_idx, pre_trial_dur, post_trial_dur, time_bin):
+    def _eval_basis_temporal(
+        self, X, trial_idx, pre_trial_dur, post_trial_dur, time_bin
+    ):
         # x list of length 1 (1-dim temporal filter)
         if len(X) > 1:
-            raise ValueError('temporal kernel signal to be filtered should be 1-dim')
+            raise ValueError("temporal kernel signal to be filtered should be 1-dim")
         x = X[0]
         Xc = np.zeros((x.shape[0], self.basis_kernel.shape[1]))
         skip_start = int(np.ceil(pre_trial_dur / time_bin))
         skip_end = int(np.ceil(post_trial_dur / time_bin))
         if (trial_idx is None) or len(trial_idx) == 0:
-            raise ValueError('must indicate trial indices for temp kernel')
+            raise ValueError("must indicate trial indices for temp kernel")
         for k in range(self.basis_kernel.shape[1]):
             kern_vec = self.basis_kernel[:, k].toarray().flatten()
             for tr in np.unique(trial_idx):
                 sel = np.where(trial_idx == tr)[0]
-                sel = sel[skip_start:sel.shape[0] - skip_end]
-                sel_conv = signal.fftconvolve(x[sel], kern_vec, mode='same')
+                sel = sel[skip_start : sel.shape[0] - skip_end]
+                sel_conv = signal.fftconvolve(x[sel], kern_vec, mode="same")
                 Xc[sel, k] = sel_conv
 
         return sparse.csr_matrix(Xc)
@@ -1222,12 +1522,34 @@ class smooths_handler(object):
         self.smooths_dict = {}
         self.smooths_var = []
 
-    def add_smooth(self, name, x_cov, ord=4, lam=None, knots=None, knots_num=15, perc_out_range=0.1, is_cyclic=None,
-                   is_temporal_kernel=False, kernel_direction=0, kernel_length=21, penalty_type='EqSpaced', der=None,
-                   knots_percentiles=(2, 98), trial_idx=None, time_bin=0.006, pre_trial_dur=None, post_trial_dur=None,
-                   penalty_measure=None, event_input=True, ord_AD=None, ad_knots=None,
-                   domain_fun=lambda x: np.zeros(x.shape, dtype=bool),
-                   prercomp_SandB=None, repeat_extreme_knots=True):
+    def add_smooth(
+        self,
+        name,
+        x_cov,
+        ord=4,
+        lam=None,
+        knots=None,
+        knots_num=15,
+        perc_out_range=0.1,
+        is_cyclic=None,
+        is_temporal_kernel=False,
+        kernel_direction=0,
+        kernel_length=21,
+        penalty_type="EqSpaced",
+        der=None,
+        knots_percentiles=(2, 98),
+        trial_idx=None,
+        time_bin=0.006,
+        pre_trial_dur=None,
+        post_trial_dur=None,
+        penalty_measure=None,
+        event_input=True,
+        ord_AD=None,
+        ad_knots=None,
+        domain_fun=lambda x: np.zeros(x.shape, dtype=bool),
+        prercomp_SandB=None,
+        repeat_extreme_knots=True,
+    ):
         """
         :param name: string, name of the variable
         :param x_cov: list containing the input variable (the list will contain 1 vector per dimension of the variable)
@@ -1255,19 +1577,32 @@ class smooths_handler(object):
             self.smooths_var.remove(name)
             self.smooths_dict.pop(name)
         self.smooths_var += [name]
-        self.smooths_dict[name] = covarate_smooth(x_cov, ord=ord, knots=knots, knots_num=knots_num,
-                                                  perc_out_range=perc_out_range, is_cyclic=is_cyclic, lam=lam,
-                                                  is_temporal_kernel=is_temporal_kernel,
-                                                  kernel_direction=kernel_direction,
-                                                  kernel_length=kernel_length, penalty_type=penalty_type, der=der,
-                                                  knots_percentiles=knots_percentiles, trial_idx=trial_idx,
-                                                  time_bin=time_bin, pre_trial_dur=pre_trial_dur,
-                                                  post_trial_dur=post_trial_dur,
-                                                  penalty_measure=penalty_measure,
-                                                  event_input=event_input, ord_AD=ord_AD,
-                                                  ad_knots=ad_knots, domain_fun=domain_fun,
-                                                  prercomp_SandB=prercomp_SandB,
-                                                  repeat_extreme_knots=repeat_extreme_knots)
+        self.smooths_dict[name] = covarate_smooth(
+            x_cov,
+            ord=ord,
+            knots=knots,
+            knots_num=knots_num,
+            perc_out_range=perc_out_range,
+            is_cyclic=is_cyclic,
+            lam=lam,
+            is_temporal_kernel=is_temporal_kernel,
+            kernel_direction=kernel_direction,
+            kernel_length=kernel_length,
+            penalty_type=penalty_type,
+            der=der,
+            knots_percentiles=knots_percentiles,
+            trial_idx=trial_idx,
+            time_bin=time_bin,
+            pre_trial_dur=pre_trial_dur,
+            post_trial_dur=post_trial_dur,
+            penalty_measure=penalty_measure,
+            event_input=event_input,
+            ord_AD=ord_AD,
+            ad_knots=ad_knots,
+            domain_fun=domain_fun,
+            prercomp_SandB=prercomp_SandB,
+            repeat_extreme_knots=repeat_extreme_knots,
+        )
         return True
 
     def __getitem__(self, name):
@@ -1276,7 +1611,7 @@ class smooths_handler(object):
     def __eq__(self, other):
         is_eq = True
         for name in self.smooths_var:
-            print('check', name)
+            print("check", name)
             is_eq = is_eq and (self.smooths_dict[name] == other.smooths_dict[name])
         return is_eq
 
@@ -1286,17 +1621,19 @@ class smooths_handler(object):
         ## smooth_pen is a vector with all the penalties in order per variable
         tot_smooths_required = 0
         for cov_name in list_cov:
-            tot_smooths_required = (tot_smooths_required + len(
-                self.smooths_dict[cov_name].S_list))  # self.smooths_dict[cov_name].dim +\
+            tot_smooths_required = tot_smooths_required + len(
+                self.smooths_dict[cov_name].S_list
+            )  # self.smooths_dict[cov_name].dim +\
             # self.smooths_dict[cov_name].extra_pen)
         if len(smooth_pen) != tot_smooths_required:
             raise ValueError(
-                'smooth_pen length must match the covariates number, (if the mean funciton mu(x) : R^n --> R, smooth_pen must be of length n')
+                "smooth_pen length must match the covariates number, (if the mean funciton mu(x) : R^n --> R, smooth_pen must be of length n"
+            )
 
         cc = 0
         for cov_name in list_cov:
             smooth_num = len(self.smooths_dict[cov_name].S_list)
-            lam = smooth_pen[cc:cc + smooth_num]
+            lam = smooth_pen[cc : cc + smooth_num]
             cc = cc + smooth_num
             # set the new penalties (make sure that a new penalty matrix is created, lambda is always used
             self.smooths_dict[cov_name].set_lam(lam)
@@ -1333,7 +1670,9 @@ class smooths_handler(object):
         return Xagu, yagu
 
     def get_additive_model_endog_and_exog(self, name_list, y):
-        Xagu, yagu, index_cov = self.get_general_additive_model_endog_and_exog(name_list, y, weights=None)
+        Xagu, yagu, index_cov = self.get_general_additive_model_endog_and_exog(
+            name_list, y, weights=None
+        )
         return Xagu, yagu, index_cov
 
     def get_general_additive_model_endog_and_exog(self, name_list, y, weights=None):
@@ -1422,7 +1761,6 @@ class smooths_handler(object):
         index_cov = {}
         count = 1
         for name in name_list:
-
             sm_cov = self.smooths_dict[name]
 
             if len(name_list) > 0:
@@ -1446,7 +1784,7 @@ class smooths_handler(object):
         first = True
         index_cov = {}
         count = 1
-        #t0 = perf_counter()
+        # t0 = perf_counter()
         # # calculate col number
         # num_col = 1
         # for name in name_list:
@@ -1454,7 +1792,6 @@ class smooths_handler(object):
         # X = np.zeros((self.smooths_dict[name].X.shape[1],num_col))
 
         for name in name_list:
-
             sm_cov = self.smooths_dict[name]
 
             if len(name_list) > 0:
@@ -1471,7 +1808,7 @@ class smooths_handler(object):
             if type(X) is sparse.csr.csr_matrix:
                 hstack_X = sparse.hstack
             else:
-                #print('full matrix stack')
+                # print('full matrix stack')
                 hstack_X = np.hstack
 
             if first:
@@ -1479,13 +1816,13 @@ class smooths_handler(object):
                 fullX = hstack_X((np.ones((X.shape[0], 1)), X.copy()))
             else:
                 fullX = hstack_X((fullX, X))
-        #t1 = perf_counter()
-        #print('hstack:', t1 - t0, 'sec')
-        #t0 = perf_counter()
+        # t1 = perf_counter()
+        # print('hstack:', t1 - t0, 'sec')
+        # t0 = perf_counter()
         if type(fullX) is sparse.csr.csr_matrix or type(fullX) is sparse.coo.coo_matrix:
             fullX = fullX.toarray()
         t1 = perf_counter()
-        #print('tranform to full matrix: ', t1 - t0, 'sec')
+        # print('tranform to full matrix: ', t1 - t0, 'sec')
 
         return fullX, index_cov
 
@@ -1558,22 +1895,24 @@ def compute_Sjs(sm_handler, var_list):
             S = np.zeros((tot_dim, tot_dim))
             Sk = sm_handler[var].S_list[k]
             shapeS = Sk.shape[0]
-            Sk = Sk[:shapeS - ii, :shapeS - ii]
-            S[cc: cc + Sk.shape[0], cc:cc + Sk.shape[0]] = Sk
+            Sk = Sk[: shapeS - ii, : shapeS - ii]
+            S[cc : cc + Sk.shape[0], cc : cc + Sk.shape[0]] = Sk
             S_all += [S]
         cc += Sk.shape[0]
 
     return S_all
 
 
-def checkGrad(grad, grad_app, tol=10 ** -3, print_res=False):
-    DEN = (np.linalg.norm(grad) + np.linalg.norm(grad_app))
+def checkGrad(grad, grad_app, tol=10**-3, print_res=False):
+    DEN = np.linalg.norm(grad) + np.linalg.norm(grad_app)
     if DEN == 0:
         check = 0
     else:
-        check = np.linalg.norm(grad_app - grad) / (np.linalg.norm(grad) + np.linalg.norm(grad_app))
+        check = np.linalg.norm(grad_app - grad) / (
+            np.linalg.norm(grad) + np.linalg.norm(grad_app)
+        )
     if print_res == True:
-        print('check:', check)
+        print("check:", check)
     return check > tol
 
 
@@ -1587,5 +1926,3 @@ def approx_grad(x0, dim, func, epsi):
             ej[j] = epsi
         grad[j] = (func(x0 + ej) - func(x0 - ej)) / (2 * epsi)
     return grad
-
-

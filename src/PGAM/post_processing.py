@@ -27,67 +27,109 @@ def pseudo_r2_comp(spk, fit, sm_handler, family, use_tp=None, exog=None):
     lin_pred = np.dot(exog_cut, fit.beta)
     mu = fit.family.fitted(lin_pred)
     res_dev_t = fit.family.resid_dev(spk, mu)
-    resid_deviance = np.sum(res_dev_t ** 2)
+    resid_deviance = np.sum(res_dev_t**2)
 
     null_mu = spk.sum() / spk.shape[0]
     null_dev_t = family.resid_dev(spk, [null_mu] * spk.shape[0])
 
-    null_deviance = np.sum(null_dev_t ** 2)
+    null_deviance = np.sum(null_dev_t**2)
 
     pseudo_r2 = (null_deviance - resid_deviance) / null_deviance
     return pseudo_r2, exog
 
 
-def compute_tuning(spk, fit, exog, var, sm_handler, filter_trials, trial_idx, dt=0.006,bins=15):
+def compute_tuning(
+    spk, fit, exog, var, sm_handler, filter_trials, trial_idx, dt=0.006, bins=15
+):
     # print('comp tun')
     mu = np.dot(exog[filter_trials], fit.beta)
 
     # convert to rate space (the sima2 works for log-normal, only log link)
     if type(fit.family.link) == sm.genmod.families.links.log:
-        sigma2 = np.einsum('ij,jk,ik->i', exog[filter_trials], fit.cov_beta, exog[filter_trials],
-                           optimize=True)
+        sigma2 = np.einsum(
+            "ij,jk,ik->i",
+            exog[filter_trials],
+            fit.cov_beta,
+            exog[filter_trials],
+            optimize=True,
+        )
         lam_s = np.exp(mu + sigma2 * 0.5)
-    else: # do not consider uncertainty on the beta...
+    else:  # do not consider uncertainty on the beta...
         lam_s = fit.family.fitted(mu)
 
-    if fit.smooth_info[var]['is_temporal_kernel'] and fit.smooth_info[var]['is_event_input']:
+    if (
+        fit.smooth_info[var]["is_temporal_kernel"]
+        and fit.smooth_info[var]["is_event_input"]
+    ):
         # print('temp')
-        x_axis, tuning, sc_based_tuning, counts = compute_tuning_temporal(var, lam_s, sm_handler, fit, spk, filter_trials, trial_idx, bins, dt)
+        x_axis, tuning, sc_based_tuning, counts = compute_tuning_temporal(
+            var, lam_s, sm_handler, fit, spk, filter_trials, trial_idx, bins, dt
+        )
         x_axis = x_axis.reshape(1, -1)
         tuning = tuning.reshape(1, -1)
         sc_based_tuning = sc_based_tuning.reshape(1, -1)
         counts = counts.reshape(1, -1)
     else:
         # print('spat')
-        x_axis, tuning, sc_based_tuning,counts = compute_tuning_spatial(var, lam_s, sm_handler, fit, spk, filter_trials, bins,dt)
+        x_axis, tuning, sc_based_tuning, counts = compute_tuning_spatial(
+            var, lam_s, sm_handler, fit, spk, filter_trials, bins, dt
+        )
     return x_axis, tuning, sc_based_tuning, counts
 
-def mutual_info_est(spk_counts, exog, fit, var, sm_handler, filter_trials, trial_idx, dt=0.006,bins=15,
-                    min_occupancy_sec=0.2):
+
+def mutual_info_est(
+    spk_counts,
+    exog,
+    fit,
+    var,
+    sm_handler,
+    filter_trials,
+    trial_idx,
+    dt=0.006,
+    bins=15,
+    min_occupancy_sec=0.2,
+):
     # print('here')
-    temp_bins, tuning, sc_based_tuning, count_bins = compute_tuning(spk_counts, fit, exog, var, sm_handler, filter_trials,trial_idx, dt=0.006, bins=bins)
+    temp_bins, tuning, sc_based_tuning, count_bins = compute_tuning(
+        spk_counts,
+        fit,
+        exog,
+        var,
+        sm_handler,
+        filter_trials,
+        trial_idx,
+        dt=0.006,
+        bins=bins,
+    )
     tuning = tuning * dt
     smooth_info = fit.smooth_info
     D = np.prod(tuning.shape)
     entropy_s = np.zeros(D) * np.nan
-    bl_use = count_bins.flatten() > min_occupancy_sec / dt # at least 500ms to estimate rate
+    bl_use = (
+        count_bins.flatten() > min_occupancy_sec / dt
+    )  # at least 500ms to estimate rate
     for cc in range(D):
         if bl_use[cc]:
             entropy_s[cc] = sts.poisson.entropy(tuning.flatten()[cc])
 
-    if (smooth_info[var]['kernel_direction'] == 1) and\
-            (smooth_info[var]['is_temporal_kernel']) and (smooth_info[var]['is_event_input']):
-
+    if (
+        (smooth_info[var]["kernel_direction"] == 1)
+        and (smooth_info[var]["is_temporal_kernel"])
+        and (smooth_info[var]["is_event_input"])
+    ):
         sel = temp_bins > 0
-        temp_bins = temp_bins[sel].reshape(1,-1)
-        count_bins = count_bins[sel].reshape(1,-1)
-        tuning = tuning[sel].reshape(1,-1)
-        sc_based_tuning = sc_based_tuning[sel].reshape(1,-1)
+        temp_bins = temp_bins[sel].reshape(1, -1)
+        count_bins = count_bins[sel].reshape(1, -1)
+        tuning = tuning[sel].reshape(1, -1)
+        sc_based_tuning = sc_based_tuning[sel].reshape(1, -1)
         entropy_s = entropy_s[sel[0]]
         bl_use = bl_use[sel[0]]
 
-    elif (smooth_info[var]['kernel_direction'] == -1) and\
-            (smooth_info[var]['is_temporal_kernel']) and (smooth_info[var]['is_event_input']):
+    elif (
+        (smooth_info[var]["kernel_direction"] == -1)
+        and (smooth_info[var]["is_temporal_kernel"])
+        and (smooth_info[var]["is_event_input"])
+    ):
         sel = temp_bins < 0
         temp_bins = temp_bins[sel]
         count_bins = count_bins[sel]
@@ -100,7 +142,11 @@ def mutual_info_est(spk_counts, exog, fit, var, sm_handler, filter_trials, trial
     mean_lam = np.sum(prob_s * tuning.flatten()[bl_use])
 
     try:
-        mi = (sts.poisson.entropy(mean_lam) - np.nansum(prob_s * entropy_s[bl_use])) * np.log2(np.exp(1)) / dt
+        mi = (
+            (sts.poisson.entropy(mean_lam) - np.nansum(prob_s * entropy_s[bl_use]))
+            * np.log2(np.exp(1))
+            / dt
+        )
     except:
         mi = np.nan
 
@@ -112,18 +158,20 @@ def mutual_info_est(spk_counts, exog, fit, var, sm_handler, filter_trials, trial
     return mi, tmp_val
 
 
-def alignRateForMI(y, lam_s, var, sm_handler, smooth_info, time_bin, filter_trials, trial_idx):
+def alignRateForMI(
+    y, lam_s, var, sm_handler, smooth_info, time_bin, filter_trials, trial_idx
+):
     """
     Slow aligment method.
     """
     reward = np.squeeze(sm_handler[var]._x)[filter_trials]
     # temp kernel where 161 timepoints long
-    size_kern = smooth_info[var]['time_pt_for_kernel'].shape[0]
+    size_kern = smooth_info[var]["time_pt_for_kernel"].shape[0]
     if size_kern % 2 == 0:
         size_kern += 1
     half_size = (size_kern - 1) // 2
     timept = np.arange(-half_size, half_size + 1) * time_bin
-    if (var.startswith('neu')) or var == 'spike_hist':
+    if (var.startswith("neu")) or var == "spike_hist":
         nbin = timept.shape[0]
         if nbin % 2 == 0:
             nbin += 1
@@ -139,28 +187,35 @@ def alignRateForMI(y, lam_s, var, sm_handler, smooth_info, time_bin, filter_tria
         rwd_tr = reward[select]
         lam_s_tr = lam_s[select]
         y_tr = y[select]
-        for ii in np.where(rwd_tr==1)[0]:
-            i0 = max(0, ii-half_size)
-            i1 = min(len(rwd_tr), ii+half_size+1)
+        for ii in np.where(rwd_tr == 1)[0]:
+            i0 = max(0, ii - half_size)
+            i1 = min(len(rwd_tr), ii + half_size + 1)
             d0 = ii - i0
             d1 = i1 - ii
             tmpmu = lam_s_tr[i0:i1]
             tmpy = y_tr[i0:i1]
-            iidx = np.array(np.round(nbin//2 + (-d0 + np.arange(0,d1+d0))*time_bin / (temp_bins[1]-temp_bins[0])),dtype=int)
+            iidx = np.array(
+                np.round(
+                    nbin // 2
+                    + (-d0 + np.arange(0, d1 + d0))
+                    * time_bin
+                    / (temp_bins[1] - temp_bins[0])
+                ),
+                dtype=int,
+            )
             for cc in np.unique(iidx):
                 tuning[cc] = tuning[cc] + tmpmu[iidx == cc].sum()
                 count_bins[cc] = count_bins[cc] + (iidx == cc).sum()
-                sc_based_tuning[cc] = sc_based_tuning[cc] + tmpy[iidx==cc].sum()
-
+                sc_based_tuning[cc] = sc_based_tuning[cc] + tmpy[iidx == cc].sum()
 
     tuning = tuning / count_bins
     sc_based_tuning = sc_based_tuning / count_bins
 
-    entropy_s = np.zeros(temp_bins.shape[0])*np.nan
+    entropy_s = np.zeros(temp_bins.shape[0]) * np.nan
     for cc in range(tuning.shape[0]):
         entropy_s[cc] = sts.poisson.entropy(tuning[cc])
 
-    if (var.startswith('neu')) or var == 'spike_hist':
+    if (var.startswith("neu")) or var == "spike_hist":
         sel = temp_bins > 0
         temp_bins = temp_bins[sel]
         count_bins = count_bins[sel]
@@ -171,7 +226,11 @@ def alignRateForMI(y, lam_s, var, sm_handler, smooth_info, time_bin, filter_tria
     mean_lam = np.sum(prob_s * tuning)
 
     try:
-        mi = (sts.poisson.entropy(mean_lam) - (prob_s * entropy_s).sum()) * np.log2(np.exp(1)) / time_bin
+        mi = (
+            (sts.poisson.entropy(mean_lam) - (prob_s * entropy_s).sum())
+            * np.log2(np.exp(1))
+            / time_bin
+        )
     except:
         mi = np.nan
 
@@ -185,17 +244,18 @@ def alignRateForMI(y, lam_s, var, sm_handler, smooth_info, time_bin, filter_tria
 
 def find_first_x_bin(result, num_events, bins):
     flag = False
-    skip_until = 0#nb.int64([0])
+    skip_until = 0  # nb.int64([0])
     for idx, val in np.ndenumerate(num_events):
         # print(idx,type(idx))
-        ii = idx[0]#nb.int64(idx)
+        ii = idx[0]  # nb.int64(idx)
         if ii < skip_until:
             continue
-        if (val != 0):
+        if val != 0:
             result[idx] = 1
             skip_until = ii + bins
             flag = True
-    return result,flag
+    return result, flag
+
 
 # Modified from numpy.histogramdd
 def multidim_digitize(sample, bins=10):
@@ -209,18 +269,18 @@ def multidim_digitize(sample, bins=10):
 
     nbin = np.empty(D, int)
     edges = D * [None]
-    #dedges = D * [None]
+    # dedges = D * [None]
 
     try:
         M = len(bins)
         if M != D:
             raise ValueError(
-                'The dimension of bins must be equal to the dimension of the '
-                ' sample x.')
+                "The dimension of bins must be equal to the dimension of the "
+                " sample x."
+            )
     except TypeError:
         # bins is an integer
         bins = D * [bins]
-
 
     _range = (None,) * D
 
@@ -229,7 +289,8 @@ def multidim_digitize(sample, bins=10):
         if np.ndim(bins[i]) == 0:
             if bins[i] < 1:
                 raise ValueError(
-                    '`bins[{}]` must be positive, when an integer'.format(i))
+                    "`bins[{}]` must be positive, when an integer".format(i)
+                )
             smin, smax = np.lib.histograms._get_outer_edges(sample[:, i], _range[i])
             try:
                 n = operator.index(bins[i])
@@ -244,18 +305,19 @@ def multidim_digitize(sample, bins=10):
             edges[i] = np.asarray(bins[i])
             if np.any(edges[i][:-1] > edges[i][1:]):
                 raise ValueError(
-                    '`bins[{}]` must be monotonically increasing, when an array'
-                        .format(i))
+                    "`bins[{}]` must be monotonically increasing, when an array".format(
+                        i
+                    )
+                )
         else:
-            raise ValueError(
-                '`bins[{}]` must be a scalar or 1d array'.format(i))
+            raise ValueError("`bins[{}]` must be a scalar or 1d array".format(i))
 
         nbin[i] = len(edges[i]) - 1
 
         # Compute the bin number each sample falls into.
     Ncount = tuple(
         # avoid np.digitize to work around gh-11022
-        np.searchsorted(edges[i], sample[:, i], side='right') - 1
+        np.searchsorted(edges[i], sample[:, i], side="right") - 1
         for i in range(D)
     )
 
@@ -264,7 +326,7 @@ def multidim_digitize(sample, bins=10):
     # counted in the last bin, and not as an outlier.
     for i in range(D):
         # Find which points are on the rightmost edge.
-        on_edge = (sample[:, i] == edges[i][-1])
+        on_edge = sample[:, i] == edges[i][-1]
         # Shift these points one bin to the left.
         Ncount[i][on_edge] -= 1
 
@@ -274,51 +336,54 @@ def multidim_digitize(sample, bins=10):
         digit = Ncount[0]
     cedges = edges.copy()
     for i in range(D):
-        cedges[i] = 0.5*(cedges[i][:-1] + cedges[i][1:])
+        cedges[i] = 0.5 * (cedges[i][:-1] + cedges[i][1:])
 
     XY = np.meshgrid(*cedges)
     return digit, XY
 
-def compute_tuning_spatial(var, lam_s, sm_handler, fit, spk, filter_trials, bins,dt):
+
+def compute_tuning_spatial(var, lam_s, sm_handler, fit, spk, filter_trials, bins, dt):
     # check dimensionality of the basis
 
     # this gives error for 2d variable
-    vels = sm_handler[var]._x[:,filter_trials].T
+    vels = sm_handler[var]._x[:, filter_trials].T
     vel_bins = []
     for i in range(vels.shape[1]):
-        knots = fit.smooth_info[var]['knots'][i]
-        vel_bins.append(np.linspace(knots[0], knots[-1]-0.000001, bins + 1))
+        knots = fit.smooth_info[var]["knots"][i]
+        vel_bins.append(np.linspace(knots[0], knots[-1] - 0.000001, bins + 1))
     digit_vels, XY = multidim_digitize(vels, vel_bins)
 
-    tuning = np.zeros(XY[0].shape)*np.nan
-    sc_based_tuning = np.zeros(XY[0].shape)*np.nan
+    tuning = np.zeros(XY[0].shape) * np.nan
+    sc_based_tuning = np.zeros(XY[0].shape) * np.nan
     tot_s_vec = np.zeros(XY[0].shape)
 
     if vels.shape[1] == 1:
-        tuning = tuning.reshape(1,-1)
-        sc_based_tuning = sc_based_tuning.reshape(1,-1)
-        tot_s_vec = tot_s_vec.reshape(1,-1)
+        tuning = tuning.reshape(1, -1)
+        sc_based_tuning = sc_based_tuning.reshape(1, -1)
+        tot_s_vec = tot_s_vec.reshape(1, -1)
 
     for ii in np.unique(digit_vels):
         if ii == -1 or ii == np.prod(tuning.shape):
             continue
         idx = digit_vels == ii
         if vels.shape[1] > 1:
-            row,col = np.unravel_index(ii, tuning.shape)
+            row, col = np.unravel_index(ii, tuning.shape)
         else:
             row = 0
             col = ii
-        tuning[row,col] = np.nanmean(lam_s[idx])
-        sc_based_tuning[row,col] = spk[filter_trials][idx].mean()
-        tot_s_vec[row,col] = np.sum(idx)
+        tuning[row, col] = np.nanmean(lam_s[idx])
+        sc_based_tuning[row, col] = spk[filter_trials][idx].mean()
+        tot_s_vec[row, col] = np.sum(idx)
 
     return XY, tuning / dt, sc_based_tuning / dt, tot_s_vec
 
-def compute_tuning_temporal(var, lam_s, sm_handler, fit, spk, filter_trials,trial_idx, bins, dt):
-    
+
+def compute_tuning_temporal(
+    var, lam_s, sm_handler, fit, spk, filter_trials, trial_idx, bins, dt
+):
     events = np.array(np.squeeze(sm_handler[var]._x)[filter_trials], dtype=np.int64)
     events_analyze = np.zeros(events.shape, dtype=np.int64)
-    filter_len = np.int64(fit.smooth_info[var]['time_pt_for_kernel'].shape[0])
+    filter_len = np.int64(fit.smooth_info[var]["time_pt_for_kernel"].shape[0])
     flag = True
     cc = 0
 
@@ -331,7 +396,7 @@ def compute_tuning_temporal(var, lam_s, sm_handler, fit, spk, filter_trials,tria
     if bins % 2 == 0:
         bins += 1
     temp_bins = np.linspace(timept[0], timept[-1], bins)
-    #dt = temp_bins[1] - temp_bins[0]
+    # dt = temp_bins[1] - temp_bins[0]
     tuning = np.zeros(temp_bins.shape[0])
     sc_based_tuning = np.zeros(temp_bins.shape[0])
     tot_s_vec = np.zeros(temp_bins.shape[0])
@@ -340,8 +405,18 @@ def compute_tuning_temporal(var, lam_s, sm_handler, fit, spk, filter_trials,tria
         events_analyze, flag = find_first_x_bin(events_analyze, events, filter_len)
         if not flag:
             break
-        tuning, sc_based_tuning, tot_s_vec = compute_average(spk[filter_trials],lam_s, events_analyze, temp_bins, sc_based_tuning, tuning, tot_s_vec,half_size,timept,
-                                                             trial_idx[filter_trials])
+        tuning, sc_based_tuning, tot_s_vec = compute_average(
+            spk[filter_trials],
+            lam_s,
+            events_analyze,
+            temp_bins,
+            sc_based_tuning,
+            tuning,
+            tot_s_vec,
+            half_size,
+            timept,
+            trial_idx[filter_trials],
+        )
         events = events - events_analyze
         events_analyze *= 0
         cc += 1
@@ -349,16 +424,26 @@ def compute_tuning_temporal(var, lam_s, sm_handler, fit, spk, filter_trials,tria
     sc_based_tuning = sc_based_tuning / tot_s_vec
     return temp_bins, tuning / dt, sc_based_tuning / dt, tot_s_vec
 
-def compute_average(spk, lam_s, events, temp_bins, sc_based_tuning, 
-                    tuning, tot_s_vec, half_size, timept, trial_idx):
+
+def compute_average(
+    spk,
+    lam_s,
+    events,
+    temp_bins,
+    sc_based_tuning,
+    tuning,
+    tot_s_vec,
+    half_size,
+    timept,
+    trial_idx,
+):
     rew_idx = np.where(events == 1)[0]
     time_kernel = np.ones(events.shape[0]) * np.inf
     for ind in rew_idx:
         if (ind < half_size) or (ind >= time_kernel.shape[0] - half_size):
             continue
-        time_kernel[ind - half_size:ind + half_size + 1] = timept
+        time_kernel[ind - half_size : ind + half_size + 1] = timept
 
-    
     dt = temp_bins[1] - temp_bins[0]
     for tr in np.unique(trial_idx):
         cc = 0
@@ -374,25 +459,27 @@ def compute_average(spk, lam_s, events, temp_bins, sc_based_tuning,
             cc += 1
     return tuning, sc_based_tuning, tot_s_vec
 
+
 @njit
-def replace_nan_2D(tuning, tuning_fill, rows,cols, neigh=1):
+def replace_nan_2D(tuning, tuning_fill, rows, cols, neigh=1):
     for cc in range(rows.shape[0]):
         val = 0
         cnt = 0
         row = rows[cc]
         col = cols[cc]
-        for dr in range(-neigh,neigh+1):
-            if (row+dr < 0) or (row+dr >= tuning.shape[0]):
+        for dr in range(-neigh, neigh + 1):
+            if (row + dr < 0) or (row + dr >= tuning.shape[0]):
                 continue
-            for dc in range(-neigh,neigh+1):
+            for dc in range(-neigh, neigh + 1):
                 if (col + dc < 0) or (col + dc >= tuning.shape[1]):
                     continue
-                if ~np.isnan(tuning[row+dr, col+dc]):
-                    val += tuning[row+dr, col+dc]
+                if ~np.isnan(tuning[row + dr, col + dc]):
+                    val += tuning[row + dr, col + dc]
                     cnt += 1
 
-        tuning_fill[row,col] = val/cnt
+        tuning_fill[row, col] = val / cnt
     return tuning_fill
+
 
 def multi_int(Z, x_list):
     """
@@ -409,22 +496,23 @@ def multi_int(Z, x_list):
     else:
         zz = np.zeros(Z.shape[0])
         for i in range(Z.shape[0]):
-            zz[i] = multi_int(Z[i],x_list[1:])
-    return simps(zz,xx)
+            zz[i] = multi_int(Z[i], x_list[1:])
+    return simps(zz, xx)
 
 
 def prediction_and_kernel_str(fit, var, var_zscore_par):
     if fit is None:
-        return (np.nan,)*6
+        return (np.nan,) * 6
     if not var in fit.var_list:
         return (np.nan,) * 6
-    if fit.smooth_info[var]['is_temporal_kernel']:
-        return temporal_prediction_and_kernel_str(fit,var)
+    if fit.smooth_info[var]["is_temporal_kernel"]:
+        return temporal_prediction_and_kernel_str(fit, var)
     else:
         return spatial_prediction_and_kernel_str(fit, var, var_zscore_par)
 
+
 def spatial_prediction_and_kernel_str(fit, var, var_zscore_par):
-    knots = fit.smooth_info[var]['knots']
+    knots = fit.smooth_info[var]["knots"]
     D = len(knots)
     dx = np.zeros(D)
     x_list = []
@@ -444,36 +532,49 @@ def spatial_prediction_and_kernel_str(fit, var, var_zscore_par):
     XY = [XY[k].flatten() for k in range(len(XY))]
     fX, fminus, fplus = fit.smooth_compute(XY, var, 0.99)
 
-    #xx2 = xx2 * var_zscore_par[var]['scale'] + var_zscore_par[var]['loc']
-    XY = np.array([XY[k].reshape(shapeXY)* var_zscore_par[var]['scale'] + var_zscore_par[var]['loc']
-          for k in range(len(XY))])
+    # xx2 = xx2 * var_zscore_par[var]['scale'] + var_zscore_par[var]['loc']
+    XY = np.array(
+        [
+            XY[k].reshape(shapeXY) * var_zscore_par[var]["scale"]
+            + var_zscore_par[var]["loc"]
+            for k in range(len(XY))
+        ]
+    )
     fX = fX.reshape(shapeXY)
     fminus = fminus.reshape(shapeXY)
     fplus = fplus.reshape(shapeXY)
 
     # compute integral
-    func = lambda x: (fit.smooth_compute(x, var, 0.99)[0] -
-                      fit.smooth_compute(x, var, 0.99)[0].mean()) ** 2
+    func = (
+        lambda x: (
+            fit.smooth_compute(x, var, 0.99)[0]
+            - fit.smooth_compute(x, var, 0.99)[0].mean()
+        )
+        ** 2
+    )
     XY2 = np.meshgrid(*x_list_simps)
     Z = func([XY2[k].flatten() for k in range(len(XY))])
     kern_str = multi_int(Z.reshape(XY2[0].shape), x_list_simps)
     return XY, fX, fminus, fplus, kern_str, np.nan
 
-def temporal_prediction_and_kernel_str(fit,var):
-    dim_kern = fit.smooth_info[var]['basis_kernel'].shape[0]
+
+def temporal_prediction_and_kernel_str(fit, var):
+    dim_kern = fit.smooth_info[var]["basis_kernel"].shape[0]
     x = np.zeros(dim_kern)
     x[(dim_kern - 1) // 2] = 1
     xx2 = np.arange(x.shape[0]) * 6 - np.where(x)[0][0] * 6
     fX, fminus, fplus = fit.smooth_compute([x], var, 0.99)
-    if (fit.smooth_info[var]['kernel_direction'] == 1) and \
-            (fit.smooth_info[var]['is_event_input']):
+    if (fit.smooth_info[var]["kernel_direction"] == 1) and (
+        fit.smooth_info[var]["is_event_input"]
+    ):
         sel = xx2 > 0
         fminus = fminus[sel] - fX[0]
         fplus = fplus[sel] - fX[0]
         fX = fX[sel] - fX[0]
         xx2 = xx2[sel]
-    elif (fit.smooth_info[var]['kernel_direction'] == -1) and \
-            (fit.smooth_info[var]['is_event_input']):
+    elif (fit.smooth_info[var]["kernel_direction"] == -1) and (
+        fit.smooth_info[var]["is_event_input"]
+    ):
         sel = xx2 < 0
         fminus = fminus[sel] - fX[-1]
         fplus = fplus[sel] - fX[-1]
@@ -483,72 +584,82 @@ def temporal_prediction_and_kernel_str(fit,var):
         fplus = fplus - fX[-1]
         fminus = fminus - fX[-1]
         fX = fX - fX[-1]
-    xx2 = xx2.reshape(1,-1)
-    kern_str = simps(fX ** 2, dx=fit.time_bin) / (fit.time_bin * fX.shape[0])
+    xx2 = xx2.reshape(1, -1)
+    kern_str = simps(fX**2, dx=fit.time_bin) / (fit.time_bin * fX.shape[0])
     signed_kern_str = simps(fX, dx=fit.time_bin) / (fit.time_bin * fX.shape[0])
     return xx2, fX, fminus, fplus, kern_str, signed_kern_str
 
-def postprocess_results(neuron_id,counts, full_fit, reduced_fit, train_bool,
-                        sm_handler, family, trial_idx,var_zscore_par=None,info_save={},bins=30):
 
-
+def postprocess_results(
+    neuron_id,
+    counts,
+    full_fit,
+    reduced_fit,
+    train_bool,
+    sm_handler,
+    family,
+    trial_idx,
+    var_zscore_par=None,
+    info_save={},
+    bins=30,
+):
     dtypes = {
-        'neuron_id':'U100',
-        'variable':'U100',
-        'fr':float,
-        'full_pseudo_r2_train':float,
-        'full_pseudo_r2_eval':float,
-        'reduced_pseudo_r2_train':float,
-        'reduced_pseudo_r2_eval':float,
-        'pval':float,
-        'reduced_pval':float,
-        'x_rate_Hz':object,
-        'y_rate_Hz_model':object,
-        'y_rate_Hz_raw':object,
-        'reduced_x_rate_Hz':object,
-        'reduced_y_rate_Hz_model':object,
-        'reduced_y_rate_Hz_raw':object,
-        'eval_x_rate_Hz': object,
-        'eval_y_rate_Hz_model': object,
-        'eval_y_rate_Hz_raw': object,
-        'eval_reduced_x_rate_Hz': object,
-        'eval_reduced_y_rate_Hz_model': object,
-        'eval_reduced_y_rate_Hz_raw': object,
-        'kernel_strength':float,
-        'signed_kernel_strength':float,
-        'reduced_kernel_strength':float,
-        'reduced_signed_kernel_strength':float,
-        'x_kernel':object,
-        'y_kernel':object,
-        'y_kernel_mCI':object,
-        'y_kernel_pCI':object,
-        'reduced_x_kernel':object,
-        'reduced_y_kernel':object,
-        'reduced_y_kernel_mCI':object,
-        'reduced_y_kernel_pCI':object,
-        'beta_full':object,
-        'beta_reduced':object,
-        'intercept_full':float,
-        'intercept_reduced':float,
-        'mutual_info':float,
-        'penalization':object
+        "neuron_id": "U100",
+        "variable": "U100",
+        "fr": float,
+        "full_pseudo_r2_train": float,
+        "full_pseudo_r2_eval": float,
+        "reduced_pseudo_r2_train": float,
+        "reduced_pseudo_r2_eval": float,
+        "pval": float,
+        "reduced_pval": float,
+        "x_rate_Hz": object,
+        "y_rate_Hz_model": object,
+        "y_rate_Hz_raw": object,
+        "reduced_x_rate_Hz": object,
+        "reduced_y_rate_Hz_model": object,
+        "reduced_y_rate_Hz_raw": object,
+        "eval_x_rate_Hz": object,
+        "eval_y_rate_Hz_model": object,
+        "eval_y_rate_Hz_raw": object,
+        "eval_reduced_x_rate_Hz": object,
+        "eval_reduced_y_rate_Hz_model": object,
+        "eval_reduced_y_rate_Hz_raw": object,
+        "kernel_strength": float,
+        "signed_kernel_strength": float,
+        "reduced_kernel_strength": float,
+        "reduced_signed_kernel_strength": float,
+        "x_kernel": object,
+        "y_kernel": object,
+        "y_kernel_mCI": object,
+        "y_kernel_pCI": object,
+        "reduced_x_kernel": object,
+        "reduced_y_kernel": object,
+        "reduced_y_kernel_mCI": object,
+        "reduced_y_kernel_pCI": object,
+        "beta_full": object,
+        "beta_reduced": object,
+        "intercept_full": float,
+        "intercept_reduced": float,
+        "mutual_info": float,
+        "penalization": object,
     }
     for name in info_save.keys():
         # set object as a type for unknown info save
         dtypes[name] = object
 
-    dtype_dict = {'names':[], 'formats':[]}
+    dtype_dict = {"names": [], "formats": []}
     for name in dtypes.keys():
-        dtype_dict['names'] += [name]
-        dtype_dict['formats'] += [dtypes[name]]
+        dtype_dict["names"] += [name]
+        dtype_dict["formats"] += [dtypes[name]]
 
     results = np.zeros(len((full_fit.var_list)), dtype=dtype_dict)
     for name in info_save.keys():
         results[name] = info_save[name]
-    
-    results['neuron_id'] = neuron_id
-    results['fr'] = counts.mean()/full_fit.time_bin
-    
+
+    results["neuron_id"] = neuron_id
+    results["fr"] = counts.mean() / full_fit.time_bin
+
     cs_table = full_fit.covariate_significance
     if not reduced_fit is None:
         cs_table_red = reduced_fit.covariate_significance
@@ -560,38 +671,51 @@ def postprocess_results(neuron_id,counts, full_fit, reduced_fit, train_bool,
     if var_zscore_par is None:
         var_zscore_par = {}
         for var in full_fit.var_list:
-            var_zscore_par[var]={'loc':0,'scale':1}
+            var_zscore_par[var] = {"loc": 0, "scale": 1}
 
     for cc in range(len(full_fit.var_list)):
         var = full_fit.var_list[cc]
-        #('processing: ', var)
-        cs_var = cs_table[cs_table['covariate'] == var]
+        # ('processing: ', var)
+        cs_var = cs_table[cs_table["covariate"] == var]
         if not reduced_fit is None:
             if var in reduced_fit.var_list:
-                cs_var_red = cs_table_red[cs_table_red['covariate'] == var]
+                cs_var_red = cs_table_red[cs_table_red["covariate"] == var]
 
-
-
-        results['variable'][cc] = var
-        results['penalization'][cc] = sm_handler[var].lam
+        results["variable"][cc] = var
+        results["penalization"][cc] = sm_handler[var].lam
         # results['trial_type'][cc] = trial_type
-        results['full_pseudo_r2_train'][cc] = full_fit.pseudo_r2
-        results['full_pseudo_r2_eval'][cc], exog_full = pseudo_r2_comp(counts, full_fit, sm_handler, family,
-                                                                       use_tp=~(train_bool), exog=exog_full)
+        results["full_pseudo_r2_train"][cc] = full_fit.pseudo_r2
+        results["full_pseudo_r2_eval"][cc], exog_full = pseudo_r2_comp(
+            counts, full_fit, sm_handler, family, use_tp=~(train_bool), exog=exog_full
+        )
         if not reduced_fit is None:
-            results['reduced_pseudo_r2_train'][cc] = reduced_fit.pseudo_r2
-            results['reduced_pseudo_r2_eval'][cc], exog_reduced = pseudo_r2_comp(counts, reduced_fit, sm_handler,
-                                                                                 family,
-                                                                                 use_tp=~(train_bool),
-                                                                                 exog=exog_reduced)
-        results['pval'][cc] = cs_var['p-val']
+            results["reduced_pseudo_r2_train"][cc] = reduced_fit.pseudo_r2
+            results["reduced_pseudo_r2_eval"][cc], exog_reduced = pseudo_r2_comp(
+                counts,
+                reduced_fit,
+                sm_handler,
+                family,
+                use_tp=~(train_bool),
+                exog=exog_reduced,
+            )
+        results["pval"][cc] = cs_var["p-val"]
         if not reduced_fit is None:
             if var in reduced_fit.var_list:
-                results['reduced_pval'][cc] = cs_var_red['p-val']
+                results["reduced_pval"][cc] = cs_var_red["p-val"]
             else:
-                results['reduced_pval'][cc] = np.nan
+                results["reduced_pval"][cc] = np.nan
         try:
-            mi_full, tun_full = mutual_info_est(counts, exog_full, full_fit, var, sm_handler, train_bool, trial_idx, dt=full_fit.time_bin, bins=bins)
+            mi_full, tun_full = mutual_info_est(
+                counts,
+                exog_full,
+                full_fit,
+                var,
+                sm_handler,
+                train_bool,
+                trial_idx,
+                dt=full_fit.time_bin,
+                bins=bins,
+            )
 
         except SystemError:
             mi_full = np.nan
@@ -600,22 +724,34 @@ def postprocess_results(neuron_id,counts, full_fit, reduced_fit, train_bool,
             tun_full.y_raw = np.nan
             tun_full.y_model = np.nan
 
-
-        results['mutual_info'][cc] = mi_full
-        if ~np.isnan(var_zscore_par[var]['loc']):
+        results["mutual_info"][cc] = mi_full
+        if ~np.isnan(var_zscore_par[var]["loc"]):
             xx_scaled = []
             for kk in range(len(tun_full.x)):
-                xx = tun_full.x[kk] * var_zscore_par[var]['scale'] + var_zscore_par[var]['loc']
+                xx = (
+                    tun_full.x[kk] * var_zscore_par[var]["scale"]
+                    + var_zscore_par[var]["loc"]
+                )
                 xx_scaled.append(xx)
         else:
             xx_scaled = tun_full.x
 
-        results['x_rate_Hz'][cc] = xx_scaled
-        results['y_rate_Hz_model'][cc] = tun_full.y_model
-        results['y_rate_Hz_raw'][cc] = tun_full.y_raw
+        results["x_rate_Hz"][cc] = xx_scaled
+        results["y_rate_Hz_model"][cc] = tun_full.y_model
+        results["y_rate_Hz_raw"][cc] = tun_full.y_raw
 
         try:
-            mi_full, tun_full = mutual_info_est(counts, exog_full, full_fit, var, sm_handler, ~train_bool, trial_idx, dt=full_fit.time_bin, bins=bins)
+            mi_full, tun_full = mutual_info_est(
+                counts,
+                exog_full,
+                full_fit,
+                var,
+                sm_handler,
+                ~train_bool,
+                trial_idx,
+                dt=full_fit.time_bin,
+                bins=bins,
+            )
         except:
             mi_full = np.nan
             tun_full = empty_container()
@@ -623,42 +759,64 @@ def postprocess_results(neuron_id,counts, full_fit, reduced_fit, train_bool,
             tun_full.y_raw = np.nan
             tun_full.y_model = np.nan
 
-
-        if ~np.isnan(var_zscore_par[var]['loc']):
+        if ~np.isnan(var_zscore_par[var]["loc"]):
             xx_scaled = []
             for kk in range(len(tun_full.x)):
-                xx = tun_full.x[kk] * var_zscore_par[var]['scale'] + var_zscore_par[var]['loc']
+                xx = (
+                    tun_full.x[kk] * var_zscore_par[var]["scale"]
+                    + var_zscore_par[var]["loc"]
+                )
                 xx_scaled.append(xx)
         else:
             xx_scaled = tun_full.x
 
-        results['eval_x_rate_Hz'][cc] = xx_scaled
-        results['eval_y_rate_Hz_model'][cc] = tun_full.y_model
-        results['eval_y_rate_Hz_raw'][cc] = tun_full.y_raw
-
+        results["eval_x_rate_Hz"][cc] = xx_scaled
+        results["eval_y_rate_Hz_model"][cc] = tun_full.y_model
+        results["eval_y_rate_Hz_raw"][cc] = tun_full.y_raw
 
         # compute kernel strength
-        (results['x_kernel'][cc], results['y_kernel'][cc],
-         results['y_kernel_mCI'][cc], results['y_kernel_pCI'][cc],
-         results['kernel_strength'][cc],results['signed_kernel_strength'][cc]) = prediction_and_kernel_str(full_fit, var,
-                                                                                                           var_zscore_par)
+        (
+            results["x_kernel"][cc],
+            results["y_kernel"][cc],
+            results["y_kernel_mCI"][cc],
+            results["y_kernel_pCI"][cc],
+            results["kernel_strength"][cc],
+            results["signed_kernel_strength"][cc],
+        ) = prediction_and_kernel_str(full_fit, var, var_zscore_par)
 
-        (results['reduced_x_kernel'][cc], results['reduced_y_kernel'][cc],results['reduced_y_kernel_mCI'][cc],
-         results['reduced_y_kernel_pCI'][cc],_,_) = prediction_and_kernel_str(reduced_fit, var, var_zscore_par)
+        (
+            results["reduced_x_kernel"][cc],
+            results["reduced_y_kernel"][cc],
+            results["reduced_y_kernel_mCI"][cc],
+            results["reduced_y_kernel_pCI"][cc],
+            _,
+            _,
+        ) = prediction_and_kernel_str(reduced_fit, var, var_zscore_par)
 
-
-        results['beta_full'][cc] = full_fit.beta[full_fit.index_dict[var]]
-        results['intercept_full'][cc] = full_fit.beta[0]
+        results["beta_full"][cc] = full_fit.beta[full_fit.index_dict[var]]
+        results["intercept_full"][cc] = full_fit.beta[0]
 
         if not (reduced_fit is None):
-            results['intercept_reduced'][cc] = reduced_fit.beta[0]
+            results["intercept_reduced"][cc] = reduced_fit.beta[0]
             try:
-                mi_red, tun_red = mutual_info_est(counts, exog_reduced, reduced_fit, var, sm_handler, train_bool,trial_idx,
-                                                    dt=full_fit.time_bin, bins=bins)
-                if ~np.isnan(var_zscore_par[var]['loc']):
+                mi_red, tun_red = mutual_info_est(
+                    counts,
+                    exog_reduced,
+                    reduced_fit,
+                    var,
+                    sm_handler,
+                    train_bool,
+                    trial_idx,
+                    dt=full_fit.time_bin,
+                    bins=bins,
+                )
+                if ~np.isnan(var_zscore_par[var]["loc"]):
                     xx_scaled = []
                     for kk in range(len(tun_red.x)):
-                        xx = tun_red.x[kk] * var_zscore_par[var]['scale'] + var_zscore_par[var]['loc']
+                        xx = (
+                            tun_red.x[kk] * var_zscore_par[var]["scale"]
+                            + var_zscore_par[var]["loc"]
+                        )
                         xx_scaled.append(xx)
 
                 else:
@@ -671,18 +829,30 @@ def postprocess_results(neuron_id,counts, full_fit, reduced_fit, train_bool,
                 tun_red.y_model = np.nan
                 xx_scaled = np.nan
 
-            results['reduced_x_rate_Hz'][cc] = xx_scaled
-            results['reduced_y_rate_Hz_model'][cc] = tun_red.y_model
-            results['reduced_y_rate_Hz_raw'][cc] = tun_red.y_raw
+            results["reduced_x_rate_Hz"][cc] = xx_scaled
+            results["reduced_y_rate_Hz_model"][cc] = tun_red.y_model
+            results["reduced_y_rate_Hz_raw"][cc] = tun_red.y_raw
 
             try:
-                mi_red, tun_red = mutual_info_est(counts, exog_reduced, reduced_fit, var, sm_handler, ~train_bool,trial_idx,
-                                                    dt=full_fit.time_bin, bins=bins)
+                mi_red, tun_red = mutual_info_est(
+                    counts,
+                    exog_reduced,
+                    reduced_fit,
+                    var,
+                    sm_handler,
+                    ~train_bool,
+                    trial_idx,
+                    dt=full_fit.time_bin,
+                    bins=bins,
+                )
 
-                if ~np.isnan(var_zscore_par[var]['loc']):
+                if ~np.isnan(var_zscore_par[var]["loc"]):
                     xx_scaled = []
                     for kk in range(len(tun_red.x)):
-                        xx = tun_red.x[kk] * var_zscore_par[var]['scale'] + var_zscore_par[var]['loc']
+                        xx = (
+                            tun_red.x[kk] * var_zscore_par[var]["scale"]
+                            + var_zscore_par[var]["loc"]
+                        )
                         xx_scaled.append(xx)
                 else:
                     xx_scaled = tun_red.x
@@ -693,12 +863,12 @@ def postprocess_results(neuron_id,counts, full_fit, reduced_fit, train_bool,
                 tun_red.y_model = np.nan
                 xx_scaled = np.nan
 
-
-            results['eval_reduced_x_rate_Hz'][cc] = xx_scaled
-            results['eval_reduced_y_rate_Hz_model'][cc] = tun_red.y_model
-            results['eval_reduced_y_rate_Hz_raw'][cc] = tun_red.y_raw
+            results["eval_reduced_x_rate_Hz"][cc] = xx_scaled
+            results["eval_reduced_y_rate_Hz_model"][cc] = tun_red.y_model
+            results["eval_reduced_y_rate_Hz_raw"][cc] = tun_red.y_raw
 
     return results
+
 
 def sum_trial(ev_sender, ev_reciever, rate_reciever, DT, num_DT):
     num_bin = int(np.ceil(num_DT / DT))
@@ -717,8 +887,18 @@ def sum_trial(ev_sender, ev_reciever, rate_reciever, DT, num_DT):
 
 
 @njit
-def compute_event_trig_counts(ev_receiver, pred_rate_receiver, idx_spk, rate_DT,
-                              counts_DT, tp_DT, tot_tp, delta_step, dt_ms, skip_t0):
+def compute_event_trig_counts(
+    ev_receiver,
+    pred_rate_receiver,
+    idx_spk,
+    rate_DT,
+    counts_DT,
+    tp_DT,
+    tot_tp,
+    delta_step,
+    dt_ms,
+    skip_t0,
+):
     """
     Compute a fast spike triggered average from idx_spk (the sender spike) and pred_rate_receiver (the receiver pgam
     rate) given the receiver spikes (ev_receiver).
@@ -738,21 +918,26 @@ def compute_event_trig_counts(ev_receiver, pred_rate_receiver, idx_spk, rate_DT,
             cc += 1
     return rate_DT, counts_DT, tp_DT
 
-def compute_tuning_temporal_fast(var, lam_s, sm_handler, fit, spk, filter_trials, trial_idx, bins, dt):
+
+def compute_tuning_temporal_fast(
+    var, lam_s, sm_handler, fit, spk, filter_trials, trial_idx, bins, dt
+):
     spk_sender = np.array(np.squeeze(sm_handler[var]._x)[filter_trials], dtype=np.int64)
 
-    filter_len = np.int64(fit.smooth_info[var]['time_pt_for_kernel'].shape[0])
+    filter_len = np.int64(fit.smooth_info[var]["time_pt_for_kernel"].shape[0])
     if filter_len % 2 == 1:
         filter_len = filter_len - 1
 
     tot_tp = filter_len // 2
-    delta_step = np.array(np.arange(filter_len) // (np.floor(filter_len / bins) + 1), dtype=int)
+    delta_step = np.array(
+        np.arange(filter_len) // (np.floor(filter_len / bins) + 1), dtype=int
+    )
     num_tp = np.unique(delta_step).shape[0]
     counts_DT = np.zeros(num_tp)
     rate_DT = np.zeros(num_tp)
     tp_DT = np.zeros(num_tp)
 
-    skip_t0 = var == 'spike_hist'
+    skip_t0 = var == "spike_hist"
 
     dt_ms = fit.time_bin
     edges = np.zeros(num_tp)
@@ -771,8 +956,18 @@ def compute_tuning_temporal_fast(var, lam_s, sm_handler, fit, spk, filter_trials
         lam_s_tr = lam_s_filt[sel]
         idx_spk = np.where(spk_sender[sel])[0]
 
-        rate_DT, counts_DT, tp_DT = compute_event_trig_counts(spk_tr, lam_s_tr, idx_spk, rate_DT,
-                                                              counts_DT, tp_DT, tot_tp, delta_step, dt_ms, skip_t0)
+        rate_DT, counts_DT, tp_DT = compute_event_trig_counts(
+            spk_tr,
+            lam_s_tr,
+            idx_spk,
+            rate_DT,
+            counts_DT,
+            tp_DT,
+            tot_tp,
+            delta_step,
+            dt_ms,
+            skip_t0,
+        )
 
     rate_DT = rate_DT / tp_DT
     counts_DT = counts_DT / tp_DT
