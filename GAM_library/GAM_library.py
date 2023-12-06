@@ -37,7 +37,7 @@ except ModuleNotFoundError as e:
     flagUseCuda = False
 
 
-from numpy.core.umath_tests import inner1d
+from utils.linalg_routines import inner1d_sum
 
 class empty_container(object):
     def __init__(self):
@@ -405,7 +405,7 @@ class GAM_result(object):
         V_corr = Vb + V_prime + V_2prime
         H = np.array(H)
         V_corr = np.array(V_corr)
-        self.edf2 = np.sum(inner1d(V_corr,H.T))
+        self.edf2 = inner1d_sum(V_corr, H.T)
         self.AIC = -2 * unpenalized_ll(self.beta,y,X,family,phi_est,omega=1)\
                    -2 * penalty_ll(rho,self.beta,sm_handler,self.var_list,phi_est)+ 2*self.edf2
 
@@ -460,7 +460,7 @@ class GAM_result(object):
             var_name = var_list[cc]
             fX = self.eval_basis(X,var_name,sparseX=False,post_trial_dur=post_trial_dur,
                                  pre_trial_dur=pre_trial_dur,trial_idx=trial_idx,domain_fun=self.domain_fun[var_name])
-            if type(fX) in [sparse.csr.csr_matrix,sparse.coo.coo_matrix]:
+            if type(fX) in [sparse.csr_matrix,sparse.coo_matrix]:
                 fX = fX.toarray()
 
             # mean center and remove col if more than 1 smooth in the AM
@@ -504,7 +504,7 @@ class GAM_result(object):
         fX[nan_filter,:] = 0
         # select the parameters for the desired smooths and compute the smooth value
         index = self.index_dict[var_name]
-        if type(fX) is sparse.csr.csr_matrix or type(fX) is sparse.coo.coo_matrix:
+        if type(fX) is sparse.csr_matrix or type(fX) is sparse.coo_matrix:
             fX = fX.toarray()
         # compute the mean val of the smooth +- estimated CI
         mean_y = np.dot(fX, self.beta[index])
@@ -1098,7 +1098,7 @@ class general_additive_model(object):
         for var in var_list:
             var_list_reset += [var] * len(self.sm_handler[var].lam)
         var_list_reset = np.array(var_list_reset)
-        reset_smooth = deepcopy(smooth_pen)
+        reset_smooth = deepcopy(np.asarray(smooth_pen))
         if (not k_fold) or k_fold_reducedOnly:
             full_model = self.optim_gam(var_list, max_iter=max_iter, tol=tol,
                                         conv_criteria=conv_criteria,
@@ -1291,10 +1291,6 @@ if __name__ == '__main__':
                           is_cyclic=[False], lam=None,penalty_type='der',der=2)
 
     var_list = ['1d_var','1d_var2','1d_var3']
-    for var in var_list:
-        df = pd.DataFrame()
-        df['knots'] = sm_handler[var].knots[0]
-        df.to_hdf('%s_knot.h5'%var, key='knots')
 
 
     link = deriv3_link(sm.genmod.families.links.log())

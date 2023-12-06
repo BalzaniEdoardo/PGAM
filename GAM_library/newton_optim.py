@@ -2,7 +2,7 @@
 import numpy as np
 import scipy.linalg as linalg
 import statsmodels.api as sm
-from numpy.core.umath_tests import inner1d
+from utils.linalg_routines import inner1d_sum
 from gam_data_handlers import *
 from time import perf_counter
 useCuda = False
@@ -90,7 +90,7 @@ def gcv_comp(rho, X, Q, R, endog,sm_handler,var_list,return_par='gcv',gamma=1.):
 
     ## check several steps
     U1 = U[:R.shape[0], :s.shape[0]]
-    trA = np.sum(inner1d(np.array(U1),np.array(U1)))
+    trA = inner1d_sum(np.asarray(U1), np.asarray(U1))
 
     delta = n_obs - gamma*trA
     y = endog[:n_obs]
@@ -209,9 +209,9 @@ def gcv_grad_comp(rho, X, Q, R, endog,sm_handler,var_list,return_par='gcv',gamma
     Dinv = np.zeros(D.shape)
     Dinv[di] = 1 / s
 
-    delta = n_obs - gamma*np.sum(inner1d(np.array(U1),np.array(U1)))
+    delta = n_obs - gamma * inner1d_sum(U1, U1)
     # transform everything needed in matrix
-    y,Q,R,U1,Dinv,V_T = matrix_transform(y,Q,R,U1,Dinv,V_T)
+    y,Q,R,U1,Dinv,V_T = matrix_transform(y, Q, R, U1, Dinv, V_T)
     y = np.matrix(endog[:n_obs].reshape(n_obs, 1))
     S_all = compute_Sjs(sm_handler,var_list)
     S_all = matrix_transform(*S_all)
@@ -259,7 +259,7 @@ def gcv_grad_comp(rho, X, Q, R, endog,sm_handler,var_list,return_par='gcv',gamma
         return alpha_grad
     elif return_par == 'delta':
         return delta_grad
-    elif return_par is 'A':
+    elif return_par == 'A':
         return A_grad
     else:
         raise ValueError('unknow output specification')
@@ -299,7 +299,7 @@ def gcv_hess_comp(rho, X, Q, R, endog, sm_handler, var_list, return_par='gcv',ga
     S_all = matrix_transform(*S_all)
 
     # compute alpha and delta
-    delta = n_obs - gamma*np.sum(inner1d(np.array(U1),np.array(U1)))
+    delta = n_obs - gamma * inner1d_sum(np.asarray(U1), np.asarray(U1))
     D2inv = np.zeros(D.shape)
     D2inv[di] = 1 / s ** 2
     D2inv = np.matrix(D2inv)

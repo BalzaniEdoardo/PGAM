@@ -13,8 +13,7 @@ import scipy.signal as signal
 import warnings
 from scipy.integrate import simps,dblquad
 from scipy.spatial import Delaunay
-# from numba import jit
-# import quadpy
+
 
 def splineDesign(knots, x, ord=4, der=0, outer_ok=False):
     """Reproduces behavior of R function splineDesign() for use by ns(). See R documentation for more information.

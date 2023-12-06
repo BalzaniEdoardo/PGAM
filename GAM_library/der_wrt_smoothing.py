@@ -15,7 +15,7 @@ from scipy.optimize import minimize
 from time import perf_counter
 from deriv_det_Slam import *
 from newton_optim import *
-from numpy.core.umath_tests import inner1d
+from utils.linalg_routines import inner1d_sum
 from gam_data_handlers import *
 try:
     import fast_summations
@@ -458,9 +458,6 @@ def Vbeta_rho(rho, b_hat, y, X, family,sm_handler, var_list,phi_est,inverse=Fals
     D, V_T = matrix_transform(D, V_T)
     sum_hes_inv = -V_T.T * D * V_T
 
-    sumfunc = lambda rho: -H_rho(rho, y, X, S_all, family, phi_est) - create_Slam(rho, sm_handler, var_list)/phi_est
-    # sum_hes2 = sumfunc(rho)
-
     return sum_hes_inv
 
 def dbeta_hat(rho,b_hat,S_all,sm_handler, var_list,y,X,family,phi_est=1,compute_gradient=False,method='Newton-CG'):
@@ -829,7 +826,7 @@ def deriv_compute(rho,y,X,sm_handler,var_list,family,S_all,phi_est,test=True,ome
     add3 = np.zeros(add1.shape)
     for j in range(rho.shape[0]):
         # compute the trace of a product with inner1d
-        add3[j] = -0.5*np.sum(inner1d(-sum_hes_inv, dVb_drho_arr[j].T))
+        add3[j] = -0.5 * inner1d_sum(-sum_hes_inv, dVb_drho_arr[j].T)
         
     grad_REML = add1 + add2 + add3
     if test:
@@ -852,10 +849,10 @@ def deriv_compute(rho,y,X,sm_handler,var_list,family,S_all,phi_est,test=True,ome
         dB_drho = np.array(dB_drho,order='C')
 
     try:
-        add1 = fast_summations.d2beta_hat_summation_1(sum_hes_inv, grad_neg_sum, Slam_tensor, beta_hat) # add1 = np.einsum('ij,hjl,lr,krp,p->hki', neg_sum_inv, grad_neg_sum, -neg_sum_inv, dSlam_drho, b_hat)
+        add1 = fast_summations.d2beta_hat_summation_1(sum_hes_inv, grad_neg_sum, Slam_tensor, beta_hat)
         add2 = fast_summations.d2beta_hat_summation_2(sum_hes_inv, Slam_tensor, dB_drho)
     except:
-        add1 = np.einsum('ij,hjl,lr,krp,p->hki', sum_hes_inv, grad_neg_sum, -sum_hes_inv, Slam_tensor, b_hat,optimize=True)
+        add1 = np.einsum('ij,hjl,lr,krp,p->hki', sum_hes_inv, grad_neg_sum, -sum_hes_inv, Slam_tensor, beta_hat,optimize=True)
         tmp = np.einsum('kjl,hl->hkj', Slam_tensor, dB_drho, optimize=True)
         add2 = np.einsum('hkj,ij->hki', tmp, sum_hes_inv, optimize=True)
     di1, di2 = np.diag_indices(rho.shape[0])
@@ -977,6 +974,7 @@ def hes_H_drho(rho,beta_hat,y,X,S_all,sm_handler,var_list,family,phi_est,return_
 def compute_T_matrices(rho,X,y,family,beta_hat,var_list,phi_est):
     FLOAT_EPS = np.finfo(float).eps
     dw_dB = dw_dbeta(beta_hat, y, family, X)
+    S_all = compute_Sall(sm_handler,var_list)
     dB = dbeta_hat(rho, beta_hat, S_all, sm_handler, var_list, y, X, family,phi_est=phi_est)
     dw_drho = np.einsum('li,rl->ri',dw_dB,dB,optimize='optimal')
 
@@ -1041,7 +1039,7 @@ def hes_w_wrt_rho(rho,beta,y,X,sm_handler,var_list,family,S_all,phi_est,compute_
 
     return d2w
 
-def det_H_rho(X,y,family,w,beta_hat):
+def det_H_rho(X,y,family,w,beta_hat, S_all, var_list):
     w_prime = dw_dbeta(beta_hat, y, family, X)
     dB = dbeta_hat(rho, beta_hat, S_all, sm_handler, var_list, y, X, family)
     pass
@@ -1289,7 +1287,7 @@ def grad_laplace_appr_REML(rho,beta,S_all,y,X,family,phi_est,sm_handler,var_list
     add3 = np.zeros(add1.shape)
     for j in range(rho.shape[0]):
         # compute the trace of a product with inner1d
-        add3[j] = -0.5*np.sum(inner1d(Vb_inv, dVb[j].T))
+        add3[j] = -0.5 * inner1d_sum(Vb_inv, dVb[j].T)
 
 
     return add1 + add2 + add3#, b_hat

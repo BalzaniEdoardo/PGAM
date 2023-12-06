@@ -2,7 +2,7 @@ import numpy as np
 from der_wrt_smoothing import *
 from gam_data_handlers import *
 import scipy.stats as sts
-from numpy.core.umath_tests import inner1d
+from utils.linalg_routines import inner1d_sum
 
 def symmetrize_tensor(S_tens):
     new_tens = np.zeros(S_tens.shape)
@@ -123,7 +123,7 @@ def transform_Slam(S_all,rho):
         Q = Q - r
         Slam = S_prime
         index_gamma = index_gamma_prime
-        if len(index_gamma_prime) is 0:
+        if len(index_gamma_prime) == 0:
             break
     return Slam,S_transformed
 
@@ -171,7 +171,7 @@ def grad_logDet_Slam(rho,S_transf,compute_grad=False,S_all=None):
 
     grad_det = np.zeros((rho.shape[0],))
     for j in range(rho.shape[0]):
-        grad_det[j] = lam[j] * np.sum(inner1d(Sinv, S_transf[j].T))
+        grad_det[j] = lam[j] * inner1d_sum(Sinv, S_transf[j].T)
     return grad_det
 
 def hes_logDet_Slam(rho,S_transf):
@@ -204,9 +204,9 @@ def hes_logDet_Slam(rho,S_transf):
             else:
                 Sinv_Sj = tmp_dict[j]
             Sinv_Si = tmp_dict[i]
-            hes_det[i,j] = -lam[j]*lam[i] * np.sum(inner1d(Sinv_Si,Sinv_Sj.T))
+            hes_det[i,j] = -lam[j]*lam[i] * inner1d_sum(Sinv_Si,Sinv_Sj.T)
             if i == j:
-                hes_det[i, j] = hes_det[i,j] + lam[i] * np.sum(inner1d(Sinv, S_transf[i].T))
+                hes_det[i, j] = hes_det[i,j] + lam[i] * inner1d_sum(Sinv, S_transf[i].T)
     return hes_det
 
 
