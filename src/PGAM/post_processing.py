@@ -5,13 +5,15 @@ Created on Fri Aug 12 16:33:36 2022
 
 @author: edoardo
 """
-import numpy as np
-from GAM_library import *
-from copy import deepcopy
-import scipy.stats as sts
-from scipy.integrate import simps
 import operator
+from copy import deepcopy
+
+import numpy as np
+import scipy.stats as sts
+from GAM_library import *
 from numba import njit
+from scipy.integrate import simps
+
 
 def pseudo_r2_comp(spk, fit, sm_handler, family, use_tp=None, exog=None):
     if exog is None:

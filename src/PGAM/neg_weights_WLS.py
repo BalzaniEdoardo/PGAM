@@ -1,10 +1,11 @@
-import numpy as np
-import scipy.linalg as linalg
 import sys
 from copy import deepcopy
-from newton_optim import weights_and_data
-import scipy.stats as sts
 from time import perf_counter
+
+import numpy as np
+import scipy.linalg as linalg
+from newton_optim import weights_and_data
+
 
 def pivoted_QR(A,return_Q=True):
     # fortran function for fast pivoted QR decomp
@@ -12,13 +13,12 @@ def pivoted_QR(A,return_Q=True):
     # function for reconstructing the matrix Q of the QR
     orgqr = linalg.get_lapack_funcs('orgqr')
 
-
     QR,piv,tau,_,_ = geqp3(np.array(A,order='F'))
     # triu is the R matrix
     R = np.triu(QR)
     if return_Q:
         # Q can be constructed by the tirl of QR and the weights tau (compact representation)
-        Q,_,_ = orgqr(QR,tau)
+        Q,_,_ = orgqr(QR, tau)
 
     #  index are 1 based in fortran
     piv = piv - 1
@@ -164,18 +164,9 @@ def robust_WLS(y,mu,family,X,f_weights_and_data,S_list=[],lambda_list=[], fisher
 
     zero_rows = np.abs(w) < (FLOAT_EPS) ** 0.5
     w[zero_rows] = 0
-    # if any(zero_rows):
-    #     y = y.copy()[~zero_rows]
-    #     X = X.copy()[~zero_rows,:]
-    #     if not mu is None:
-    #         mu = mu.copy()[~zero_rows]
-    #     z = z[~zero_rows]
-    #     w = w[~zero_rows]
 
     w_abs = np.abs(w)
-    # w_minus = w.copy()
-    # w_minus[w>=0] = 0
-    # w_minus = -w_minus
+
     sqrtWX = (X.T*np.sqrt(w_abs)).T
     QQ,RR = np.linalg.qr(sqrtWX)
     z_bar = z.copy()
@@ -265,8 +256,7 @@ def robust_WLS(y,mu,family,X,f_weights_and_data,S_list=[],lambda_list=[], fisher
         d = None
     else:
         # check (temporary
-        # print(np.max(np.abs(sqrtWX-np.dot(Q1,R[:,piv_revert_2]))))
-        # print(np.max(np.abs(np.dot(R[:,piv_revert_2].T,R[:,piv_revert_2]) - 2 * np.dot(X.T*w_minus,X) - np.dot(X.T*w,X) - S_lam)))
+
 
         # print(np.max(np.abs(np.dot(np.dot(R[:,piv_revert_2].T,np.eye(R.shape[0]) - 2*np.dot(Q1.T*i_diag,Q1)),R[:,piv_revert_2])- np.dot(X.T*w,X) - S_lam)))
         U, d, VT = linalg.svd((Q1[sele_row,:].T * i_diag[sele_row]).T, full_matrices=False,overwrite_a=True)

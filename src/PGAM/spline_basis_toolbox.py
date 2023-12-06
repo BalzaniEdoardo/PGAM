@@ -1,11 +1,15 @@
-import numpy as np
 import sys
+
+import numpy as np
+
 sys.path.append('/Users/edoardo/Work/Code/Angelaki-Savin/GAM_library')
-from gam_data_handlers import *
+from copy import deepcopy
+
 import statsmodels.api as sm
 from basis_set_param_per_session import *
+from gam_data_handlers import *
 from knots_util import *
-from copy import  deepcopy
+
 
 class spline_basis_element(object):
     """
@@ -538,10 +542,12 @@ class between_knots_spline_basis_function(object):
 
 if __name__ == '__main__':
 
-    import  matplotlib.pylab as plt
-    import os,dill
-    from scipy.integrate import simps
+    import os
+
+    import dill
+    import matplotlib.pylab as plt
     from gam_data_handlers import smoothPen_sqrt
+    from scipy.integrate import simps
 
     domain1 = np.array([[0,1]])
     coeff = [1,-2,3,-4]

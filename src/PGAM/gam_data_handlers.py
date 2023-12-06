@@ -1,8 +1,9 @@
+from copy import deepcopy
+
 import numpy as np
 import scipy.interpolate as interpolate
-import statsmodels.api as sm
 import scipy.sparse as sparse
-from copy import deepcopy
+import statsmodels.api as sm
 
 try:
     import kron_cython
@@ -10,12 +11,14 @@ try:
     use_fast_kron = True
 except:
     use_fast_kron = False
-from time import perf_counter
-import scipy.signal as signal
 import warnings
-from scipy.integrate import simps, dblquad
-from scipy.spatial import Delaunay
+from time import perf_counter
+
+import scipy.signal as signal
 from numba import jit
+from scipy.integrate import dblquad, simps
+from scipy.spatial import Delaunay
+
 
 def splineDesign(knots, x, ord=4, der=0, outer_ok=False):
     """Reproduces behavior of R function splineDesign() for use by ns(). See R documentation for more information.

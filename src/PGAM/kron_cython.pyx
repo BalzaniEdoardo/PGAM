@@ -1,8 +1,9 @@
 import cython
+
 cimport scipy.linalg.cython_blas as blas
+
 import numpy as np
 from cython.parallel import prange
-
 
 
 @cython.boundscheck(False)

@@ -1,29 +1,23 @@
-import sys,inspect,os
+import inspect
+import os
+import sys
 
 filename = inspect.getframeinfo(inspect.currentframe()).filename
 path = os.path.dirname(os.path.abspath(filename))
 sys.path.append(path)
 
-import numpy as np
-import scipy.linalg as linalg
-from copy import deepcopy
-import statsmodels.api as sm
-import scipy.stats as sts
-from scipy.special import erfinv
-import inspect
-from scipy.optimize import minimize
-from time import perf_counter
 from deriv_det_Slam import *
-from newton_optim import *
-from numpy.core.umath_tests import inner1d
 from gam_data_handlers import *
+from newton_optim import *
+from scipy.optimize import minimize
+from scipy.special import erfinv
+from utils.linalg_utils import inner1d_sum
+
 try:
     import fast_summations
 except:
     pass
 from opt_einsum import contract
-
-
 
 
 class d2variance_family(sm.genmod.families.Family):
@@ -284,12 +278,12 @@ def d3beta_unpenalized_ll(beta,y,X,family,phi_est):
     try:
         d3beta_ll = -1/phi_est * fast_summations.d3beta_unpenalized_ll_summation(X,dalpha_dmu,dmu_deta)
     except:
-        d3beta_ll =  -1/phi_est*np.einsum('i,i,im,ir,il->mrl', dalpha_dmu, dmu_deta, X, X, X)
+        d3beta_ll = -1/phi_est*np.einsum('i,i,im,ir,il -> mrl', dalpha_dmu, dmu_deta, X, X, X)
     t1 = perf_counter()
     print('fastsum:', t1 - t0)
     return d3beta_ll
 
-def ll_MLE_rho(rho,y,X,family,sm_handler,var_list,phi_est,conv_criteria='deviance',max_iter=10**3,tol=1e-10,returnMLE=False):
+def ll_MLE_rho(rho, y, X, family, sm_handler, var_list, phi_est, conv_criteria='deviance', max_iter=10**3, tol=1e-10, returnMLE=False):
     mu = family.starting_mu(y)
     # mu = y + delta
     # eta = self.family.link(mu)
@@ -362,10 +356,6 @@ def compute_deviance(y,eta,family):
 
 def mle_gradient_bassed_optim(rho,sm_handler, var_list,y,X,family,phi_est = 1,
                               method='Newton-CG',num_random_init=1,beta_zero=None,tol=10**-8,max_iter=1000):
-    # two possible methods:
-    # method = 'Newton-CG'
-    # method='L-BFGS-B'
-    # should not depend on phi_est (as seen in the EM WLS solution)
     Slam = create_Slam(rho, sm_handler, var_list)
     func = lambda beta: -1*(unpenalized_ll(beta,y,X,family,phi_est,omega=1) + penalty_ll_Slam(Slam,beta,phi_est))
     grad_func = lambda beta: -1*(dbeta_unpenalized_ll(beta,y,X,family,phi_est) + dbeta_penalty_ll_Slam(Slam,beta,phi_est))
@@ -384,7 +374,6 @@ def mle_gradient_bassed_optim(rho,sm_handler, var_list,y,X,family,phi_est = 1,
                 res = tmp
                 curr_min = tmp.fun
                 beta_zero = beta0.copy()
-    #else:
     res = minimize(func, beta_zero, method=method, jac=grad_func, hess=hess_func, tol=tol,
                    options={'maxiter':max_iter,'disp':True})
 
@@ -432,10 +421,6 @@ def Vbeta_rho(rho, b_hat, y, X, family,sm_handler, var_list,phi_est,inverse=Fals
     # transform everything needed in matrix
     D, V_T = matrix_transform(D, V_T)
     sum_hes_inv = -V_T.T * D * V_T
-
-    sumfunc = lambda rho: -H_rho(rho, y, X, S_all, family, phi_est) - create_Slam(rho, sm_handler, var_list)/phi_est
-    # sum_hes2 = sumfunc(rho)
-
     return sum_hes_inv
 
 def dbeta_hat(rho,b_hat,S_all,sm_handler, var_list,y,X,family,phi_est=1,compute_gradient=False,method='Newton-CG'):
@@ -454,8 +439,6 @@ def dbeta_hat(rho,b_hat,S_all,sm_handler, var_list,y,X,family,phi_est=1,compute_
     # use einsum to perform desired combinaiton
     P1 = np.einsum('kij,j->ki', Slam_tensor, beta)
     true_grad = np.einsum('li,ki->kl',sum_hes_inv,P1)
-    # true_grad = np.einsum('li,kij,j->kl',sum_hes_inv,Slam_tensor,beta)
-
     return true_grad
 
 def d2beta_hat(rho,b_hat,S_all,sm_handler, var_list,y,X,family,phi_est=1):
@@ -477,10 +460,6 @@ def d2beta_hat(rho,b_hat,S_all,sm_handler, var_list,y,X,family,phi_est=1):
 
     grad_neg_sum = -(dH_drho + dSlam_drho)
     grad_beta = dbeta_hat(rho, b_hat, S_all, sm_handler, var_list, y, X, family, phi_est=phi_est)
-
-
-
-
 
     if np.isfortran(neg_sum_inv):
         neg_sum_inv = np.array(neg_sum_inv,order='C')
@@ -506,12 +485,14 @@ def d2beta_hat(rho,b_hat,S_all,sm_handler, var_list,y,X,family,phi_est=1):
 
     return hes_beta
 
+
 def w_mu(mu,y,family):
     FLOAT_EPS = np.finfo(float).eps
     alpha = alpha_mu(y, mu, family)
     dmu_deta = np.clip(1 / family.link.deriv(mu), FLOAT_EPS, np.inf)
     w = alpha * dmu_deta ** 2 / family.variance(mu)
     return w
+
 
 def w_deriv(mu,y,family):
     """
@@ -526,6 +507,7 @@ def w_deriv(mu,y,family):
     alpha = alpha_mu(y,mu,family)
     w_prime = (alpha_prime * g_prime * V - alpha*(2*g_2prime*V + V_prime*g_prime)) / (np.clip(g_prime**3, FLOAT_EPS, np.inf) * V**2)
     return w_prime
+
 
 def w_2deriv(mu,y,family):
     """
@@ -560,6 +542,7 @@ def dw_dbeta(beta,y,family,X):
     grad_w = (w_prime/g_prime)*X.T
     return grad_w
 
+
 def w_rho(rho,beta,y,X,sm_handler,var_list,family,S_all,phi_est,compute_grad=False,method='Newton-CG'):
     if compute_grad:
         beta_hat = mle_gradient_bassed_optim(rho, sm_handler, var_list, y, X, family, phi_est=phi_est, method=method,
@@ -570,6 +553,7 @@ def w_rho(rho,beta,y,X,sm_handler,var_list,family,S_all,phi_est,compute_grad=Fal
     w = w_mu(mu,y,family)
     return w
 
+
 def dw_drho(rho,beta,y,X,sm_handler,var_list,family,S_all,phi_est,compute_grad=False,method='Newton-CG'):
     if compute_grad:
         np.random.seed(4)
@@ -577,60 +561,17 @@ def dw_drho(rho,beta,y,X,sm_handler,var_list,family,S_all,phi_est,compute_grad=F
                                          num_random_init=10,tol=10**-14)[0]
     else:
         beta_hat = beta
-    FLOAT_EPS = np.finfo(float).eps
     mu = family.link.inverse(np.dot(X, beta_hat))
     w_prime = w_deriv(mu, y, family)
     dB = dbeta_hat(rho, beta_hat, S_all, sm_handler, var_list, y, X, family, phi_est=phi_est)
-    # g_prime = np.clip(family.link.deriv(mu), FLOAT_EPS, np.inf)
     g_prime = family.link.deriv(mu)
     dw = np.zeros((rho.shape[0],X.shape[0]))
     for h in range(rho.shape[0]):
         for k in range(X.shape[0]):
             dw[h,k] = np.dot(dB[h, :], X[k, :])*w_prime[k]/g_prime[k]
 
-    # dB = dbeta_hat(rho, beta_hat, S_all, sm_handler, var_list, y, X, family)
-    # dw_dB = dw_dbeta(beta_hat, y, family, X)
-    # dw_drho = np.einsum('li,rl->ri',dw_dB,dB)
     return dw
 
-# def d2w_drho2(rho,beta,y,X,sm_handler,var_list,family,S_all,phi_est,compute_grad=False):
-#     FLOAT_EPS = np.finfo(float).eps
-#     if compute_grad:
-#         beta_hat = mle_gradient_bassed_optim(rho, sm_handler, var_list, y, X, family, phi_est=phi_est, method='Newton-CG',
-#                                          num_random_init=10)[0]
-#     else:
-#         beta_hat = beta
-#     dB = dbeta_hat(rho, beta_hat, S_all, sm_handler, var_list, y, X, family,phi_est=phi_est)
-#     d2B = d2beta_hat(rho,beta_hat,S_all,sm_handler, var_list,y,X,family,phi_est=phi_est)
-#
-#     ## formula sum_
-#     # \sum_{l,j} X_{kj}  X_{kl}  \frac{w'' g' - w' g''}{g'''  }\frac{\partial \beta_j}{\rho_r} \frac{\partial \beta_l}{\partial \rho_h} + \sum_{l} X_{kl} \frac{w'}{g'} \frac{\partial^2 \beta}{\partial \rho_r \partial \rho_r}
-#     h_prime = deriv_small_h(mu,y,family)
-#     h = small_h_mu(mu,y,family)
-#     g_prime = np.clip(family.link.deriv(mu), FLOAT_EPS, np.inf)
-#     frac = h_prime/g_prime
-#     XdB = np.einsum('ik,rk->ri',X,dB)
-#     Xd2B = np.einsum('ik,rhk->rhi',X,d2B)
-#     add1 = np.zeros(Xd2B.shape)
-#     for h in range(rho.shape[0]):
-#         for r in range(h,rho.shape[0]):
-#             add1[h,r] = XdB[h,:]*XdB[r,:]*frac
-#             add1[r, h] = add1[h,r]
-#     add2 = Xd2B*h
-#     return add1+add2
-
-
-
-
-
-
-# def d2w_rho(beta,y,family,X):
-#     mu = family.link.inverse(np.dot(X, beta))
-#     g_prime = np.clip(family.link.deriv(mu),np.finfo(float).eps,np.inf)
-#     h_prime = deriv_small_h(mu,y,family)
-#     frac = h_prime/g_prime
-#     hes_w = np.einsum('k,kr,kh->rhk',frac,X,X)
-#     return hes_w
 
 def grad_H_drho(rho,beta,y,X,sm_handler,var_list,family,S_all,phi_est,compute_grad=False):
     if compute_grad:
@@ -804,7 +745,7 @@ def deriv_compute(rho,y,X,sm_handler,var_list,family,S_all,phi_est,test=True,ome
     add3 = np.zeros(add1.shape)
     for j in range(rho.shape[0]):
         # compute the trace of a product with inner1d
-        add3[j] = -0.5*np.sum(inner1d(-sum_hes_inv, dVb_drho_arr[j].T))
+        add3[j] = -0.5 * inner1d_sum(-sum_hes_inv, dVb_drho_arr[j].T)
         
     grad_REML = add1 + add2 + add3
     if test:
@@ -830,7 +771,7 @@ def deriv_compute(rho,y,X,sm_handler,var_list,family,S_all,phi_est,test=True,ome
         add1 = fast_summations.d2beta_hat_summation_1(sum_hes_inv, grad_neg_sum, Slam_tensor, beta_hat) # add1 = np.einsum('ij,hjl,lr,krp,p->hki', neg_sum_inv, grad_neg_sum, -neg_sum_inv, dSlam_drho, b_hat)
         add2 = fast_summations.d2beta_hat_summation_2(sum_hes_inv, Slam_tensor, dB_drho)
     except:
-        add1 = np.einsum('ij,hjl,lr,krp,p->hki', sum_hes_inv, grad_neg_sum, -sum_hes_inv, Slam_tensor, b_hat,optimize=True)
+        add1 = np.einsum('ij,hjl,lr,krp,p->hki', sum_hes_inv, grad_neg_sum, -sum_hes_inv, Slam_tensor, beta_hat,optimize=True)
         tmp = np.einsum('kjl,hl->hkj', Slam_tensor, dB_drho, optimize=True)
         add2 = np.einsum('hkj,ij->hki', tmp, sum_hes_inv, optimize=True)
     di1, di2 = np.diag_indices(rho.shape[0])
@@ -1144,10 +1085,6 @@ def gradcholA(x,B):
     dB = grad_cholesky(dA,B[0])
     return dB.reshape((1,)+dB.shape)
 
-### END OF THE EXEMPLE
-
-####### COMPUTATION OF HESSIAN H
-
 def alpha_deriv2(y,mu,family):
     FLOAT_EPS = np.finfo(float).eps
     dy = (y - mu)
@@ -1173,22 +1110,20 @@ def alpha_deriv2(y,mu,family):
     alpha_2prime = term1 + dy * (add3 + add4)
     return alpha_2prime
 
+
 def small_h_mu(mu,y,family):
     ## see overleaf gradient and hessian of H
-    FLOAT_EPS = np.finfo(float).eps
-    g_prime = family.link.deriv(mu) #np.clip(family.link.deriv(mu), FLOAT_EPS, np.inf)
-    small_h = w_deriv(mu,y,family)/g_prime
+    g_prime = family.link.deriv(mu)
+    small_h = w_deriv(mu, y, family)/g_prime
     return small_h
 
-def deriv_small_h(mu,y,family):
-    ## needs the deriv3 (use the redefined family)
-    FLOAT_EPS = np.finfo(float).eps
 
+def deriv_small_h(mu,y,family):
     V = family.variance(mu)
     V_prime = family.variance.deriv(mu)
     V_2prime = family.variance.deriv2(mu)
 
-    g_prime = family.link.deriv(mu)#np.clip(family.link.deriv(mu), FLOAT_EPS, np.inf)
+    g_prime = family.link.deriv(mu)
     g_2prime = family.link.deriv2(mu)
     g_3prime = family.link.deriv3(mu)
 
@@ -1264,10 +1199,10 @@ def grad_laplace_appr_REML(rho,beta,S_all,y,X,family,phi_est,sm_handler,var_list
     add3 = np.zeros(add1.shape)
     for j in range(rho.shape[0]):
         # compute the trace of a product with inner1d
-        add3[j] = -0.5*np.sum(inner1d(Vb_inv, dVb[j].T))
+        add3[j] = -0.5 * inner1d_sum(Vb_inv, dVb[j].T)
 
 
-    return add1 + add2 + add3#, b_hat
+    return add1 + add2 + add3
 
 def hess_laplace_appr_REML(rho,beta,S_all,y,X,family,phi_est,sm_handler,var_list,compute_grad=False,
                            fixRand=False,method='Newton-CG',num_random_init=1,tol=10**-12):
@@ -1317,7 +1252,7 @@ def balance_diag_func(rho,s,d):
     idx_mat = s > np.finfo(float).eps
     for j in range(s.shape[0]):
         idx = idx_mat[j,:]
-        vec[j] = np.mean(d[idx]/(d[idx]+lam_s[j,idx]))-0.4
+        vec[j] = np.mean(d[idx]/(d[idx]+lam_s[j, idx])) - 0.4
     return np.sum(vec**2)
 
 def grad_balance_diag_func(rho,s,d):
@@ -1328,5 +1263,5 @@ def grad_balance_diag_func(rho,s,d):
     for j in range(lam.shape[0]):
         idx = idx_mat[j,:]
         n = np.sum(idx)
-        grad[j] = 2/n**2 * np.sum(d[idx]/(d[idx]+lam_s[j,idx])-0.4)*(np.sum(-d[idx]*s[j,idx]*lam[j]/(d[idx]+lam_s[j,idx])**2))
+        grad[j] = 2/n**2 * np.sum(d[idx]/(d[idx]+lam_s[j,idx])-0.4)*(np.sum(-d[idx]*s[j, idx]*lam[j]/(d[idx]+lam_s[j, idx])**2))
     return grad

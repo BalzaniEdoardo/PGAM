@@ -1,7 +1,9 @@
-from distutils.core import setup,Extension
+import os
+from distutils.core import Extension, setup
+
 from Cython.Build import cythonize
 from Cython.Distutils import build_ext
-import os
+
 #os.environ['CC'] = '/usr/local/bin/gcc-9'
 #os.environ['CXX'] = '/usr/local/bin/g++-9'
 # setup(

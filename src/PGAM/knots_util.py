@@ -1,5 +1,6 @@
 import numpy as np
 
+
 def computeKnots(X,order,knots_num, dim, perc_out_range, percentiles=(2, 98),min_x=None,max_x=None,use_extern=True):
     """
         Compute equispaced knots based on input data values (cover all the data range)

@@ -1,4 +1,7 @@
-import sys,inspect,os
+import inspect
+import os
+import sys
+
 filename = inspect.getframeinfo(inspect.currentframe()).filename
 path = os.path.dirname(os.path.abspath(filename))
 sys.path.append(path)
@@ -11,19 +14,20 @@ try:
         pass
 except IndexError:
     pass
-from gam_data_handlers import *
-import numpy as np
-import matplotlib.pyplot as plt
-import statsmodels.api as sm
-import scipy.sparse as sparse
-from scipy.optimize import minimize
-from newton_optim import *
-from der_wrt_smoothing import *
-import scipy.stats as sts
-
-from time import perf_counter
-import scipy.linalg as linalg
 from copy import deepcopy
+from time import perf_counter
+
+import matplotlib.pyplot as plt
+import numpy as np
+import scipy.linalg as linalg
+import scipy.sparse as sparse
+import scipy.stats as sts
+import statsmodels.api as sm
+from der_wrt_smoothing import *
+from gam_data_handlers import *
+from newton_optim import *
+from scipy.optimize import minimize
+
 tryCuda = False
 try:
     if not tryCuda:
@@ -36,17 +40,19 @@ except ModuleNotFoundError as e:
     #print(e)
     flagUseCuda = False
 
+from utils.linalg_utils import inner1d_sum
 
-from numpy.core.umath_tests import inner1d
 
 class empty_container(object):
     def __init__(self):
         pass
 
-from rpy2.robjects.packages import importr
 import rpy2.robjects.numpy2ri as numpy2ri
+from rpy2.robjects.packages import importr
+
 survey = importr('survey')
 from neg_weights_WLS import robust_WLS
+
 
 def wSumChisq_cdf(x,df,w):
     numpy2ri.activate()
@@ -59,7 +65,7 @@ def wSumChisq_cdf(x,df,w):
     except:
         pval = np.nan
     numpy2ri.deactivate()
-    return np.clip(pval,0,1)
+    return np.clip(pval, 0, 1)
 
 
 def alignRateForMI(y,lam_s, var, sm_handler, smooth_info, time_bin, filter_trials, trial_idx):
@@ -435,7 +441,7 @@ class GAM_result(object):
         V_corr = Vb + V_prime + V_2prime
         H = np.array(H)
         V_corr = np.array(V_corr)
-        self.edf2 = np.sum(inner1d(V_corr,H.T))
+        self.edf2 = inner1d_sum(V_corr, H.T)
         self.AIC = -2 * unpenalized_ll(self.beta,y,X,family,phi_est,omega=1)\
                     -2 * penalty_ll(rho,self.beta,sm_handler,self.var_list,phi_est) + 2*self.edf2
 
@@ -1029,7 +1035,7 @@ class general_additive_model(object):
         for var in var_list:
             var_list_reset += [var] * len(self.sm_handler[var].lam)
         var_list_reset = np.array(var_list_reset)
-        reset_smooth = deepcopy(smooth_pen)
+        reset_smooth = deepcopy(np.asarray(smooth_pen))
         if (not k_fold) or k_fold_reducedOnly:
             full_model = self.optim_gam(var_list, max_iter=max_iter, tol=tol,
                                         conv_criteria=conv_criteria,

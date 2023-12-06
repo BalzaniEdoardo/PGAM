@@ -1,8 +1,9 @@
 import numpy as np
+import scipy.stats as sts
 from der_wrt_smoothing import *
 from gam_data_handlers import *
-import scipy.stats as sts
-from numpy.core.umath_tests import inner1d
+from utils.linalg_utils import inner1d_sum
+
 
 def symmetrize_tensor(S_tens):
     new_tens = np.zeros(S_tens.shape)
@@ -14,11 +15,12 @@ def symmetrize_tensor(S_tens):
 
     return new_tens
 
+
 def transform_Slam(S_all,rho):
     FLOAT_EPS = np.finfo(float).eps
     # preprocess to remove 0 eig
     lam = np.exp(rho)
-    S_tensor = np.zeros((rho.shape[0],)+S_all[0].shape)
+    S_tensor = np.zeros((rho.shape[0],) + S_all[0].shape)
     S_tensor[:,:,:] = S_all
     S_tensor = symmetrize_tensor(S_tensor)
     sum_S_norm = 0
@@ -76,7 +78,7 @@ def transform_Slam(S_all,rho):
             break
 
         # step 5
-        S_alpha =  np.einsum('kih,k->ih', S_tild[index_alpha], lam[index_alpha])
+        S_alpha = np.einsum('kih,k->ih', S_tild[index_alpha], lam[index_alpha])
         S_gamma_prime = np.einsum('kih,k->ih', S_tild[index_gamma_prime], lam[index_gamma_prime])
 
         d,U = np.linalg.eigh(S_alpha)
@@ -103,9 +105,9 @@ def transform_Slam(S_all,rho):
         M12 = np.einsum('ji,jk,kl->il', Ur, S_gamma_prime, Un)
         M21 = np.einsum('ji,jk,kl->il', Un, S_gamma_prime, Ur)
         M22 = np.einsum('ji,jk,kl->il', Un, S_gamma_prime, Un)
-        C_prime = np.block([[Dr+M11, M12],[M21,M22]])
+        C_prime = np.block([[Dr + M11, M12], [M21, M22]])
 
-        S_prime = np.block([[A,B_prime],[B_prime.T,C_prime]])
+        S_prime = np.block([[A, B_prime],[B_prime.T, C_prime]])
 
         T_alpha = np.block([[np.eye(K), np.zeros((K,r)), np.zeros((K,totDim-K-r))],[np.zeros((Q,K)), Ur, np.zeros((Q,totDim-K-r))]])
         T_gamma = np.block([[np.eye(K), np.zeros((K,Q))],[np.zeros((Q,K)),U]])
@@ -125,7 +127,7 @@ def transform_Slam(S_all,rho):
         index_gamma = index_gamma_prime
         if len(index_gamma_prime) == 0:
             break
-    return Slam,S_transformed
+    return Slam, S_transformed
 
 
 def logDet_Slam(rho,S_transf,compute_grad=False,S_all=None):
@@ -171,7 +173,7 @@ def grad_logDet_Slam(rho,S_transf,compute_grad=False,S_all=None):
 
     grad_det = np.zeros((rho.shape[0],))
     for j in range(rho.shape[0]):
-        grad_det[j] = lam[j] * np.sum(inner1d(Sinv, S_transf[j].T))
+        grad_det[j] = lam[j] * inner1d_sum(Sinv, S_transf[j].T)
     return grad_det
 
 def hes_logDet_Slam(rho,S_transf):
@@ -204,9 +206,9 @@ def hes_logDet_Slam(rho,S_transf):
             else:
                 Sinv_Sj = tmp_dict[j]
             Sinv_Si = tmp_dict[i]
-            hes_det[i,j] = -lam[j]*lam[i] * np.sum(inner1d(Sinv_Si,Sinv_Sj.T))
+            hes_det[i,j] = -lam[j]*lam[i] * inner1d_sum(Sinv_Si, Sinv_Sj.T)
             if i == j:
-                hes_det[i, j] = hes_det[i,j] + lam[i] * np.sum(inner1d(Sinv, S_transf[i].T))
+                hes_det[i, j] = hes_det[i,j] + lam[i] * inner1d_sum(Sinv, S_transf[i].T)
     return hes_det
 
 
@@ -236,12 +238,12 @@ if __name__ == '__main__':
 
 
     rho = np.array([14,14.1,-13,1]*2)
-    S_all = compute_Sjs(sm_handler,var_list)
+    S_all = compute_Sjs(sm_handler, var_list)
     # S_all[1] = S_all[1]#*10**8
     # S_all[0] = S_all[0]# * 10 ** 8
     # S_all[2] = S_all[2]# *10**-2
 
-    Slam = create_Slam(rho,sm_handler,var_list)
+    Slam = create_Slam(rho, sm_handler, var_list)
     Slam_trans,S_transf = transform_Slam(S_all, rho)
 
     func = lambda rho : logDet_Slam(rho,S_transf,compute_grad=True,S_all=S_all)
