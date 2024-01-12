@@ -98,7 +98,7 @@ def mutual_info_est(
         sm_handler,
         filter_trials,
         trial_idx,
-        dt=0.006,
+        dt=dt,
         bins=bins,
     )
     tuning = tuning * dt
