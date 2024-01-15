@@ -321,6 +321,12 @@ def multidim_digitize(sample, bins=10):
         for i in range(D)
     )
 
+    # grab the indexes which are out of range (Ncount == -1 and len(edges))
+    # clip, then ad nans
+    invalid = np.zeros(sample.shape[0], dtype=bool)
+    for i, nct in enumerate(Ncount):
+        invalid += (nct == -1) | (nct == nbin[i])
+
     # Using digitize, values that fall on an edge are put in the right bin.
     # For the rightmost bin, we want values equal to the right edge to be
     # counted in the last bin, and not as an outlier.
@@ -331,7 +337,7 @@ def multidim_digitize(sample, bins=10):
         Ncount[i][on_edge] -= 1
 
     if len(nbin) > 1:
-        digit = np.ravel_multi_index(Ncount, nbin)
+        digit = np.ravel_multi_index(Ncount, nbin, mode="clip")
     else:
         digit = Ncount[0]
     cedges = edges.copy()
@@ -339,6 +345,8 @@ def multidim_digitize(sample, bins=10):
         cedges[i] = 0.5 * (cedges[i][:-1] + cedges[i][1:])
 
     XY = np.meshgrid(*cedges)
+    digit = np.asarray(digit, dtype=float)
+    digit[invalid] = np.nan
     return digit, XY
 
 
@@ -351,7 +359,7 @@ def compute_tuning_spatial(var, lam_s, sm_handler, fit, spk, filter_trials, bins
     for i in range(vels.shape[1]):
         knots = fit.smooth_info[var]["knots"][i]
         vel_bins.append(np.linspace(knots[0], knots[-1] - 0.000001, bins + 1))
-    digit_vels, XY = multidim_digitize(vels, vel_bins)
+    digit_vels, XY = multidim_digitize(vels, np.asarray(vel_bins))
 
     tuning = np.zeros(XY[0].shape) * np.nan
     sc_based_tuning = np.zeros(XY[0].shape) * np.nan
@@ -363,14 +371,16 @@ def compute_tuning_spatial(var, lam_s, sm_handler, fit, spk, filter_trials, bins
         tot_s_vec = tot_s_vec.reshape(1, -1)
 
     for ii in np.unique(digit_vels):
+        if np.isnan(ii):
+            continue
         if ii == -1 or ii == np.prod(tuning.shape):
             continue
         idx = digit_vels == ii
         if vels.shape[1] > 1:
-            row, col = np.unravel_index(ii, tuning.shape)
+            row, col = np.unravel_index(int(ii), tuning.shape)
         else:
             row = 0
-            col = ii
+            col = int(ii)
         tuning[row, col] = np.nanmean(lam_s[idx])
         sc_based_tuning[row, col] = spk[filter_trials][idx].mean()
         tot_s_vec[row, col] = np.sum(idx)
@@ -675,7 +685,7 @@ def postprocess_results(
 
     for cc in range(len(full_fit.var_list)):
         var = full_fit.var_list[cc]
-        # ('processing: ', var)
+        print('processing: ', var)
         cs_var = cs_table[cs_table["covariate"] == var]
         if not reduced_fit is None:
             if var in reduced_fit.var_list:
