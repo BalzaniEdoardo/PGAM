@@ -1865,7 +1865,7 @@ class smooths_handler(object):
 
             cov_num += 1
 
-        if type(fullM) is sparse.csr.csr_matrix or type(fullM) is sparse.coo.coo_matrix:
+        if type(fullM) == sparse.csr_matrix or type(fullM) == sparse.coo_matrix:
             fullM = fullM.toarray()
 
         return fullM
