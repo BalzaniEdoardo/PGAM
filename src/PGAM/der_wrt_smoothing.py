@@ -590,7 +590,7 @@ def dbeta_hat(
 
 
 def d2beta_hat(rho, b_hat, S_all, sm_handler, var_list, y, X, family, phi_est=1):
-    """
+    r"""
     This function compute the hessian of the MLE \hat{\beta} wrt to the smoothing
     paramters (the formula in the paper and in the book is wrong! check out overleaf)
     """

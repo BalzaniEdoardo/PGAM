@@ -239,7 +239,7 @@ def gcv_grad_comp(
         Mj = Dinv * V_T * Sj * V_T.T * Dinv
         Fj = Mj * UTU
 
-        alpha_grad[j] = lamj * (2 * y1.T * Mj * y1 - y1.T * Fj * y1 - y1.T * Fj.T * y1)
+        alpha_grad[j] = (lamj * (2 * y1.T * Mj * y1 - y1.T * Fj * y1 - y1.T * Fj.T * y1))[0, 0]
         delta_grad[j] = gamma * lamj * np.trace(Fj)
 
         if return_par == "A":
