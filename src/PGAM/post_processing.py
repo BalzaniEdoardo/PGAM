@@ -572,7 +572,7 @@ def temporal_prediction_and_kernel_str(fit, var):
     dim_kern = fit.smooth_info[var]["basis_kernel"].shape[0]
     x = np.zeros(dim_kern)
     x[(dim_kern - 1) // 2] = 1
-    xx2 = np.arange(x.shape[0]) * 6 - np.where(x)[0][0] * 6
+    xx2 = np.arange(x.shape[0]) * fit.time_bin - np.where(x)[0][0] * fit.time_bin
     fX, fminus, fplus = fit.smooth_compute([x], var, 0.99)
     if (fit.smooth_info[var]["kernel_direction"] == 1) and (
         fit.smooth_info[var]["is_event_input"]
