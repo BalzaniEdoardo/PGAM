@@ -447,6 +447,7 @@ class GAM_result(object):
             self.smooth_info[var_name]["penalty_type"] = smooth.penalty_type
             self.smooth_info[var_name]["der"] = smooth.der
             self.smooth_info[var_name]["is_event_input"] = smooth.is_event_input
+            self.smooth_info[var_name]["colMean_X"] = smooth.colMean_X
 
     def eval_basis(
         self,
@@ -610,7 +611,7 @@ class GAM_result(object):
 
             # mean center and remove col if more than 1 smooth in the AM
             if len(self.var_list) > 0:
-                fX = fX[:, :-1] - np.mean(fX[~nan_filter, :-1], axis=0)
+                fX = fX[:, :-1] - self.smooth_info[var_name]["colMean_X"]
             fX[nan_filter, :] = 0
             index = self.index_dict[var_name]
             # compute the mean val of the smooth +- estimated CI
