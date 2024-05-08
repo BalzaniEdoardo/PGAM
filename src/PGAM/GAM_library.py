@@ -610,7 +610,7 @@ class GAM_result(object):
                 fX = fX.toarray()
 
             # mean center and remove col if more than 1 smooth in the AM
-            if len(self.var_list) > 0:
+            if len(self.var_list) > 0 and not self.smooth_info[var_name]["is_temporal_kernel"]:
                 fX = fX[:, :-1] - self.smooth_info[var_name]["colMean_X"]
             fX[nan_filter, :] = 0
             index = self.index_dict[var_name]
@@ -657,7 +657,8 @@ class GAM_result(object):
                 fX = fX.toarray()
 
             # mean center and remove col if more than 1 smooth in the AM
-            fX = fX[:, :-1] - np.mean(fX[~nan_filter, :-1], axis=0)
+            if not self.smooth_info[var_name]["is_temporal_kernel"]:
+                fX = fX[:, :-1] - self.smooth_info[var_name]["colMean_X"]
             fX[nan_filter, :] = 0
             if first:
                 modelX = np.zeros((fX.shape[0], 1 + fX.shape[1]))
@@ -706,8 +707,8 @@ class GAM_result(object):
         )
         nan_filter = np.array(np.sum(np.isnan(np.array(X)), axis=0), dtype=bool)
         # mean center and remove col if more than 1 smooth in the AM
-        if len(self.var_list) > 0 and fX.shape[1] != 1:
-            fX = np.array(fX[:, :-1] - np.mean(fX[~nan_filter, :-1], axis=0))
+        if len(self.var_list) > 0 and fX.shape[1] != 1 and not self.smooth_info[var_name]["is_temporal_kernel"]:
+            fX = np.array(fX[:, :-1]) - self.smooth_info[var_name]["colMean_X"]
         fX[nan_filter, :] = 0
         # select the parameters for the desired smooths and compute the smooth value
         index = self.index_dict[var_name]

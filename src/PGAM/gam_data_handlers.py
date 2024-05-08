@@ -1763,7 +1763,7 @@ class smooths_handler(object):
         for name in name_list:
             sm_cov = self.smooths_dict[name]
 
-            if len(name_list) > 0:
+            if len(name_list) > 0 and not sm_cov.is_temporal_kernel:
                 X, _ = sm_cov.additive_model_preprocessing(sparsebl=False)
             else:
                 X = sm_cov.X
@@ -1775,8 +1775,6 @@ class smooths_handler(object):
             count += X.shape[1]
 
             fullX[:, index_cov[name]] = X
-        # t1 = perf_counter()
-        # print('hstack:', t1 - t0, 'sec')
 
         return fullX, index_cov
 
@@ -1794,7 +1792,7 @@ class smooths_handler(object):
         for name in name_list:
             sm_cov = self.smooths_dict[name]
 
-            if len(name_list) > 0:
+            if len(name_list) > 0 and not sm_cov.is_temporal_kernel:
                 X, _ = sm_cov.additive_model_preprocessing(sparsebl=False)
             else:
                 X = sm_cov.X
