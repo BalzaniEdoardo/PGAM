@@ -1798,6 +1798,8 @@ class smooths_handler(object):
             else:
                 X = sm_cov.X
                 X[sm_cov.nan_filter, :] = 0
+                X = sparse.csr_matrix(X, dtype=np.float64)
+
 
             # save the indices that will be related to a specific covariate in the full regression
             index_cov[name] = np.arange(count, count + X.shape[1])
