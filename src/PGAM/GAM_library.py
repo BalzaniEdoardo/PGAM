@@ -198,7 +198,7 @@ class GAM_result(object):
         self.transl_tuning = {}
         for var in var_list:
             mdl_matrix = sm_handler[var].X
-            if mdl_matrix.shape[1] != 1:  # if a column as been removed
+            if mdl_matrix.shape[1] != 1 and (not sm_handler[var].is_temporal_kernel):  # if a column as been removed
                 beta_var = np.hstack((self.beta[index_var[var]], [0]))
             else:
                 beta_var = self.beta[index_var[var]]
@@ -738,7 +738,7 @@ class GAM_result(object):
         # eval the basis into the X
         smooth = sm_handler[var_name]
         # mean center and remove col if more than 1 smooth in the AM
-        if len(self.var_list) > 0:
+        if len(self.var_list) > 0 and (not self.smooth_info[var_name]["is_temporal_kernel"]):
             X = (smooth.additive_model_preprocessing()[0]).toarray()
             X = sm.add_constant(X)
         else:

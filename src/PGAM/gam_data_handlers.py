@@ -1798,8 +1798,8 @@ class smooths_handler(object):
             else:
                 X = sm_cov.X
                 X[sm_cov.nan_filter, :] = 0
-                X = sparse.csr_matrix(X, dtype=np.float64)
-
+                if hasattr(X, "toarray"):
+                    X = X.toarray()
 
             # save the indices that will be related to a specific covariate in the full regression
             index_cov[name] = np.arange(count, count + X.shape[1])
@@ -1841,7 +1841,7 @@ class smooths_handler(object):
         for name in name_list:
             sm_cov = self.smooths_dict[name]
 
-            if len(name_list) > 0:
+            if len(name_list) > 0 and not self.smooths_dict[name].is_temporal_kernel:
                 M = sm_cov.additive_model_preprocessing(penal_only=True)
             else:
                 M = sm_cov.compute_Bx()
@@ -1886,7 +1886,7 @@ def compute_Sjs(sm_handler, var_list):
     if len(var_list) > 0:
         ii = 1
     for var in var_list:
-        tot_dim += sm_handler[var].X.shape[1] - ii * (sm_handler[var].X.shape[1] != 1)
+        tot_dim += sm_handler[var].X.shape[1] - ii * (sm_handler[var].X.shape[1] != 1) * (not sm_handler[var].is_temporal_kernel)
 
     cc = 1
     for var in var_list:
