@@ -13,10 +13,7 @@ try:
         pass
 except IndexError:
     pass
-from copy import deepcopy
-from time import perf_counter
 
-import matplotlib.pyplot as plt
 import numpy as np
 import scipy.linalg as linalg
 import scipy.sparse as sparse
