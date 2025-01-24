@@ -494,7 +494,7 @@ def rowWiseKron_fullPython(a, b):
 def multiRowWiseKron(*M, sparseX=True):
     KP = M[0]
     if len(M) == 1:
-        if type(KP) is sparse.csr.csr_matrix and sparseX:
+        if type(KP) is sparse.csr_matrix and sparseX:
             return KP
         elif sparseX:
             return sparse.csr_matrix(KP, dtype=np.float64)
