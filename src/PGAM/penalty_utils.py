@@ -110,7 +110,7 @@ def tree_create_block(tree_penalty_blocks, start_idx, block_matrix_n_rows: int):
 
     return jnp.concatenate(
         jax.tree_util.tree_map(
-            lambda x,y: create_block_penalty(x, y, num_weights)[None],
+            lambda x,y: create_block_penalty(x, y, block_matrix_n_rows)[None],
             tree_penalty_blocks,
             start_idx
         ),
