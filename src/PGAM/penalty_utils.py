@@ -26,6 +26,32 @@ def symmetric_sqrt(M):
     return Bx[:, ::-1].T
 
 
+def compute_start_block(tree_penalty, shift_by=0):
+    """Compute start block index."""
+    flat, struct = jax.tree_util.tree_flatten(tree_penalty)
+    vals = (shift_by, *(arr.shape[0] for arr in flat[:-1]))
+
+    def cum_sum(val_iter):
+        v_prev = 0
+        for v_curr in val_iter:
+            yield v_curr + v_prev
+            v_prev = v_curr + v_prev
+
+    return jax.tree_util.tree_unflatten(struct, [k for k in cum_sum(vals)])
+
+
+def tree_compute_sqrt(tree_penalty, reg_strength: jnp.ndarray, index_map: jnp.ndarray, shift_by=0, positive_mon_func=jnp.exp):
+    sqrt_tree = jax.tree_util.tree_map(symmetric_sqrt, tree_penalty)
+    tree_start = compute_start_block(sqrt_tree, shift_by=shift_by)
+    mx_size = pytree_map_and_reduce(lambda x: x.shape[0], sum, sqrt_tree)
+    return compute_weighted_penalty(
+        tree_create_block(sqrt_tree, tree_start, mx_size),
+        reg_strength,
+        jnp.hstack(jax.tree_util.tree_leaves(index_map), dtype=int),
+        positive_mon_func=positive_mon_func
+    )
+
+
 def compute_energy_penalty(n_samples, knots, order):
     if order < 3:
         raise ValueError("A second derivative based penalty can be computed for `order >= 3`. "
