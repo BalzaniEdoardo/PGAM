@@ -1,7 +1,9 @@
+from functools import partial
 
 import jax
 import jax.numpy as jnp
 import numpy as np
+from nemos.tree_utils import pytree_map_and_reduce
 
 from nemos.basis._spline_basis import bspline
 
@@ -68,3 +70,49 @@ def compute_weighted_penalty(penalty_tensor: jnp.ndarray, reg_strength: jnp.ndar
     """
     pos_reg = positive_mon_func(reg_strength)
     return jnp.sum(penalty_tensor[index_map] * pos_reg[:, None, None], axis=1)
+
+
+def create_block_penalty(full_penalty: jnp.ndarray, start_idx: int, num_weights: int):
+    block_size = full_penalty.shape[0]
+    block_penalty = jnp.zeros((num_weights, num_weights)).at[
+                    start_idx: start_idx+block_size, start_idx: start_idx+block_size
+                    ].set(full_penalty)
+    return block_penalty
+
+
+def tree_create_block(tree_penalty_blocks, start_idx, block_matrix_n_rows: int):
+    """
+    Create the block penalty.
+
+    Put the full penalties in the correct blocks and stack them in a tensor.
+    This function should create the `penalty_tensor` that is used in
+    `compute_weighted_penalty`.
+    Can be pre-computed.
+
+
+    Parameters
+    ----------
+    tree_penalty_blocks::
+        A tree with the full penalties that needs to be inserted in the block diagonal.
+    start_idx:
+        Indices of the start of the block.
+    block_matrix_n_rows:
+        Number of rows and cols of the final penalty matrix.
+
+    Returns
+    -------
+        An (num leaves, block_matrix_n_rows, block_matrix_n_rows) tensor with the full penalties
+        in the right block. Can be precomputed.
+
+    """
+    tree_penalty_blocks = jax.tree_util.tree_leaves(tree_penalty_blocks)
+    start_idx = jax.tree_util.tree_leaves(start_idx)
+
+    return jnp.concatenate(
+        jax.tree_util.tree_map(
+            lambda x,y: create_block_penalty(x, y, num_weights)[None],
+            tree_penalty_blocks,
+            start_idx
+        ),
+        axis=0
+    )
