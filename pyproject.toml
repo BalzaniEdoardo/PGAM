@@ -10,7 +10,7 @@ description = "Poisson Generalized Additive Models."
 readme = "README.md"
 requires-python = ">=3.9"
 keywords = ["neuroscience", "Poisson-GAM"]
-license = { file = "LICENSE" }
+license = { file = "LICENSE.md" }
 classifiers = [
     "Intended Audience :: Science/Research",
     "Natural Language :: English",
