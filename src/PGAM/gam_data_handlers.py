@@ -16,7 +16,7 @@ from time import perf_counter
 
 import scipy.signal as signal
 from numba import jit
-from scipy.integrate import dblquad, simps
+from scipy.integrate import dblquad, simpson
 from scipy.spatial import Delaunay
 
 
@@ -219,7 +219,7 @@ def smPenalty_1D_derBased(
     M = np.zeros((D.shape[1], D.shape[1]))
     for i in range(D.shape[1]):
         for j in range(i, D.shape[1]):
-            M[i, j] = simps(D[:, i] * D[:, j] * mux, dx=dx)
+            M[i, j] = simpson(D[:, i] * D[:, j] * mux, dx=dx)
     M = M + np.triu(M, 1).T
     Bx = smoothPen_sqrt(M)
     M = sparse.csr_matrix(M)
@@ -266,7 +266,7 @@ def adaptiveSmoother_1D_derBased(
         M = np.zeros((D.shape[1], D.shape[1]))
         for i in range(D.shape[1]):
             for j in range(i, D.shape[1]):
-                M[i, j] = simps(D[:, i] * D[:, j] * kX[:, k], dx=dx)
+                M[i, j] = simpson(D[:, i] * D[:, j] * kX[:, k], dx=dx)
         M[:, :] = M[:, :] + np.triu(M[:, :], 1).T
         Bx += [smoothPen_sqrt(M[:, :])]
         M_list += [M]
