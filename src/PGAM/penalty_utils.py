@@ -1,11 +1,10 @@
-from functools import partial
+from typing import Callable
 
 import jax
 import jax.numpy as jnp
 import numpy as np
 from nemos.tree_utils import pytree_map_and_reduce
 
-from nemos.basis._spline_basis import bspline
 
 @jax.jit
 def symmetric_sqrt(M):
@@ -52,20 +51,26 @@ def tree_compute_sqrt(tree_penalty, reg_strength: jnp.ndarray, index_map: jnp.nd
     )
 
 
-def compute_energy_penalty(n_samples, knots, order):
-    if order < 3:
-        raise ValueError("A second derivative based penalty can be computed for `order >= 3`. "
-                         f"The provided order is {order} instead!")
+def compute_energy_penalty(n_samples, basis_derivative: Callable):
     samples = np.linspace(0, 1, n_samples)
-    eval_bas = bspline(samples, knots, order, der=2, outer_ok=False)
+    eval_bas = basis_derivative(samples)
     indices = jnp.triu_indices(eval_bas.shape[1])
     square_bas = eval_bas[:, indices[0]] * eval_bas[:, indices[1]]
     dx = samples[1] - samples[0]
-    integr = jax.scipy.integrate.trapezoid(square_bas, dx=dx, axis=0)
+    from scipy.integrate import simpson
+    integr = simpson(square_bas, dx=dx, axis=0)
+    # integr = jax.scipy.integrate.trapezoid(square_bas, dx=dx, axis=0)
     energy_pen = jnp.zeros((eval_bas.shape[1], eval_bas.shape[1]))
     energy_pen = energy_pen.at[indices].set(integr)
     energy_pen = energy_pen + energy_pen.T - jnp.diag(energy_pen.diagonal())
     return energy_pen
+
+
+def compute_penalty_null_space(penalty):
+    eig, U = jnp.linalg.eigh(penalty)
+    zero_idx = jnp.abs(eig) < jnp.finfo(float).eps * jnp.max(eig)
+    U = U[:, zero_idx]
+    return jnp.dot(U, U.T)
 
 
 def compute_weighted_penalty(penalty_tensor: jnp.ndarray, reg_strength: jnp.ndarray, index_map: jnp.ndarray, positive_mon_func=jnp.exp):
@@ -95,7 +100,7 @@ def compute_weighted_penalty(penalty_tensor: jnp.ndarray, reg_strength: jnp.ndar
 
     """
     pos_reg = positive_mon_func(reg_strength)
-    return jnp.sum(penalty_tensor[index_map] * pos_reg[:, None, None], axis=1)
+    return jnp.sum(penalty_tensor[index_map] * pos_reg[:, None, None], axis=0)
 
 
 def create_block_penalty(full_penalty: jnp.ndarray, start_idx: int, num_weights: int):
