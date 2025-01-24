@@ -27,7 +27,7 @@ class weights_and_data(object):
 
         :param y:
         :param family:  statsmodels.genmod.families.family family class
-        :param fisher_scoring: if False mehtod is unstable
+        :param fisher_scoring: if False method is unstable
         """
         self.y = y.copy()
         self.family = family

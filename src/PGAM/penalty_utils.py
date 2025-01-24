@@ -1,10 +1,9 @@
-import timeit
 
 import jax
 import jax.numpy as jnp
-import nemos as nmo
 import numpy as np
 
+from nemos.basis._spline_basis import bspline
 
 @jax.jit
 def symmetric_sqrt(M):
@@ -30,7 +29,7 @@ def compute_energy_penalty(n_samples, knots, order):
         raise ValueError("A second derivative based penalty can be computed for `order >= 3`. "
                          f"The provided order is {order} instead!")
     samples = np.linspace(0, 1, n_samples)
-    eval_bas = nmo.basis.bspline(samples, knots, order, der=2, outer_ok=False)
+    eval_bas = bspline(samples, knots, order, der=2, outer_ok=False)
     indices = jnp.triu_indices(eval_bas.shape[1])
     square_bas = eval_bas[:, indices[0]] * eval_bas[:, indices[1]]
     dx = samples[1] - samples[0]
@@ -39,3 +38,33 @@ def compute_energy_penalty(n_samples, knots, order):
     energy_pen = energy_pen.at[indices].set(integr)
     energy_pen = energy_pen + energy_pen.T - jnp.diag(energy_pen.diagonal())
     return energy_pen
+
+
+def compute_weighted_penalty(penalty_tensor: jnp.ndarray, reg_strength: jnp.ndarray, index_map: jnp.ndarray, positive_mon_func=jnp.exp):
+    """
+    Compute a weighted sum of the penalties.
+
+    Parameters
+    ----------
+    penalty_tensor:
+        A tensor of shape (N, K, K), where K is the number of coefficients, N is the number of
+        different penalty matrix available. If two variables have the same num of coefficients,
+        then the derivative penalty witll be the same so we don't need to double count.
+        penalty_tensor[i] contains a single block on the diagonal with the i-th penalization
+    reg_strength:
+        Vector of dimension (M,) with M >= N the number of variable we are regressing.
+    index_map:
+        Vector of integers of length M, with values from 0 to N-1. This vector is used to
+        map the penalty tensor to the variable, so that penalty_tensor[index_map[i]] is
+        the penalization term corresponding to the i-th regularization strength, i.e. the i-th variable.
+    positive_mon_func:
+        Function that makes the weights positives.
+
+    Returns
+    -------
+    :
+        The weighted penalty.
+
+    """
+    pos_reg = positive_mon_func(reg_strength)
+    return jnp.sum(penalty_tensor[index_map] * pos_reg[:, None, None], axis=1)
