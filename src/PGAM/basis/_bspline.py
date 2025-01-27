@@ -11,8 +11,10 @@ from typing import Tuple, Optional
 
 from pynapple import Tsd, TsdFrame, TsdTensor
 from ._basis_utils import apply_constraints
+from ._basis_mxin import GAMBasisMixin
 
-class GAMBSplineEval(BSplineEval):
+
+class GAMBSplineEval(GAMBasisMixin, BSplineEval):
 
     def __init__(
             self,
@@ -22,19 +24,9 @@ class GAMBSplineEval(BSplineEval):
             label: Optional[str] = "GAMBSplineEval",
             identifiability: Optional[bool] = True,
     ):
-        super().__init__(n_basis_funcs=n_basis_funcs, order=order, bounds=bounds, label=label)
-        self._identifiability = int(identifiability)
-        self._keep_index: Optional[NDArray] = None
+        BSplineEval.__init__(self, n_basis_funcs=n_basis_funcs, order=order, bounds=bounds, label=label)
+        GAMBasisMixin.__init__(self, identifiability=identifiability)
 
-    @property
-    def identifiability(self):
-        return bool(self._identifiability)
-
-    @identifiability.setter
-    def identifiability(self, value: bool):
-        if not isinstance(value, bool):
-            raise TypeError(f"identifiability must be a boolean. {value} provided instead.")
-        self._identifiability = value
 
     @support_pynapple(conv_type="numpy")
     @check_transform_input
@@ -80,9 +72,3 @@ class GAMBSplineEval(BSplineEval):
         elif self._identifiability:
             X, self._keep_index = apply_constraints(X)
         return X
-
-    def set_identifiability(self, sample_pts: ArrayLike | Tsd | TsdTensor):
-        """Find and store linearly independent columns.
-        """
-        X = super()._evaluate(sample_pts)
-        _, self._keep_index = apply_constraints(X)
