@@ -1,4 +1,4 @@
-from typing import Callable
+from typing import Any, Callable, Optional
 
 import jax
 import jax.numpy as jnp
@@ -7,9 +7,21 @@ from nemos.tree_utils import pytree_map_and_reduce
 
 
 @jax.jit
-def symmetric_sqrt(M):
-    """Compute the square root of a symmetric matrix truncating eigs at float 32 precision."""
-    eig, U = jnp.linalg.eigh(M)
+def symmetric_sqrt(symmetric_matrix):
+    """
+    Compute the square root of a symmetric matrix, truncating eigenvalues at float32 precision.
+
+    Parameters
+    ----------
+    symmetric_matrix :
+        A symmetric matrix of shape (N, N).
+
+    Returns
+    -------
+    :
+        The square root of the input matrix.
+    """
+    eig, U = jnp.linalg.eigh(symmetric_matrix)
     sort_col = jnp.argsort(eig)
     eig = eig[sort_col]
     U = U[:, sort_col]
@@ -25,8 +37,22 @@ def symmetric_sqrt(M):
     return Bx[:, ::-1].T
 
 
-def compute_start_block(tree_penalty, shift_by=0):
-    """Compute start block index."""
+def compute_start_block(tree_penalty: Any, shift_by=0):
+    """
+    Compute the starting block index for penalties.
+
+    Parameters
+    ----------
+    tree_penalty :
+        Tree containing penalty matrices.
+    shift_by : int, optional
+        Initial index to shift by, default is 0.
+
+    Returns
+    -------
+    :
+        A tree containing the cumulative sum of block indices.
+    """
     flat, struct = jax.tree_util.tree_flatten(tree_penalty)
     vals = (shift_by, *(arr.shape[0] for arr in flat[:-1]))
 
@@ -39,7 +65,28 @@ def compute_start_block(tree_penalty, shift_by=0):
     return jax.tree_util.tree_unflatten(struct, [k for k in cum_sum(vals)])
 
 
-def tree_compute_sqrt(tree_penalty, reg_strength: jnp.ndarray, index_map: jnp.ndarray, shift_by=0, positive_mon_func=jnp.exp):
+def tree_compute_sqrt_penalty(tree_penalty, reg_strength: jnp.ndarray, index_map: jnp.ndarray, shift_by: Optional[int]=0, positive_mon_func: Callable=jnp.exp):
+    """
+    Compute the square root of penalties in a pytree and apply weighting.
+
+    Parameters
+    ----------
+    tree_penalty :
+        Tree containing penalty matrices.
+    reg_strength :
+        Regularization strengths of shape (M,).
+    index_map :
+        Index mapping of length M.
+    shift_by :
+        Initial index to shift by, default is 0.
+    positive_mon_func :
+        Monotonic function to ensure positive weights, default is `jnp.exp`.
+
+    Returns
+    -------
+    :
+        Weighted penalty matrix.
+    """
     sqrt_tree = jax.tree_util.tree_map(symmetric_sqrt, tree_penalty)
     tree_start = compute_start_block(sqrt_tree, shift_by=shift_by)
     mx_size = pytree_map_and_reduce(lambda x: x.shape[0], sum, sqrt_tree)
@@ -52,14 +99,28 @@ def tree_compute_sqrt(tree_penalty, reg_strength: jnp.ndarray, index_map: jnp.nd
 
 
 def compute_energy_penalty(n_samples, basis_derivative: Callable):
+    """
+    Compute the energy penalty for a basis derivative.
+
+    Parameters
+    ----------
+    n_samples :
+        Number of samples for integration.
+    basis_derivative :
+        Function that computes the derivative of the basis.
+
+    Returns
+    -------
+    j:
+        Energy penalty matrix of shape (K, K), where K is the number of basis functions.
+    """
     samples = np.linspace(0, 1, n_samples)
     eval_bas = basis_derivative(samples)
     indices = jnp.triu_indices(eval_bas.shape[1])
     square_bas = eval_bas[:, indices[0]] * eval_bas[:, indices[1]]
     dx = samples[1] - samples[0]
-    from scipy.integrate import simpson
-    integr = simpson(square_bas, dx=dx, axis=0)
-    # integr = jax.scipy.integrate.trapezoid(square_bas, dx=dx, axis=0)
+    # write my own implementation of simpson for numerical accuracy
+    integr = jax.scipy.integrate.trapezoid(square_bas, dx=dx, axis=0)
     energy_pen = jnp.zeros((eval_bas.shape[1], eval_bas.shape[1]))
     energy_pen = energy_pen.at[indices].set(integr)
     energy_pen = energy_pen + energy_pen.T - jnp.diag(energy_pen.diagonal())
@@ -67,6 +128,19 @@ def compute_energy_penalty(n_samples, basis_derivative: Callable):
 
 
 def compute_penalty_null_space(penalty):
+    """
+    Compute the null space projection of a penalty matrix.
+
+    Parameters
+    ----------
+    penalty :
+        Penalty matrix of shape (K, K).
+
+    Returns
+    -------
+    :
+        Null space projection matrix of shape (K, K).
+    """
     eig, U = jnp.linalg.eigh(penalty)
     zero_idx = jnp.abs(eig) < jnp.finfo(float).eps * jnp.max(eig)
     U = U[:, zero_idx]
@@ -79,31 +153,42 @@ def compute_weighted_penalty(penalty_tensor: jnp.ndarray, reg_strength: jnp.ndar
 
     Parameters
     ----------
-    penalty_tensor:
-        A tensor of shape (N, K, K), where K is the number of coefficients, N is the number of
-        different penalty matrix available. If two variables have the same num of coefficients,
-        then the derivative penalty witll be the same so we don't need to double count.
-        penalty_tensor[i] contains a single block on the diagonal with the i-th penalization
-    reg_strength:
-        Vector of dimension (M,) with M >= N the number of variable we are regressing.
-    index_map:
-        Vector of integers of length M, with values from 0 to N-1. This vector is used to
-        map the penalty tensor to the variable, so that penalty_tensor[index_map[i]] is
-        the penalization term corresponding to the i-th regularization strength, i.e. the i-th variable.
-    positive_mon_func:
-        Function that makes the weights positives.
+    penalty_tensor :
+        Tensor of shape (N, K, K), where K is the number of coefficients and N is the number of penalty matrices.
+    reg_strength :
+        Regularization strengths of shape (M,), where M >= N.
+    index_map :
+        Mapping of indices from (0, N-1) of shape (M,).
+    positive_mon_func :
+        Function that ensures positive weights, default is `jnp.exp`.
 
     Returns
     -------
     :
-        The weighted penalty.
-
+        Weighted penalty matrix of shape (K, K).
     """
     pos_reg = positive_mon_func(reg_strength)
     return jnp.sum(penalty_tensor[index_map] * pos_reg[:, None, None], axis=0)
 
 
 def create_block_penalty(full_penalty: jnp.ndarray, start_idx: int, num_weights: int):
+    """
+    Create a block penalty matrix.
+
+    Parameters
+    ----------
+    full_penalty :
+        Penalty matrix to insert in the block.
+    start_idx :
+        Start index of the block.
+    num_weights :
+        Total number of weights.
+
+    Returns
+    -------
+    :
+        Block penalty matrix of shape (num_weights, num_weights).
+    """
     block_size = full_penalty.shape[0]
     block_penalty = jnp.zeros((num_weights, num_weights)).at[
                     start_idx: start_idx+block_size, start_idx: start_idx+block_size
@@ -111,37 +196,30 @@ def create_block_penalty(full_penalty: jnp.ndarray, start_idx: int, num_weights:
     return block_penalty
 
 
-def tree_create_block(tree_penalty_blocks, start_idx, block_matrix_n_rows: int):
+def tree_create_block(tree_penalty_blocks, start_idx, block_size: int):
     """
-    Create the block penalty.
-
-    Put the full penalties in the correct blocks and stack them in a tensor.
-    This function should create the `penalty_tensor` that is used in
-    `compute_weighted_penalty`.
-    Can be pre-computed.
-
+    Create a block penalty tensor from a tree of penalty blocks.
 
     Parameters
     ----------
-    tree_penalty_blocks::
-        A tree with the full penalties that needs to be inserted in the block diagonal.
-    start_idx:
-        Indices of the start of the block.
-    block_matrix_n_rows:
-        Number of rows and cols of the final penalty matrix.
+    tree_penalty_blocks :
+        Tree containing penalty blocks.
+    start_idx :
+        Tree containing start indices for each block.
+    block_size :
+        Number of rows/columns of the final block matrix.
 
     Returns
     -------
-        An (num leaves, block_matrix_n_rows, block_matrix_n_rows) tensor with the full penalties
-        in the right block. Can be precomputed.
-
+    :
+        Block penalty tensor of shape (num_blocks, block_matrix_n_rows, block_matrix_n_rows).
     """
     tree_penalty_blocks = jax.tree_util.tree_leaves(tree_penalty_blocks)
     start_idx = jax.tree_util.tree_leaves(start_idx)
 
     return jnp.concatenate(
         jax.tree_util.tree_map(
-            lambda x,y: create_block_penalty(x, y, block_matrix_n_rows)[None],
+            lambda x,y: create_block_penalty(x, y, block_size)[None],
             tree_penalty_blocks,
             start_idx
         ),
