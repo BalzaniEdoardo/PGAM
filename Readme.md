@@ -1,6 +1,21 @@
 Poisson Generalized Additive Model (PGAM)
 =====================================
 
+## TODO:
+
+- Basis: 
+  - Adjust split axis to account for identifiability
+  - Adjust the n_output_features?
+  - Write tests on new and old behavior 
+- PGAM:
+  - Define class API:
+    - OPTION A:
+      - fit, score, predict: receive a matrix of concatenated features
+      - concat_fit, concat_score, concat_predict: receives the separate time series
+      - Gets a basis as input
+    - OPTION B:
+      - receives the penalty tree, a map from tree to reg strength, a tree of regularization strength.
+      - Implements solely the estimator API.
 
 A PGAM for the efficient estimation of neural tuning functions. Responses are represented in terms of B-splines regularized by a smoothing enforcing penalization. B-spline coefficients and regularization hyperparameters are jointly learned from the data by numerical optimization of a cross-validation score. The model infers marginal confidence bounds for the contribution of each feature to the neural response and uses such bounds to identify the minimal subset of features each neuron responds to. This implies that the model selects a subset of variables based on statistical testing, as opposed to time costly forward-backward selection, that may be unfeasible when the number of regressors is large. See [[1]](#1) for a more technical details as well as benchmarking vs traditional regularized GLMs. 
 
