@@ -1,6 +1,6 @@
 from nemos.basis._basis import AdditiveBasis
 from ._basis_mxin import GAMAdditiveBasisMixin
-A
+
 def GAMAdditiveBasis(AdditiveBasis, GAMAdditiveBasisMixin):
 
     def __init__(self, basis1, basis2):

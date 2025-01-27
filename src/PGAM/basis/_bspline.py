@@ -30,7 +30,7 @@ class GAMBSplineEval(GAMBasisMixin, BSplineEval):
 
     @support_pynapple(conv_type="numpy")
     @check_transform_input
-    def derivative(self, sample_pts: np.ndarray, der: int = 2):
+    def _derivative(self, sample_pts: np.ndarray, der: int = 2):
         """
         Compute the basis derivative.
 
@@ -59,6 +59,24 @@ class GAMBSplineEval(GAMBasisMixin, BSplineEval):
         if keep_index is not None:
             X = X[..., keep_index]
         return X
+
+    def derivative(self, sample_pts: np.ndarray, der: int = 2):
+        """
+        Compute the basis derivative and concatenate output on the second axis.
+
+        Parameters
+        ----------
+        sample_pts:
+            Sample points over which computing the derivative.
+        der:
+            Order of the derivative.
+
+        Returns
+        -------
+            The derivative at the sample points.
+        """
+        X = self._derivative(sample_pts, der=der)
+        return X.reshape(X.shape[0], -1)
 
     def _evaluate(
         self, sample_pts: ArrayLike | Tsd | TsdFrame | TsdTensor

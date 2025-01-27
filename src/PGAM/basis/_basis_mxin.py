@@ -1,9 +1,10 @@
+from nemos.type_casting import support_pynapple
 from numpy.typing import ArrayLike, NDArray
 from typing import Optional
 from pynapple import Tsd, TsdFrame, TsdTensor
 from ._basis_utils import apply_constraints
 import numpy as np
-
+from nemos.utils import row_wise_kron
 
 class GAMBasisMixin:
 
@@ -31,10 +32,23 @@ class GAMBasisMixin:
 
 class GAMAdditiveBasisMixin:
 
+    @support_pynapple("numpy")
     def derivative(self, *xi: ArrayLike):
         return np.hstack(
             self.basis1.derivative(*xi[: self.basis1._n_input_dimensionality]),
             self.basis2.derivative(*xi[: self.basis1._n_input_dimensionality])
         )
 
+
+class GAMMultiplicativeBasisMixin:
+
+    @support_pynapple("numpy")
+    def derivative(self, *xi: ArrayLike):
+        return np.asarray(
+            row_wise_kron(
+                self.basis1.derivative(*xi[: self.basis1._n_input_dimensionality]),
+                self.basis2.derivative(*xi[self.basis1._n_input_dimensionality :]),
+                transpose=False,
+            )
+        )
 
