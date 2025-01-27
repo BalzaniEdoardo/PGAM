@@ -1,5 +1,4 @@
-from copy import deepcopy
-
+import inspect
 from nemos.basis._basis import AdditiveBasis, MultiplicativeBasis
 from typing import Optional
 from pynapple import Tsd, TsdFrame, TsdTensor
@@ -12,6 +11,16 @@ from nemos.type_casting import support_pynapple
 
 import numpy as np
 from nemos.utils import row_wise_kron
+
+def has_param(bas, method, param_name="apply_identifiability"):
+    attr = getattr(bas, method, None)
+    if attr is None:
+        return False
+    sig = inspect.signature(attr)
+    return param_name in (
+        p.name
+        for p in sig.parameters.values()
+    )
 
 class GAMBasisMixin:
 
@@ -34,11 +43,11 @@ class GAMBasisMixin:
         else:
             self.apply_constraints = lambda x: x
 
-    def compute_features(
+    def _compute_features(
         self, sample_pts: ArrayLike | Tsd | TsdFrame | TsdTensor, apply_identifiability: Optional[bool] = None
     ) -> FeatureMatrix:
         # this gets the compute feature from the inheritance (bspline or similar)
-        X = super().compute_features(sample_pts)
+        X = super()._compute_features(sample_pts)
         if apply_identifiability:
             # enforce drop col
             X = X[..., :-1]
@@ -143,7 +152,7 @@ class GAMAdditiveBasis(AdditiveBasis):
     def derivative(self, *xi: ArrayLike):
         return np.hstack(
             self.basis1.derivative(*xi[: self.basis1._n_input_dimensionality]),
-            self.basis2.derivative(*xi[: self.basis1._n_input_dimensionality])
+            self.basis2.derivative(*xi[self.basis1._n_input_dimensionality:])
         )
 
 
@@ -152,20 +161,32 @@ class GAMMultiplicativeBasis(MultiplicativeBasis):
     def __init__(self, basis1: GAMBasisMixin, basis2: GAMBasisMixin):
         super().__init__(basis1, basis2)
 
-    @support_pynapple("numpy")
+
     def derivative(self, *xi: ArrayLike):
-        return np.asarray(
-            row_wise_kron(
-                self.basis1.derivative(*xi[: self.basis1._n_input_dimensionality]),
-                self.basis2.derivative(*xi[self.basis1._n_input_dimensionality :]),
+        kron = support_pynapple(conv_type="numpy")(row_wise_kron)
+
+        kwargs1, kwargs2 = dict(), dict()
+        if has_param(self.basis1, "_compute_features", "apply_identifiability"):
+            kwargs1 = dict(apply_identifiability=False)
+        if has_param(self.basis2, "_compute_features", "apply_identifiability"):
+            kwargs2 = dict(apply_identifiability=False)
+
+        return kron(
+                self.basis1.derivative(*xi[: self.basis1._n_input_dimensionality], **kwargs1),
+                self.basis2.derivative(*xi[self.basis1._n_input_dimensionality :], **kwargs2),
                 transpose=False,
-            )
         )
 
-    def compute_features(self, *xi: ArrayLike):
+    def _compute_features(self, *xi: ArrayLike):
         kron = support_pynapple(conv_type="numpy")(row_wise_kron)
+        kwargs1, kwargs2 = dict(), dict()
+        if has_param(self.basis1, "_compute_features", "apply_identifiability"):
+            kwargs1 = dict(apply_identifiability=False)
+        if has_param(self.basis2, "_compute_features", "apply_identifiability"):
+            kwargs2 = dict(apply_identifiability=False)
         X = kron(
-            self.basis1.compute_features(*xi[: self.basis1._n_input_dimensionality], apply_identifiability=False),
-            self.basis1.compute_features(*xi[self.basis1._n_input_dimensionality:], apply_identifiability=False)
+            self.basis1._compute_features(*xi[: self.basis1._n_input_dimensionality], **kwargs1),
+            self.basis2._compute_features(*xi[self.basis1._n_input_dimensionality:], **kwargs2),
+            transpose=False,
         )
         return X
