@@ -4,9 +4,8 @@ Poisson Generalized Additive Model (PGAM)
 ## TODO:
 
 - Basis: 
-  - Adjust split axis to account for identifiability
-  - Adjust the n_output_features?
   - Write tests on new and old behavior 
+  - FIX SPLIT BY for multiplicative!
 - PGAM:
   - Define class API:
     - OPTION A:

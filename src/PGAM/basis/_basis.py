@@ -1,4 +1,6 @@
 import inspect
+from copy import deepcopy
+
 from nemos.basis._basis import AdditiveBasis, MultiplicativeBasis
 from typing import Optional
 from pynapple import Tsd, TsdFrame, TsdTensor
@@ -28,6 +30,8 @@ class GAMBasisMixin:
         self._identifiability = int(identifiability)
         # get the attribute or the func
         self.apply_constraints = lambda x: x[...,:-1]
+        # add a basis if the drop column is enabled
+        self._n_basis_funcs = self._n_basis_funcs + self._identifiability
 
     @property
     def identifiability(self):
@@ -68,12 +72,11 @@ class GAMBasisMixin:
                     self.label: slice(start_slice, start_slice + self.n_output_features)
                 }
             else:
-                n_basis = self.n_basis_funcs - self._identifiability
                 split_dict = {
                     self.label: {
                         f"{i}": slice(
-                            start_slice + i * n_basis,
-                            start_slice + (i + 1) * n_basis,
+                            start_slice + i * self.n_basis_funcs,
+                            start_slice + (i + 1) * self.n_basis_funcs,
                         )
                         for i in range(self._input_shape_product[0])
                     }
@@ -103,22 +106,10 @@ class GAMBasisMixin:
             result = result * self
         return result
 
-    @property
-    def n_output_features(self) -> int | None:
-        """
-        Number of features returned by the basis.
 
-        Notes
-        -----
-        The number of output features can be determined only when the number of inputs
-        provided to the basis is known. Therefore, before the first call to ``compute_features``,
-        this property will return ``None``. After that call, or after setting the input shape with
-        ``set_input_shape``, ``n_output_features`` will be available.
-        """
-        n_basis = self.n_basis_funcs - self._identifiability
-        if self._input_shape_product is not None:
-            return n_basis * self._input_shape_product[0]
-        return None
+    @property
+    def n_basis_funcs(self) -> int:
+        return self._n_basis_funcs - getattr(self, "_identifiability", 0)
 
     def derivative(self, sample_pts: np.ndarray, der: int = 2, apply_identifiability: Optional[bool] = None):
         """
@@ -159,34 +150,21 @@ class GAMAdditiveBasis(AdditiveBasis):
 class GAMMultiplicativeBasis(MultiplicativeBasis):
 
     def __init__(self, basis1: GAMBasisMixin, basis2: GAMBasisMixin):
+        # copy and reset number of basis and identifiability.
+        basis1 = deepcopy(basis1)
+        basis1._n_basis_funcs = basis1.n_basis_funcs
+        basis1.identifiability = False
+        basis2 = deepcopy(basis2)
+        basis2._n_basis_funcs = basis2.n_basis_funcs
+        basis2.identifiability = False
         super().__init__(basis1, basis2)
 
 
     def derivative(self, *xi: ArrayLike):
         kron = support_pynapple(conv_type="numpy")(row_wise_kron)
 
-        kwargs1, kwargs2 = dict(), dict()
-        if has_param(self.basis1, "_compute_features", "apply_identifiability"):
-            kwargs1 = dict(apply_identifiability=False)
-        if has_param(self.basis2, "_compute_features", "apply_identifiability"):
-            kwargs2 = dict(apply_identifiability=False)
-
         return kron(
-                self.basis1.derivative(*xi[: self.basis1._n_input_dimensionality], **kwargs1),
-                self.basis2.derivative(*xi[self.basis1._n_input_dimensionality :], **kwargs2),
+                self.basis1.derivative(*xi[: self.basis1._n_input_dimensionality]),
+                self.basis2.derivative(*xi[self.basis1._n_input_dimensionality :]),
                 transpose=False,
         )
-
-    def _compute_features(self, *xi: ArrayLike):
-        kron = support_pynapple(conv_type="numpy")(row_wise_kron)
-        kwargs1, kwargs2 = dict(), dict()
-        if has_param(self.basis1, "_compute_features", "apply_identifiability"):
-            kwargs1 = dict(apply_identifiability=False)
-        if has_param(self.basis2, "_compute_features", "apply_identifiability"):
-            kwargs2 = dict(apply_identifiability=False)
-        X = kron(
-            self.basis1._compute_features(*xi[: self.basis1._n_input_dimensionality], **kwargs1),
-            self.basis2._compute_features(*xi[self.basis1._n_input_dimensionality:], **kwargs2),
-            transpose=False,
-        )
-        return X
