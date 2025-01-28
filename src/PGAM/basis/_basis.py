@@ -59,34 +59,11 @@ class GAMBasisMixin:
             X = self.apply_constraints(X)
         return X
 
-    def _get_default_slicing(
-            self, split_by_input: bool, start_slice: int
-    ) -> Tuple[OrderedDict, int]:
-        """Handle default slicing logic."""
-        if split_by_input:
-            # should we remove this option?
-            if self._input_shape_product[0] == 1 or isinstance(
-                    self, MultiplicativeBasis
-            ):
-                split_dict = {
-                    self.label: slice(start_slice, start_slice + self.n_output_features)
-                }
-            else:
-                split_dict = {
-                    self.label: {
-                        f"{i}": slice(
-                            start_slice + i * self.n_basis_funcs,
-                            start_slice + (i + 1) * self.n_basis_funcs,
-                        )
-                        for i in range(self._input_shape_product[0])
-                    }
-                }
-        else:
-            split_dict = {
-                self.label: slice(start_slice, start_slice + self.n_output_features)
-            }
-        start_slice += self.n_output_features
-        return OrderedDict(split_dict), start_slice
+    def evaluate_on_grid(self, *n_samples: int) -> Tuple[Tuple[NDArray], NDArray]:
+        out = super().evaluate_on_grid(*n_samples)
+        grid, X = out[:-1], out[-1]
+        X = self.apply_constraints(X)
+        return *grid, X
 
     def __add__(self, other):
         return GAMAdditiveBasis(self, other)
