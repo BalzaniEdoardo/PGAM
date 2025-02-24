@@ -4,12 +4,8 @@ from nemos.basis._basis import min_max_rescale_samples, check_transform_input
 from nemos.type_casting import support_pynapple
 
 import numpy as np
-from nemos.typing import FeatureMatrix
-from numpy._typing import ArrayLike
-from numpy.typing import NDArray
 from typing import Tuple, Optional
 
-from pynapple import Tsd, TsdFrame, TsdTensor
 
 from._basis import GAMAtomicBasisMixin
 
