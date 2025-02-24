@@ -4,6 +4,11 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 from nemos.tree_utils import pytree_map_and_reduce
+from scipy import sparse
+
+import math
+
+from .basis import GAMBSplineEval
 
 
 @jax.jit
@@ -98,7 +103,7 @@ def tree_compute_sqrt_penalty(tree_penalty, reg_strength: jnp.ndarray, index_map
     )
 
 
-def compute_energy_penalty(n_samples, basis_derivative: Callable):
+def compute_energy_penalty(n_samples: int, basis_derivative: Callable):
     """
     Compute the energy penalty for a basis derivative.
 
@@ -111,7 +116,7 @@ def compute_energy_penalty(n_samples, basis_derivative: Callable):
 
     Returns
     -------
-    j:
+    energy_pen:
         Energy penalty matrix of shape (K, K), where K is the number of basis functions.
     """
     samples = np.linspace(0, 1, n_samples)
@@ -119,7 +124,7 @@ def compute_energy_penalty(n_samples, basis_derivative: Callable):
     indices = jnp.triu_indices(eval_bas.shape[1])
     square_bas = eval_bas[:, indices[0]] * eval_bas[:, indices[1]]
     dx = samples[1] - samples[0]
-    # write my own implementation of simpson for numerical accuracy
+    # TODO: write my own implementation of simpson for numerical accuracy
     integr = jax.scipy.integrate.trapezoid(square_bas, dx=dx, axis=0)
     energy_pen = jnp.zeros((eval_bas.shape[1], eval_bas.shape[1]))
     energy_pen = energy_pen.at[indices].set(integr)
@@ -225,3 +230,117 @@ def tree_create_block(tree_penalty_blocks, start_idx, block_size: int):
         ),
         axis=0
     )
+
+
+def ndim_tensor_product_basis_penalty(*penalty: jnp.ndarray) -> jnp.ndarray:
+    r"""
+    Create a n-dimensional smoothing penalty matrix.
+
+    Computes a smoothing penalty matrix for n-dimensional tensor product basis as in [1]_.
+
+    Parameters
+    ----------
+    penalty:
+        The smoothing penalty square matrices for each coordinate.
+        Usually `penalty[i]` hsd the form
+        :math:`\int (\mathbf{b_i}'' \cdot \mathbf{b_i} ^{\top} '' (x_1,...,x_n))^2 dx`,
+        and :math:`\mathbf{b}_i` is the vector of basis function for the i-th coordinate.
+
+    Returns
+    -------
+    ndim_penalty_tensor:
+        A (num_dimensions, prod_penalty_shape, prod_penalty_shape) containing a penalty
+        matrix that penalize wigglieness in each dimension. prod_penalty_shape is the
+        product of the dimension of the squre penalty matrices.
+
+    References
+    ----------
+    .. [1] Eilers, P. H. C. and B. D. Marx (2003). Multivariate calibration with temperature
+    interaction using two-dimensional penalized signal regression. Chemometrics
+    and Intelligent Laboratory Systems 66, 159–174.
+
+    """
+    num_dimensions = len(penalty)
+    ndim_penalties = []
+    penalty = tuple(penalty)
+    # from the identities for the kron prod
+    identities = tuple(sparse.identity(pen.shape[0], format='csr') for pen in penalty)
+
+    # initialize the output tensor
+    final_dim = math.prod(p.shape[0] for p in penalty)
+    ndim_penalty_tensor = np.zeros((num_dimensions, final_dim, final_dim))
+
+    # apply the sparse kron between each element
+    for k, pen in enumerate(penalty):
+        out = pen if k == 0 else identities[0]
+        for j in  range(1, num_dimensions):
+            out = sparse.kron(out, pen) if j == k else sparse.kron(out, identities[j])
+        ndim_penalty_tensor[k] = out.toarray() if hasattr(out, 'toarray') else out
+    return ndim_penalty_tensor
+
+
+def compute_energy_penalty_tensor_additive_component(
+        basis_component: GAMBSplineEval,
+        n_sample: int = 10**4,
+        penalize_null_space: bool = True,
+) -> jnp.ndarray:
+    """
+    Define a penalty tensor for an additive component.
+
+    Parameters
+    ----------
+    basis_component:
+        Additive component of a basis.
+    n_sample:
+        Number of samples for the numerical approximation of the integral.
+    penalize_null_space:
+        Boolean, if true penalize the null space of every coordinate.
+
+
+    Returns
+    -------
+
+    Notes
+    -----
+    For second derivative based penalties:
+    - For 1-dimensional predictors, it adds penalties to straight lines (degree 1 polynomials ..math:`a + b \cdot x`).
+    - For 2-dimensional predictors, it adds a penalty to ..math:`a + b \cdot x + c \cdot y + d \cdot xy`.
+
+    """
+    one_dim_pen = (compute_energy_penalty(n_sample, b.derivative) for b in basis_component._iterate_over_components())
+    out = ndim_tensor_product_basis_penalty(*one_dim_pen)
+    if penalize_null_space:
+        null_pen = (compute_penalty_null_space(p) for p in out)
+        full_rank = (p[None] if ~np.all(p ==0) else jnp.zeros((0, *p.shape)) for p in null_pen)
+        out = jnp.concatenate(
+            (out, *full_rank),
+            axis=0
+        )
+    return out
+
+
+def irregularly_sampled_simps(x, y):
+    dx = jnp.diff(x)
+    # compute scaling
+    h0_over_h1 = dx[:-1:2] / dx[1::2]
+    h0_plus_h1 = dx[:-1:2] + dx[1::2]
+    glob_scale = h0_plus_h1 / 6
+    first_scale = 2 - 1 / h0_over_h1
+    second_scale = h0_plus_h1**2 / (dx[:-1:2] * dx[1::2])
+    third_scale = 2 - h0_over_h1
+    # compute simpson 1/3 formula
+    even_tot = jnp.sum(glob_scale * (
+            first_scale * y[:len(y)-2:2] + second_scale * y[1:len(y)-1:2] + third_scale * y[2::2]
+        )
+    )
+
+    def add_correction(out, dx, y):
+        len_y = len(y) - 1
+        h0, h1 = dx[-2], dx[-1]
+        return (
+                out + y[len_y] * (2 * h1 ** 2 + 3 * h0 * h1) / (6 * (h0 + h1)) +
+                y[len_y - 1] * (h1 ** 2 + 3 * h1 * h0) / (6 * h0) -
+                y[len_y - 2] * h1 ** 3 / (6 * h0 * (h0 + h1))
+        )
+    return jax.lax.cond(len(y) % 2 == 0, add_correction, lambda *x: x[0], even_tot, dx, y)
+

@@ -24,7 +24,37 @@ def has_param(bas, method, param_name="apply_identifiability"):
         for p in sig.parameters.values()
     )
 
+def _evaluate_on_grid(bas, *n_samples) -> Tuple[Tuple[NDArray], NDArray]:
+    sample_tuple = bas._get_samples(*n_samples)
+    Xs = np.meshgrid(*sample_tuple, indexing="ij")
+    Y = bas.compute_features(*(grid_axis.flatten() for grid_axis in Xs))
+    return Xs, Y.reshape(*Xs[0].shape, bas.n_basis_funcs)
+
+
 class GAMBasisMixin:
+
+    def __add__(self, other):
+        return GAMAdditiveBasis(self, other)
+
+    def __mul__(self, other):
+        return GAMMultiplicativeBasis(self, other)
+
+    def __pow__(self, exponent):
+        if not isinstance(exponent, int):
+            raise TypeError("Exponent should be an integer!")
+
+        if exponent <= 0:
+            raise ValueError("Exponent should be a non-negative integer!")
+
+        result = self
+        for _ in range(exponent - 1):
+            result = result * self
+        return result
+
+    def evaluate_on_grid(self, *n_samples: int) -> Tuple[Tuple[NDArray], NDArray]:
+        return _evaluate_on_grid(self, *n_samples)
+
+class GAMAtomicBasisMixin(GAMBasisMixin):
 
     def __init__(self, identifiability: bool):
         self._identifiability = int(identifiability)
@@ -32,6 +62,7 @@ class GAMBasisMixin:
         self.apply_constraints = lambda x: x[...,:-1]
         # add a basis if the drop column is enabled
         self._n_basis_funcs = self._n_basis_funcs + self._identifiability
+        GAMBasisMixin.__init__(self)
 
     @property
     def identifiability(self):
@@ -59,29 +90,7 @@ class GAMBasisMixin:
             X = self.apply_constraints(X)
         return X
 
-    def evaluate_on_grid(self, *n_samples: int) -> Tuple[Tuple[NDArray], NDArray]:
-        out = super().evaluate_on_grid(*n_samples)
-        grid, X = out[:-1], out[-1]
-        X = self.apply_constraints(X)
-        return *grid, X
 
-    def __add__(self, other):
-        return GAMAdditiveBasis(self, other)
-
-    def __mul__(self, other):
-        return GAMMultiplicativeBasis(self, other)
-
-    def __pow__(self, exponent):
-        if not isinstance(exponent, int):
-            raise TypeError("Exponent should be an integer!")
-
-        if exponent <= 0:
-            raise ValueError("Exponent should be a non-negative integer!")
-
-        result = self
-        for _ in range(exponent - 1):
-            result = result * self
-        return result
 
 
     @property
@@ -111,10 +120,12 @@ class GAMBasisMixin:
             X = self.apply_constraints(X)
         return X
 
-class GAMAdditiveBasis(AdditiveBasis):
+
+class GAMAdditiveBasis(GAMBasisMixin, AdditiveBasis):
 
     def __init__(self, basis1, basis2):
-        super().__init__(basis1, basis2)
+        AdditiveBasis.__init__(self, basis1, basis2)
+        GAMBasisMixin.__init__(self)
 
     @support_pynapple("numpy")
     def derivative(self, *xi: ArrayLike):
@@ -124,7 +135,7 @@ class GAMAdditiveBasis(AdditiveBasis):
         )
 
 
-class GAMMultiplicativeBasis(MultiplicativeBasis):
+class GAMMultiplicativeBasis(GAMBasisMixin, MultiplicativeBasis):
 
     def __init__(self, basis1: GAMBasisMixin, basis2: GAMBasisMixin):
         # copy and reset number of basis and identifiability.
@@ -134,7 +145,8 @@ class GAMMultiplicativeBasis(MultiplicativeBasis):
         basis2 = deepcopy(basis2)
         basis2._n_basis_funcs = basis2.n_basis_funcs
         basis2.identifiability = False
-        super().__init__(basis1, basis2)
+        MultiplicativeBasis.__init__(self, basis1, basis2)
+        GAMBasisMixin.__init__(self)
 
 
     def derivative(self, *xi: ArrayLike):

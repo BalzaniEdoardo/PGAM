@@ -11,9 +11,9 @@ from typing import Tuple, Optional
 
 from pynapple import Tsd, TsdFrame, TsdTensor
 
-from._basis import GAMBasisMixin
+from._basis import GAMAtomicBasisMixin
 
-class GAMBSplineEval(GAMBasisMixin, BSplineEval):
+class GAMBSplineEval(GAMAtomicBasisMixin, BSplineEval):
 
     def __init__(
             self,
@@ -24,7 +24,7 @@ class GAMBSplineEval(GAMBasisMixin, BSplineEval):
             identifiability: Optional[bool] = True,
     ):
         BSplineEval.__init__(self, n_basis_funcs=n_basis_funcs, order=order, bounds=bounds, label=label)
-        GAMBasisMixin.__init__(self, identifiability=identifiability)
+        GAMAtomicBasisMixin.__init__(self, identifiability=identifiability)
 
 
 
@@ -56,8 +56,4 @@ class GAMBSplineEval(GAMBasisMixin, BSplineEval):
         )
         X = X.reshape(*shape, X.shape[1])
         return X
-
-
-
-
 
