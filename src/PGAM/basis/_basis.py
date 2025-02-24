@@ -4,9 +4,7 @@ from copy import deepcopy
 from nemos.basis._basis import AdditiveBasis, MultiplicativeBasis
 from typing import Optional
 from pynapple import Tsd, TsdFrame, TsdTensor
-from collections import OrderedDict
 from typing import Tuple
-from nemos.basis._basis import MultiplicativeBasis
 from numpy.typing import NDArray, ArrayLike
 from nemos.typing import FeatureMatrix
 from nemos.type_casting import support_pynapple
