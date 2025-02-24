@@ -124,8 +124,8 @@ def compute_energy_penalty(n_samples: int, basis_derivative: Callable):
     indices = jnp.triu_indices(eval_bas.shape[1])
     square_bas = eval_bas[:, indices[0]] * eval_bas[:, indices[1]]
     dx = samples[1] - samples[0]
-    # TODO: write my own implementation of simpson for numerical accuracy
-    integr = jax.scipy.integrate.trapezoid(square_bas, dx=dx, axis=0)
+    # Simps integration of squared basis.
+    integr = vmap_simpson_regular(dx, square_bas)
     energy_pen = jnp.zeros((eval_bas.shape[1], eval_bas.shape[1]))
     energy_pen = energy_pen.at[indices].set(integr)
     energy_pen = energy_pen + energy_pen.T - jnp.diag(energy_pen.diagonal())
@@ -343,4 +343,32 @@ def irregularly_sampled_simps(x, y):
                 y[len_y - 2] * h1 ** 3 / (6 * h0 * (h0 + h1))
         )
     return jax.lax.cond(len(y) % 2 == 0, add_correction, lambda *x: x[0], even_tot, dx, y)
+
+
+def regularly_sampled_simps(dx, y):
+    # compute scaling
+    glob_scale = dx / 3.
+    second_scale = 4
+    # compute simpson 1/3 formula
+    even_tot = jnp.sum(glob_scale * (
+            y[:len(y)-2:2] + second_scale * y[1:len(y)-1:2] + y[2::2]
+        )
+    )
+
+    def add_correction(out, dx, y):
+        len_y = len(y) - 1
+        return (
+                out + y[len_y] * (5 * dx) / 12 +
+                y[len_y - 1] * (2 * dx) / 3 -
+                y[len_y - 2] * dx / 12
+        )
+    return jax.lax.cond(len(y) % 2 == 0, add_correction, lambda *x: x[0], even_tot, dx, y)
+
+_vec_irregularly_sampled_simps = jax.vmap(irregularly_sampled_simps, in_axes=(None, 1))
+_vec_regularly_sampled_simps = jax.vmap(regularly_sampled_simps, in_axes=(None, 1))
+
+
+def vmap_simpson_regular(dx, y):
+    shape = y.shape[1:]
+    return _vec_irregularly_sampled_simps(dx, y.reshape(y.shape[0], -1)).reshape(shape)
 
