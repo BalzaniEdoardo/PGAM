@@ -17,7 +17,7 @@ def _tree_map_list_to_array():
     return map_list_to_array
 
 
-def test_one_dim_bspline_der_2_full_penalty(_tree_map_list_to_array):
+def test_one_dim_bspline_der_2_energy_penalty(_tree_map_list_to_array):
     """Check that the full penalty matches the original PGAM implementation."""
     jax.config.update('jax_enable_x64', True)
     script_dir = pathlib.Path(__file__).resolve().parent / "data"
@@ -28,3 +28,17 @@ def test_one_dim_bspline_der_2_full_penalty(_tree_map_list_to_array):
     der_basis = lambda x : nmo.basis._spline_basis.bspline(x, basis_parms["knots"], basis_parms["order"], der=basis_parms["der"], outer_ok=False)
     pen = penalty_utils.compute_energy_penalty(params["n_samples"], der_basis)
     assert np.allclose(pen, params["energy_penalty"])
+
+
+def test_one_dim_bspline_der_2_null_space_penalty(_tree_map_list_to_array):
+    """Check that the full penalty matches the original PGAM implementation."""
+    jax.config.update('jax_enable_x64', True)
+    script_dir = pathlib.Path(__file__).resolve().parent / "data"
+    with open(script_dir / "one_dim_bspline_penalty.json", "r", encoding="utf-8") as f:
+        params = json.load(f)
+        params = _tree_map_list_to_array(params)
+    basis_parms = params["bspline_params"]
+    der_basis = lambda x : nmo.basis._spline_basis.bspline(x, basis_parms["knots"], basis_parms["order"], der=basis_parms["der"], outer_ok=False)
+    pen = penalty_utils.compute_energy_penalty(params["n_samples"], der_basis)
+    null_pen = penalty_utils.compute_penalty_null_space(pen)
+    assert np.allclose(null_pen, params["null_space_penalty"])
