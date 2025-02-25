@@ -119,12 +119,12 @@ def compute_energy_penalty(n_samples: int, basis_derivative: Callable):
     energy_pen:
         Energy penalty matrix of shape (K, K), where K is the number of basis functions.
     """
-    samples = np.linspace(0, 1, n_samples)
-    eval_bas = basis_derivative(samples)
+    samples = jnp.linspace(0, 1, n_samples)
+    eval_bas = jnp.asarray(basis_derivative(samples))
     indices = jnp.triu_indices(eval_bas.shape[1])
     square_bas = eval_bas[:, indices[0]] * eval_bas[:, indices[1]]
     dx = samples[1] - samples[0]
-    # Simps integration of squared basis.
+    # Simpson integration of squared basis.
     integr = vmap_simpson_regular(dx, square_bas)
     energy_pen = jnp.zeros((eval_bas.shape[1], eval_bas.shape[1]))
     energy_pen = energy_pen.at[indices].set(integr)
@@ -370,5 +370,5 @@ _vec_regularly_sampled_simps = jax.vmap(regularly_sampled_simps, in_axes=(None, 
 
 def vmap_simpson_regular(dx, y):
     shape = y.shape[1:]
-    return _vec_irregularly_sampled_simps(dx, y.reshape(y.shape[0], -1)).reshape(shape)
+    return _vec_regularly_sampled_simps(dx, y.reshape(y.shape[0], -1)).reshape(shape)
 
