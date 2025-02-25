@@ -37,8 +37,8 @@ def test_one_dim_bspline_der_2_null_space_penalty(_tree_map_list_to_array):
     with open(script_dir / "one_dim_bspline_penalty.json", "r", encoding="utf-8") as f:
         params = json.load(f)
         params = _tree_map_list_to_array(params)
-    basis_parms = params["bspline_params"]
-    der_basis = lambda x : nmo.basis._spline_basis.bspline(x, basis_parms["knots"], basis_parms["order"], der=basis_parms["der"], outer_ok=False)
+    basis_params = params["bspline_params"]
+    der_basis = lambda x : nmo.basis._spline_basis.bspline(x, basis_params["knots"], basis_params["order"], der=basis_params["der"], outer_ok=False)
     pen = penalty_utils.compute_energy_penalty(params["n_samples"], der_basis)
     null_pen = penalty_utils.compute_penalty_null_space(pen)
     assert np.allclose(null_pen, params["null_space_penalty"])
@@ -53,3 +53,6 @@ def test_one_dim_bspline_der_2_symmetric_sqrt(_tree_map_list_to_array):
         params = _tree_map_list_to_array(params)
     sqrt_pen = penalty_utils.symmetric_sqrt(params["energy_penalty"])
     assert np.allclose(sqrt_pen, params["sqrt_energy_penalty"])
+    log_lam = params["reg_strength"][0]
+    scaled_pen = penalty_utils.tree_compute_sqrt_penalty([params["energy_penalty"]], np.array([log_lam]), np.array([0]))
+    assert np.allclose(scaled_pen, np.exp(log_lam) * params["sqrt_energy_penalty"])
