@@ -42,3 +42,14 @@ def test_one_dim_bspline_der_2_null_space_penalty(_tree_map_list_to_array):
     pen = penalty_utils.compute_energy_penalty(params["n_samples"], der_basis)
     null_pen = penalty_utils.compute_penalty_null_space(pen)
     assert np.allclose(null_pen, params["null_space_penalty"])
+
+
+def test_one_dim_bspline_der_2_symmetric_sqrt(_tree_map_list_to_array):
+    """Check that the full penalty matches the original PGAM implementation."""
+    jax.config.update('jax_enable_x64', True)
+    script_dir = pathlib.Path(__file__).resolve().parent / "data"
+    with open(script_dir / "one_dim_bspline_penalty.json", "r", encoding="utf-8") as f:
+        params = json.load(f)
+        params = _tree_map_list_to_array(params)
+    sqrt_pen = penalty_utils.symmetric_sqrt(params["energy_penalty"])
+    assert np.allclose(sqrt_pen, params["sqrt_energy_penalty"])
