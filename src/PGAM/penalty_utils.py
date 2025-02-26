@@ -9,6 +9,7 @@ from scipy import sparse
 import math
 
 from .basis import GAMBSplineEval
+from .basis._basis import GAMAdditiveBasis, GAMMultiplicativeBasis
 
 
 @jax.jit
@@ -280,7 +281,7 @@ def ndim_tensor_product_basis_penalty(*penalty: jnp.ndarray) -> jnp.ndarray:
 
 
 def compute_energy_penalty_tensor_additive_component(
-        basis_component: GAMBSplineEval,
+        basis_component: GAMBSplineEval | GAMMultiplicativeBasis,
         n_sample: int = 10**4,
         penalize_null_space: bool = True,
 ) -> jnp.ndarray:
@@ -294,7 +295,7 @@ def compute_energy_penalty_tensor_additive_component(
     n_sample:
         Number of samples for the numerical approximation of the integral.
     penalize_null_space:
-        Boolean, if true penalize the null space of every coordinate.
+        Boolean, if true penalize the null space of every energy penalty component.
 
 
     Returns
@@ -317,6 +318,43 @@ def compute_energy_penalty_tensor_additive_component(
             axis=0
         )
     return out
+
+
+def compute_energy_penalty_tensor(
+        basis: GAMBSplineEval | GAMMultiplicativeBasis | GAMAdditiveBasis,
+        n_sample: int = 10**4,
+        penalize_null_space: bool = True,
+        apply_identifiability: Callable[[jnp.ndarray], jnp.ndarray] = lambda x: x,
+) -> list[jnp.ndarray]:
+    """
+    Create an energy penalty for each additive component.
+
+    Parameters
+    ----------
+    basis:
+        A BSpline basis or a composition of BSplines.
+    n_sample:
+        Number of samples for the numerical approximation of the integral.
+    penalize_null_space:
+        Boolean, if true penalize the null space of every energy penalty component.
+    apply_identifiability:
+        Callable that may set an identifiability constraint to the penalty tensor. Default
+        is no constraint. Other classical options include could be dropping a column,
+        or dropping a column and mean center (most common default option in GAM implementations,
+        see R mgcv package).
+
+    Returns
+    -------
+        A list with the penalty tensors for each component.
+
+    """
+    return [
+        apply_identifiability(
+            compute_energy_penalty_tensor_additive_component(bas, n_sample, penalize_null_space=penalize_null_space)
+        )
+        for bas in basis
+    ]
+
 
 
 def irregularly_sampled_simps(x, y):
