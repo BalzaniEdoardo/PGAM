@@ -7,6 +7,8 @@ import nemos as nmo
 import jax
 from jax.tree_util import tree_map,  treedef_is_leaf, tree_structure
 
+from PGAM.basis import GAMBSplineEval
+
 
 @pytest.fixture()
 def _tree_map_list_to_array():
@@ -56,3 +58,17 @@ def test_one_dim_bspline_der_2_symmetric_sqrt(_tree_map_list_to_array):
     log_lam = params["reg_strength"][0]
     scaled_pen = penalty_utils.tree_compute_sqrt_penalty([params["energy_penalty"]], np.array([log_lam]), np.array([0]))
     assert np.allclose(scaled_pen, np.exp(log_lam) * params["sqrt_energy_penalty"])
+
+
+def test_one_dim_bspline_der_2_penalty_tensor(_tree_map_list_to_array):
+    jax.config.update('jax_enable_x64', True)
+    script_dir = pathlib.Path(__file__).resolve().parent / "data"
+    with open(script_dir / "one_dim_bspline_penalty.json", "r", encoding="utf-8") as f:
+        params = json.load(f)
+        params = _tree_map_list_to_array(params)
+    bspline_params = params["bspline_params"]
+    n_basis = bspline_params["knots"].shape[0] - bspline_params["order"]
+    bas = GAMBSplineEval(n_basis, order=bspline_params["order"], identifiability=False)
+    pen_tensor = penalty_utils.compute_energy_penalty_tensor_additive_component(bas)
+    assert np.allclose(pen_tensor[0], params["energy_penalty"])
+    assert np.allclose(pen_tensor[1], params["null_space_penalty"])

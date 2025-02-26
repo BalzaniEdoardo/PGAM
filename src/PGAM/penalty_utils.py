@@ -311,7 +311,7 @@ def compute_energy_penalty_tensor_additive_component(
     out = ndim_tensor_product_basis_penalty(*one_dim_pen)
     if penalize_null_space:
         null_pen = (compute_penalty_null_space(p) for p in out)
-        full_rank = (p[None] if ~np.all(p ==0) else jnp.zeros((0, *p.shape)) for p in null_pen)
+        full_rank = (p[None] if ~np.all(p == 0) else jnp.zeros((0, *p.shape)) for p in null_pen)
         out = jnp.concatenate(
             (out, *full_rank),
             axis=0

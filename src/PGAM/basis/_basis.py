@@ -57,7 +57,7 @@ class GAMAtomicBasisMixin(GAMBasisMixin):
     def __init__(self, identifiability: bool):
         self._identifiability = int(identifiability)
         # get the attribute or the func
-        self.apply_constraints = lambda x: x[...,:-1]
+        self.apply_constraints = lambda x: x[...,:-1] if identifiability else x
         # add a basis if the drop column is enabled
         self._n_basis_funcs = self._n_basis_funcs + self._identifiability
         GAMBasisMixin.__init__(self)
