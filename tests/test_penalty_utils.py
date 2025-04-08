@@ -11,6 +11,10 @@ from PGAM.basis import GAMBSplineEval
 
 
 @pytest.fixture()
+def script_dir():
+    return pathlib.Path(__file__).resolve().parent / "data"
+
+@pytest.fixture()
 def _tree_map_list_to_array():
 
     is_leaf = lambda x: treedef_is_leaf(tree_structure(x)) or isinstance(x, list)
@@ -19,10 +23,8 @@ def _tree_map_list_to_array():
     return map_list_to_array
 
 
-def test_one_dim_bspline_der_2_energy_penalty(_tree_map_list_to_array):
+def test_one_dim_bspline_der_2_energy_penalty(_tree_map_list_to_array, script_dir):
     """Check that the full penalty matches the original PGAM implementation."""
-    jax.config.update('jax_enable_x64', True)
-    script_dir = pathlib.Path(__file__).resolve().parent / "data"
     with open(script_dir / "one_dim_bspline_penalty.json", "r", encoding="utf-8") as f:
         params = json.load(f)
         params = _tree_map_list_to_array(params)
@@ -32,10 +34,8 @@ def test_one_dim_bspline_der_2_energy_penalty(_tree_map_list_to_array):
     assert np.allclose(pen, params["energy_penalty"])
 
 
-def test_one_dim_bspline_der_2_null_space_penalty(_tree_map_list_to_array):
+def test_one_dim_bspline_der_2_null_space_penalty(_tree_map_list_to_array, script_dir):
     """Check that the full penalty matches the original PGAM implementation."""
-    jax.config.update('jax_enable_x64', True)
-    script_dir = pathlib.Path(__file__).resolve().parent / "data"
     with open(script_dir / "one_dim_bspline_penalty.json", "r", encoding="utf-8") as f:
         params = json.load(f)
         params = _tree_map_list_to_array(params)
@@ -46,23 +46,19 @@ def test_one_dim_bspline_der_2_null_space_penalty(_tree_map_list_to_array):
     assert np.allclose(null_pen, params["null_space_penalty"])
 
 
-def test_one_dim_bspline_der_2_symmetric_sqrt(_tree_map_list_to_array):
+def test_one_dim_bspline_der_2_symmetric_sqrt(_tree_map_list_to_array, script_dir):
     """Check that the full penalty matches the original PGAM implementation."""
-    jax.config.update('jax_enable_x64', True)
-    script_dir = pathlib.Path(__file__).resolve().parent / "data"
     with open(script_dir / "one_dim_bspline_penalty.json", "r", encoding="utf-8") as f:
         params = json.load(f)
         params = _tree_map_list_to_array(params)
     sqrt_pen = penalty_utils.symmetric_sqrt(params["energy_penalty"])
     assert np.allclose(sqrt_pen, params["sqrt_energy_penalty"])
-    log_lam = params["reg_strength"][0]
-    scaled_pen = penalty_utils.tree_compute_sqrt_penalty([params["energy_penalty"]], np.array([log_lam]), np.array([0]))
-    assert np.allclose(scaled_pen, np.exp(log_lam) * params["sqrt_energy_penalty"])
+    log_lam = np.log(params["reg_strength"][0])
+    scaled_pen = penalty_utils.tree_compute_sqrt_penalty([params["energy_penalty"]], [np.array([log_lam])], 0, apply_identifiability=lambda x:x)
+    assert np.allclose(scaled_pen, np.sqrt(np.exp(log_lam)) * params["sqrt_energy_penalty"])
 
 
-def test_one_dim_bspline_der_2_penalty_tensor(_tree_map_list_to_array):
-    jax.config.update('jax_enable_x64', True)
-    script_dir = pathlib.Path(__file__).resolve().parent / "data"
+def test_one_dim_bspline_der_2_penalty_tensor(_tree_map_list_to_array, script_dir):
     with open(script_dir / "one_dim_bspline_penalty.json", "r", encoding="utf-8") as f:
         params = json.load(f)
         params = _tree_map_list_to_array(params)
@@ -74,9 +70,7 @@ def test_one_dim_bspline_der_2_penalty_tensor(_tree_map_list_to_array):
     assert np.allclose(pen_tensor[1], params["null_space_penalty"])
 
 
-def test_one_dim_bspline_der_2_agumented(_tree_map_list_to_array):
-    jax.config.update('jax_enable_x64', True)
-    script_dir = pathlib.Path(__file__).resolve().parent / "data"
+def test_one_dim_bspline_der_2_agumented(_tree_map_list_to_array, script_dir):
     with open(script_dir / "one_dim_bspline_penalty.json", "r", encoding="utf-8") as f:
         params = json.load(f)
         params = _tree_map_list_to_array(params)
@@ -97,10 +91,8 @@ def test_one_dim_bspline_der_2_agumented(_tree_map_list_to_array):
     assert np.allclose(out.T.dot(out), orig_agu_pen_square)
 
 
-def test_two_dim_bspline_der_2_energy_penalty(_tree_map_list_to_array):
+def test_two_dim_bspline_der_2_energy_penalty(_tree_map_list_to_array, script_dir):
     """Check that the full penalty matches the original PGAM implementation."""
-    jax.config.update('jax_enable_x64', True)
-    script_dir = pathlib.Path(__file__).resolve().parent / "data"
     with open(script_dir / "two_dim_bspline_penalty.json", "r", encoding="utf-8") as f:
         params = json.load(f)
         params = _tree_map_list_to_array(params)
@@ -112,10 +104,8 @@ def test_two_dim_bspline_der_2_energy_penalty(_tree_map_list_to_array):
     assert np.allclose(pen[1], params["energy_penalty_1"])
 
 
-def test_two_dim_bspline_der_2_null_space_penalty(_tree_map_list_to_array):
+def test_two_dim_bspline_der_2_null_space_penalty(_tree_map_list_to_array, script_dir):
     """Check that the full penalty matches the original PGAM implementation."""
-    jax.config.update('jax_enable_x64', True)
-    script_dir = pathlib.Path(__file__).resolve().parent / "data"
     with open(script_dir / "two_dim_bspline_penalty.json", "r", encoding="utf-8") as f:
         params = json.load(f)
         params = _tree_map_list_to_array(params)
@@ -133,10 +123,8 @@ def test_two_dim_bspline_der_2_null_space_penalty(_tree_map_list_to_array):
     assert np.allclose(np.dot(params["energy_penalty_1"], null_pen), 0)
 
 
-def test_two_dim_bspline_der_2_symmetric_sqrt(_tree_map_list_to_array):
+def test_two_dim_bspline_der_2_symmetric_sqrt(_tree_map_list_to_array, script_dir):
     """Check that the full penalty matches the original PGAM implementation."""
-    jax.config.update('jax_enable_x64', True)
-    script_dir = pathlib.Path(__file__).resolve().parent / "data"
     with open(script_dir / "two_dim_bspline_penalty.json", "r", encoding="utf-8") as f:
         params = json.load(f)
         params = _tree_map_list_to_array(params)
@@ -147,3 +135,20 @@ def test_two_dim_bspline_der_2_symmetric_sqrt(_tree_map_list_to_array):
     squared_pen = scaled_sqrt_pen.T.dot(scaled_sqrt_pen)
     squared_pen_orig = sqrt_orig.T.dot(sqrt_orig)
     assert np.allclose(squared_pen_orig, squared_pen)
+
+
+def test_two_dim_bspline_der_2_penalty_tensor(_tree_map_list_to_array, script_dir):
+    with open(script_dir / "two_dim_bspline_penalty.json", "r", encoding="utf-8") as f:
+        params = json.load(f)
+        params = _tree_map_list_to_array(params)
+    bspline_params = params["bspline_params"]
+    n_basis = bspline_params["knots"].shape[0] - bspline_params["order"]
+    bas = GAMBSplineEval(n_basis, order=bspline_params["order"], identifiability=False) ** 2
+    pen_tensor = penalty_utils.compute_energy_penalty_tensor_additive_component(bas)
+    s_list = np.concatenate(
+        (
+            [params["energy_penalty_0"][None], params["energy_penalty_1"][None]]
+        ),
+        axis=0
+    )
+    assert np.allclose(pen_tensor[:2], s_list)
