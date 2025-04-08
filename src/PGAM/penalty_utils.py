@@ -306,10 +306,18 @@ def compute_energy_penalty_tensor_additive_component(
     one_dim_pen = (compute_energy_penalty(n_sample, b.derivative) for b in basis_component._iterate_over_components())
     out = ndim_tensor_product_basis_penalty(*one_dim_pen)
     if penalize_null_space:
-        null_pen = (compute_penalty_null_space(p) for p in out)
-        full_rank = (p[None] if ~np.all(p == 0) else jnp.zeros((0, *p.shape)) for p in null_pen)
+        # In GAMs one penalizes the null space of a linear combinations of positive-semidefinite
+        # matrices with positive coefficients (a convex cone). The null space of any matrix in the interior
+        # of the cone is the intersection of the null space of individual matrix.
+        # Example, take two positive-semidef matrices A, B and positive constant a,b>0, then
+        # 0 = v.T * (a * A + b * B) v = a * (v.T * A * v) + b * (v.T * B * v) which is true iif
+        # (v.T * A * v) = (v.T * B * v) = 0, since A and B are positive semidef. I.e. v is in null(A) intersect
+        # null(B). For this reason we can compute the null-space of the sum of the penality matrices and penalize that.
+        # In the original code the sum was used, however, the mean is more stable when summing many matrices.
+        null_pen = compute_penalty_null_space(out.mean(axis=0))
+        full_rank = null_pen[None] if ~np.all(null_pen == 0) else jnp.zeros((0, *null_pen.shape))
         out = jnp.concatenate(
-            (out, *full_rank),
+            (out, full_rank),
             axis=0
         )
     return out

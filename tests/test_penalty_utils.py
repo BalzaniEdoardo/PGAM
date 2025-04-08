@@ -89,7 +89,7 @@ def test_one_dim_bspline_der_2_agumented(_tree_map_list_to_array):
     # since the intercept term was treated as a column of 1s in
     # the design matrix and was not penalized.
     # secondly, the original PGAM code had a try/except which would try
-    # an unsafe cholesky decomposition, if failed, used the safe eig
+    # an unsafe Cholesky decomposition, if failed, used the safe eig
     # truncation method to get a square root of a matrix that is implemented
     # here. I.e. in order to compare we need to check the square of the matrix
     orig_agu_pen = params["agumented_penalty"][:, 1:]
