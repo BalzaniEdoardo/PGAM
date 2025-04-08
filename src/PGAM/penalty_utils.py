@@ -277,7 +277,7 @@ def ndim_tensor_product_basis_penalty(*penalty: jnp.ndarray) -> jnp.ndarray:
 
 def compute_energy_penalty_tensor_additive_component(
         basis_component: GAMBSplineEval | GAMMultiplicativeBasis,
-        n_sample: int = 10**4,
+        n_samples: int = 10 ** 4,
         penalize_null_space: bool = True,
 ) -> jnp.ndarray:
     """
@@ -287,7 +287,7 @@ def compute_energy_penalty_tensor_additive_component(
     ----------
     basis_component:
         Additive component of a basis.
-    n_sample:
+    n_samples:
         Number of samples for the numerical approximation of the integral.
     penalize_null_space:
         Boolean, if true penalize the null space of every energy penalty component.
@@ -303,7 +303,7 @@ def compute_energy_penalty_tensor_additive_component(
     - For 2-dimensional predictors, it adds a penalty to ..math:`a + b \cdot x + c \cdot y + d \cdot xy`.
 
     """
-    one_dim_pen = (compute_energy_penalty(n_sample, b.derivative) for b in basis_component._iterate_over_components())
+    one_dim_pen = (compute_energy_penalty(n_samples, b.derivative) for b in basis_component._iterate_over_components())
     out = ndim_tensor_product_basis_penalty(*one_dim_pen)
     if penalize_null_space:
         # In GAMs one penalizes the null space of a linear combinations of positive-semidefinite
