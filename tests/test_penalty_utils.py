@@ -22,63 +22,64 @@ def _tree_map_list_to_array():
         return tree_map(lambda x: x if not isinstance(x, list) else np.asarray(x), params, is_leaf=is_leaf)
     return map_list_to_array
 
-
-def test_one_dim_bspline_der_2_energy_penalty(_tree_map_list_to_array, script_dir):
-    """Check that the full penalty matches the original PGAM implementation."""
+@pytest.fixture()
+def one_dim_bspline_penalty(_tree_map_list_to_array, script_dir):
     with open(script_dir / "one_dim_bspline_penalty.json", "r", encoding="utf-8") as f:
         params = json.load(f)
         params = _tree_map_list_to_array(params)
-    basis_parms = params["bspline_params"]
+    return params
+
+@pytest.fixture()
+def two_dim_bspline_penalty(_tree_map_list_to_array, script_dir):
+    with open(script_dir / "two_dim_bspline_penalty.json", "r", encoding="utf-8") as f:
+        params = json.load(f)
+        params = _tree_map_list_to_array(params)
+    return params
+
+def test_one_dim_bspline_der_2_energy_penalty(one_dim_bspline_penalty):
+    """Check that the full penalty matches the original PGAM implementation."""
+    basis_parms = one_dim_bspline_penalty["bspline_params"]
     der_basis = lambda x : nmo.basis._spline_basis.bspline(x, basis_parms["knots"], basis_parms["order"], der=basis_parms["der"], outer_ok=False)
-    pen = penalty_utils.compute_energy_penalty(params["n_samples"], der_basis)
-    assert np.allclose(pen, params["energy_penalty"])
+    pen = penalty_utils.compute_energy_penalty(one_dim_bspline_penalty["n_samples"], der_basis)
+    assert np.allclose(pen, one_dim_bspline_penalty["energy_penalty"])
 
 
-def test_one_dim_bspline_der_2_null_space_penalty(_tree_map_list_to_array, script_dir):
+def test_one_dim_bspline_der_2_null_space_penalty(one_dim_bspline_penalty):
     """Check that the full penalty matches the original PGAM implementation."""
-    with open(script_dir / "one_dim_bspline_penalty.json", "r", encoding="utf-8") as f:
-        params = json.load(f)
-        params = _tree_map_list_to_array(params)
-    basis_params = params["bspline_params"]
+    basis_params = one_dim_bspline_penalty["bspline_params"]
     der_basis = lambda x : nmo.basis._spline_basis.bspline(x, basis_params["knots"], basis_params["order"], der=basis_params["der"], outer_ok=False)
-    pen = penalty_utils.compute_energy_penalty(params["n_samples"], der_basis)
+    pen = penalty_utils.compute_energy_penalty(one_dim_bspline_penalty["n_samples"], der_basis)
     null_pen = penalty_utils.compute_penalty_null_space(pen)
-    assert np.allclose(null_pen, params["null_space_penalty"])
+    assert np.allclose(null_pen, one_dim_bspline_penalty["null_space_penalty"])
 
 
-def test_one_dim_bspline_der_2_symmetric_sqrt(_tree_map_list_to_array, script_dir):
+def test_one_dim_bspline_der_2_symmetric_sqrt(one_dim_bspline_penalty):
     """Check that the full penalty matches the original PGAM implementation."""
-    with open(script_dir / "one_dim_bspline_penalty.json", "r", encoding="utf-8") as f:
-        params = json.load(f)
-        params = _tree_map_list_to_array(params)
-    sqrt_pen = penalty_utils.symmetric_sqrt(params["energy_penalty"])
-    assert np.allclose(sqrt_pen, params["sqrt_energy_penalty"])
-    log_lam = np.log(params["reg_strength"][0])
-    scaled_pen = penalty_utils.tree_compute_sqrt_penalty([params["energy_penalty"]], [np.array([log_lam])], 0, apply_identifiability=lambda x:x)
-    assert np.allclose(scaled_pen, np.sqrt(np.exp(log_lam)) * params["sqrt_energy_penalty"])
+    sqrt_pen = penalty_utils.symmetric_sqrt(one_dim_bspline_penalty["energy_penalty"])
+    assert np.allclose(sqrt_pen, one_dim_bspline_penalty["sqrt_energy_penalty"])
+    log_lam = np.log(one_dim_bspline_penalty["reg_strength"][0])
+    scaled_pen = penalty_utils.tree_compute_sqrt_penalty([one_dim_bspline_penalty["energy_penalty"]], [np.array([log_lam])], 0, apply_identifiability=lambda x:x)
+    assert np.allclose(scaled_pen, np.sqrt(np.exp(log_lam)) * one_dim_bspline_penalty["sqrt_energy_penalty"])
 
 
-def test_one_dim_bspline_der_2_penalty_tensor(_tree_map_list_to_array, script_dir):
-    with open(script_dir / "one_dim_bspline_penalty.json", "r", encoding="utf-8") as f:
-        params = json.load(f)
-        params = _tree_map_list_to_array(params)
-    bspline_params = params["bspline_params"]
+def test_one_dim_bspline_der_2_penalty_tensor(one_dim_bspline_penalty):
+    bspline_params = one_dim_bspline_penalty["bspline_params"]
     n_basis = bspline_params["knots"].shape[0] - bspline_params["order"]
     bas = GAMBSplineEval(n_basis, order=bspline_params["order"], identifiability=False)
     pen_tensor = penalty_utils.compute_energy_penalty_tensor_additive_component(bas)
-    assert np.allclose(pen_tensor[0], params["energy_penalty"])
-    assert np.allclose(pen_tensor[1], params["null_space_penalty"])
+    assert np.allclose(pen_tensor[0], one_dim_bspline_penalty["energy_penalty"])
+    assert np.allclose(pen_tensor[1], one_dim_bspline_penalty["null_space_penalty"])
 
 
-def test_one_dim_bspline_der_2_agumented(_tree_map_list_to_array, script_dir):
-    with open(script_dir / "one_dim_bspline_penalty.json", "r", encoding="utf-8") as f:
-        params = json.load(f)
-        params = _tree_map_list_to_array(params)
-    bspline_params = params["bspline_params"]
+def test_one_dim_bspline_der_2_agumented(one_dim_bspline_penalty):
+    bspline_params = one_dim_bspline_penalty["bspline_params"]
     n_basis = bspline_params["knots"].shape[0] - bspline_params["order"]
     bas = GAMBSplineEval(n_basis, order=bspline_params["order"], identifiability=False)
     pen_list = penalty_utils.compute_energy_penalty_tensor(bas)
-    out = penalty_utils.tree_compute_sqrt_penalty(pen_list, [jax.numpy.log(params["reg_strength"])])
+    out = penalty_utils.tree_compute_sqrt_penalty(
+        pen_list,
+        [jax.numpy.log(one_dim_bspline_penalty["reg_strength"])]
+    )
     # the first col of agumented pen in original gam was a column of 0s
     # since the intercept term was treated as a column of 1s in
     # the design matrix and was not penalized.
@@ -86,32 +87,26 @@ def test_one_dim_bspline_der_2_agumented(_tree_map_list_to_array, script_dir):
     # an unsafe Cholesky decomposition, if failed, used the safe eig
     # truncation method to get a square root of a matrix that is implemented
     # here. I.e. in order to compare we need to check the square of the matrix
-    orig_agu_pen = params["agumented_penalty"][:, 1:]
+    orig_agu_pen = one_dim_bspline_penalty["agumented_penalty"][:, 1:]
     orig_agu_pen_square = orig_agu_pen.T.dot(orig_agu_pen)
     assert np.allclose(out.T.dot(out), orig_agu_pen_square)
 
 
-def test_two_dim_bspline_der_2_energy_penalty(_tree_map_list_to_array, script_dir):
+def test_two_dim_bspline_der_2_energy_penalty(two_dim_bspline_penalty):
     """Check that the full penalty matches the original PGAM implementation."""
-    with open(script_dir / "two_dim_bspline_penalty.json", "r", encoding="utf-8") as f:
-        params = json.load(f)
-        params = _tree_map_list_to_array(params)
-    basis_parms = params["bspline_params"]
+    basis_parms = two_dim_bspline_penalty["bspline_params"]
     der_basis = lambda x : nmo.basis._spline_basis.bspline(x, basis_parms["knots"], basis_parms["order"], der=basis_parms["der"], outer_ok=False)
-    pen = penalty_utils.compute_energy_penalty(params["n_samples"], der_basis)
+    pen = penalty_utils.compute_energy_penalty(two_dim_bspline_penalty["n_samples"], der_basis)
     pen = penalty_utils.ndim_tensor_product_basis_penalty(pen, pen)
-    assert np.allclose(pen[0], params["energy_penalty_0"])
-    assert np.allclose(pen[1], params["energy_penalty_1"])
+    assert np.allclose(pen[0], two_dim_bspline_penalty["energy_penalty_0"])
+    assert np.allclose(pen[1], two_dim_bspline_penalty["energy_penalty_1"])
 
 
-def test_two_dim_bspline_der_2_null_space_penalty(_tree_map_list_to_array, script_dir):
+def test_two_dim_bspline_der_2_null_space_penalty(two_dim_bspline_penalty):
     """Check that the full penalty matches the original PGAM implementation."""
-    with open(script_dir / "two_dim_bspline_penalty.json", "r", encoding="utf-8") as f:
-        params = json.load(f)
-        params = _tree_map_list_to_array(params)
-    basis_params = params["bspline_params"]
+    basis_params = two_dim_bspline_penalty["bspline_params"]
     der_basis = lambda x : nmo.basis._spline_basis.bspline(x, basis_params["knots"], basis_params["order"], der=basis_params["der"], outer_ok=False)
-    pen = penalty_utils.compute_energy_penalty(params["n_samples"], der_basis)
+    pen = penalty_utils.compute_energy_penalty(two_dim_bspline_penalty["n_samples"], der_basis)
     pen = penalty_utils.ndim_tensor_product_basis_penalty(pen, pen)
     null_pen = penalty_utils.compute_penalty_null_space(pen.mean(axis=0))
     # due to poor conditioning of the penalty and different LAPACK versions
@@ -119,52 +114,44 @@ def test_two_dim_bspline_der_2_null_space_penalty(_tree_map_list_to_array, scrip
     # Instead, check that the null_pen is orthogonal to the energy penalty (which is all
     # we care about).
     assert np.allclose(np.dot(pen, null_pen), 0)
-    assert np.allclose(np.dot(params["energy_penalty_0"], null_pen), 0)
-    assert np.allclose(np.dot(params["energy_penalty_1"], null_pen), 0)
+    assert np.allclose(np.dot(two_dim_bspline_penalty["energy_penalty_0"], null_pen), 0)
+    assert np.allclose(np.dot(two_dim_bspline_penalty["energy_penalty_1"], null_pen), 0)
 
 
-def test_two_dim_bspline_der_2_symmetric_sqrt(_tree_map_list_to_array, script_dir):
+def test_two_dim_bspline_der_2_symmetric_sqrt(two_dim_bspline_penalty):
     """Check that the full penalty matches the original PGAM implementation."""
-    with open(script_dir / "two_dim_bspline_penalty.json", "r", encoding="utf-8") as f:
-        params = json.load(f)
-        params = _tree_map_list_to_array(params)
-    out = params["penalties_for_compute_sqrt"]
-    log_lam = np.log(params["reg_strength"][0])
-    sqrt_orig = params["sqrt_energy_penalty"]
+    out = two_dim_bspline_penalty["penalties_for_compute_sqrt"]
+    log_lam = np.log(two_dim_bspline_penalty["reg_strength"][0])
+    sqrt_orig = two_dim_bspline_penalty["sqrt_energy_penalty"]
     scaled_sqrt_pen = penalty_utils.tree_compute_sqrt_penalty(out, np.array([log_lam, log_lam, log_lam]), 0, apply_identifiability=lambda x:x)
     squared_pen = scaled_sqrt_pen.T.dot(scaled_sqrt_pen)
     squared_pen_orig = sqrt_orig.T.dot(sqrt_orig)
     assert np.allclose(squared_pen_orig, squared_pen)
 
 
-def test_two_dim_bspline_der_2_penalty_tensor(_tree_map_list_to_array, script_dir):
-    with open(script_dir / "two_dim_bspline_penalty.json", "r", encoding="utf-8") as f:
-        params = json.load(f)
-        params = _tree_map_list_to_array(params)
-    bspline_params = params["bspline_params"]
+def test_two_dim_bspline_der_2_penalty_tensor(two_dim_bspline_penalty):
+    bspline_params = two_dim_bspline_penalty["bspline_params"]
     n_basis = bspline_params["knots"].shape[0] - bspline_params["order"]
     bas = GAMBSplineEval(n_basis, order=bspline_params["order"], identifiability=False) ** 2
     pen_tensor = penalty_utils.compute_energy_penalty_tensor_additive_component(bas)
     s_list = np.concatenate(
         (
-            [params["energy_penalty_0"][None], params["energy_penalty_1"][None]]
+            [two_dim_bspline_penalty["energy_penalty_0"][None],
+             two_dim_bspline_penalty["energy_penalty_1"][None]]
         ),
         axis=0
     )
     assert np.allclose(pen_tensor[:2], s_list)
 
 
-def test_two_dim_bspline_der_2_agumented(_tree_map_list_to_array, script_dir):
-    with open(script_dir / "two_dim_bspline_penalty.json", "r", encoding="utf-8") as f:
-        params = json.load(f)
-        params = _tree_map_list_to_array(params)
-    bspline_params = params["bspline_params"]
+def test_two_dim_bspline_der_2_agumented(two_dim_bspline_penalty):
+    bspline_params = two_dim_bspline_penalty["bspline_params"]
     n_basis = bspline_params["knots"].shape[0] - bspline_params["order"]
     bas = GAMBSplineEval(n_basis, order=bspline_params["order"], identifiability=False) ** 2
     pen_list = penalty_utils.compute_energy_penalty_tensor(bas)
     out = penalty_utils.tree_compute_sqrt_penalty(
         pen_list,
-        [jax.numpy.log(params["reg_strength"])]
+        [jax.numpy.log(two_dim_bspline_penalty["reg_strength"])]
     )
     # the first col of agumented pen in original gam was a column of 0s
     # since the intercept term was treated as a column of 1s in
@@ -173,6 +160,6 @@ def test_two_dim_bspline_der_2_agumented(_tree_map_list_to_array, script_dir):
     # an unsafe Cholesky decomposition, if failed, used the safe eig
     # truncation method to get a square root of a matrix that is implemented
     # here. I.e. in order to compare we need to check the square of the matrix
-    orig_agu_pen = params["agumented_penalty"][:, 1:]
+    orig_agu_pen = two_dim_bspline_penalty["agumented_penalty"][:, 1:]
     orig_agu_pen_square = orig_agu_pen.T.dot(orig_agu_pen)
     assert np.allclose(out.T.dot(out), orig_agu_pen_square)
