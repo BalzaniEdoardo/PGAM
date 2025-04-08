@@ -140,12 +140,10 @@ def test_two_dim_bspline_der_2_symmetric_sqrt(_tree_map_list_to_array):
     with open(script_dir / "two_dim_bspline_penalty.json", "r", encoding="utf-8") as f:
         params = json.load(f)
         params = _tree_map_list_to_array(params)
-
-    basis_params = params["bspline_params"]
-    der_basis = lambda x : nmo.basis._spline_basis.bspline(x, basis_params["knots"], basis_params["order"], der=basis_params["der"], outer_ok=False)
-    pen = penalty_utils.compute_energy_penalty(params["n_samples"], der_basis)
-    pen = penalty_utils.ndim_tensor_product_basis_penalty(pen, pen)
-    null_pen = penalty_utils.compute_penalty_null_space(pen.mean(axis=0))
+    out = params["penalties_for_compute_sqrt"]
+    log_lam = np.log(params["reg_strength"][0])
     sqrt_orig = params["sqrt_energy_penalty"]
-    scaled_pen = penalty_utils.tree_compute_sqrt_penalty([pen[0], pen[1], null_pen], np.array([log_lam]), np.array([0]))
-    # assert np.allclose(scaled_pen, np.exp(log_lam) * params["sqrt_energy_penalty"])
+    scaled_sqrt_pen = penalty_utils.tree_compute_sqrt_penalty(out, np.array([log_lam, log_lam, log_lam]), 0, apply_identifiability=lambda x:x)
+    squared_pen = scaled_sqrt_pen.T.dot(scaled_sqrt_pen)
+    squared_pen_orig = sqrt_orig.T.dot(sqrt_orig)
+    assert np.allclose(squared_pen_orig, squared_pen)
