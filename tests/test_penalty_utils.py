@@ -152,3 +152,27 @@ def test_two_dim_bspline_der_2_penalty_tensor(_tree_map_list_to_array, script_di
         axis=0
     )
     assert np.allclose(pen_tensor[:2], s_list)
+
+
+def test_two_dim_bspline_der_2_agumented(_tree_map_list_to_array, script_dir):
+    with open(script_dir / "two_dim_bspline_penalty.json", "r", encoding="utf-8") as f:
+        params = json.load(f)
+        params = _tree_map_list_to_array(params)
+    bspline_params = params["bspline_params"]
+    n_basis = bspline_params["knots"].shape[0] - bspline_params["order"]
+    bas = GAMBSplineEval(n_basis, order=bspline_params["order"], identifiability=False) ** 2
+    pen_list = penalty_utils.compute_energy_penalty_tensor(bas)
+    out = penalty_utils.tree_compute_sqrt_penalty(
+        pen_list,
+        [jax.numpy.log(params["reg_strength"])]
+    )
+    # the first col of agumented pen in original gam was a column of 0s
+    # since the intercept term was treated as a column of 1s in
+    # the design matrix and was not penalized.
+    # secondly, the original PGAM code had a try/except which would try
+    # an unsafe Cholesky decomposition, if failed, used the safe eig
+    # truncation method to get a square root of a matrix that is implemented
+    # here. I.e. in order to compare we need to check the square of the matrix
+    orig_agu_pen = params["agumented_penalty"][:, 1:]
+    orig_agu_pen_square = orig_agu_pen.T.dot(orig_agu_pen)
+    assert np.allclose(out.T.dot(out), orig_agu_pen_square)

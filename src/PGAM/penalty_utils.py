@@ -71,7 +71,7 @@ def compute_start_block(tree_penalty: Any, shift_by=0):
     return jax.tree_util.tree_unflatten(struct, [k for k in cum_sum(vals)])
 
 
-def tree_compute_sqrt_penalty(tree_penalty: Any, reg_strength: Any, shift_by: Optional[int]=0, positive_mon_func: Callable=jnp.exp, apply_identifiability: Callable[[jnp.ndarray], jnp.ndarray] = lambda x:x[...,:-1]):
+def tree_compute_sqrt_penalty(tree_penalty: Any, reg_strength: Any, shift_by: Optional[int]=0, positive_mon_func: Callable=jnp.exp, apply_identifiability: Callable[[jnp.ndarray], jnp.ndarray] = lambda x: x[...,:-1]):
     """
     Compute the square root of penalties in a pytree and apply weighting.
 
@@ -105,7 +105,10 @@ def tree_compute_sqrt_penalty(tree_penalty: Any, reg_strength: Any, shift_by: Op
     )
     sqrt_tree = jax.tree_util.tree_map(lambda x: apply_identifiability(symmetric_sqrt(x)), scaled_pen)
     tree_start = compute_start_block(sqrt_tree, shift_by=shift_by)
-    tot_shape = pytree_map_and_reduce(lambda x: x.shape[0], sum, sqrt_tree), pytree_map_and_reduce(lambda x: x.shape[1], sum, sqrt_tree)
+    tot_shape = (
+        pytree_map_and_reduce(lambda x: x.shape[0], sum, sqrt_tree),
+        pytree_map_and_reduce(lambda x: x.shape[1], sum, sqrt_tree)
+    )
     return tree_create_block(sqrt_tree, tree_start, tot_shape)
 
 
@@ -350,29 +353,45 @@ def compute_energy_penalty_tensor(
         for bas in basis
     ]
 
-def compute_penalty_agumented(
-        list_penalty_tensors: list[jnp.ndarray],
-        penalization_strength: jnp.ndarray,
+def compute_penalty_agumented_from_basis(
+        basis: GAMBSplineEval | GAMMultiplicativeBasis | GAMAdditiveBasis,
+        reg_strength: float,
+        n_samples: int = 10 ** 4,
+        penalize_null_space: bool = True,
+        shift_by: Optional[int] = 0,
+        positive_mon_func = jnp.exp,
+        apply_identifiability: Callable[[jnp.ndarray], jnp.ndarray] = lambda x: x[...,:-1],
 ):
     """
-    Compute the block-diagonal square-root of the smoothing penaliztion.
+    Compute the block-diagonal penalization matrix.
 
     Parameters
     ----------
-    list_penalty_tensors:
-        A list of penalty tensors, each one can be of shape (2, Ki, Ki) or (1, Ki, ki) for
-        Ki the number of coefficients for predictors i, for i =1 , ..., M. First axis is of len 2
-        if the null-space is penalize, 1 otherwise.
-    penalization_strength:
-        A (2, M) shaped array of penalties where M is the number of predictors.
+    basis:
+        A possibly composite basis.
+    reg_strength:
+        The regularization strength.
+    n_samples:
+        Number of samples for computing the numerical integral of the basis energy.
+    penalize_null_space:
+        Boolean, if true penalize the null space of every energy penalty component.
+    shift_by
+    positive_mon_func
+    apply_identifiability
 
     Returns
     -------
+    Block-diagonal penalization matrix.
 
     """
-    pass
-
-
+    penalty_tree = compute_energy_penalty_tensor(basis, n_samples, penalize_null_space=penalize_null_space)
+    return tree_compute_sqrt_penalty(
+        penalty_tree,
+        reg_strength,
+        shift_by=shift_by,
+        positive_mon_func=positive_mon_func,
+        apply_identifiability=apply_identifiability
+    )
 
 
 def irregularly_sampled_simps(x, y):
