@@ -1,3 +1,5 @@
+from functools import partial
+
 from typing import Any, Callable, Optional, Tuple
 
 import jax
@@ -10,10 +12,39 @@ import math
 
 from .basis import GAMBSplineEval
 from .basis._basis import GAMAdditiveBasis, GAMMultiplicativeBasis
+from .config import config
 
+
+def symmetric_sqrt(symmetric_matrix):
+    if config.DEBUG:
+        return _symmetric_sqrt_numpy(symmetric_matrix)
+    else:
+        return _symmetric_sqrt_jax(symmetric_matrix)
+
+
+# original PGAM implementation (NeurIPS Balzani)
+def _symmetric_sqrt_numpy(symmetric_matrix):
+    print("Original implementation...")
+    try:
+        return np.linalg.cholesky(symmetric_matrix).T
+    except np.linalg.LinAlgError:
+        eig, U = np.linalg.eigh(symmetric_matrix)
+        sort_col = np.argsort(eig)[::-1]
+        eig = eig[sort_col]
+        U = U[:, sort_col]
+        # matrix is sym should be positive
+        eig = np.abs(eig)
+        i_rem = np.where(eig < 10 ** (-8) * eig.max())[0]
+        eig = np.delete(eig, i_rem, 0)
+        Bx = np.zeros(U.shape)
+        mask = np.arange(U.shape[1])
+        mask = mask[np.delete(mask, i_rem, 0)]
+        Bx[:, mask] = np.delete(U, i_rem, 1) * np.sqrt(eig)
+        Bx = Bx.T
+        return Bx
 
 @jax.jit
-def symmetric_sqrt(symmetric_matrix):
+def _symmetric_sqrt_jax(symmetric_matrix):
     """
     Compute the square root of a symmetric matrix, truncating eigenvalues at float32 precision.
 

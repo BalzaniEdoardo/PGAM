@@ -8,6 +8,7 @@ import jax
 from jax.tree_util import tree_map,  treedef_is_leaf, tree_structure
 
 from PGAM.basis import GAMBSplineEval
+from PGAM.config import set_debug
 
 
 @pytest.fixture()
@@ -32,6 +33,13 @@ def one_dim_bspline_penalty(_tree_map_list_to_array, script_dir):
 @pytest.fixture()
 def two_dim_bspline_penalty(_tree_map_list_to_array, script_dir):
     with open(script_dir / "two_dim_bspline_penalty.json", "r", encoding="utf-8") as f:
+        params = json.load(f)
+        params = _tree_map_list_to_array(params)
+    return params
+
+@pytest.fixture()
+def sum_two_one_dim_bspline_penalty(_tree_map_list_to_array, script_dir):
+    with open(script_dir / "sum_of_two_one_dim_bspline_penalty.json", "r", encoding="utf-8") as f:
         params = json.load(f)
         params = _tree_map_list_to_array(params)
     return params
@@ -76,10 +84,7 @@ def test_one_dim_bspline_der_2_agumented(one_dim_bspline_penalty):
     n_basis = bspline_params["knots"].shape[0] - bspline_params["order"]
     bas = GAMBSplineEval(n_basis, order=bspline_params["order"], identifiability=False)
     pen_list = penalty_utils.compute_energy_penalty_tensor(bas)
-    out = penalty_utils.tree_compute_sqrt_penalty(
-        pen_list,
-        [jax.numpy.log(one_dim_bspline_penalty["reg_strength"])]
-    )
+
     # the first col of agumented pen in original gam was a column of 0s
     # since the intercept term was treated as a column of 1s in
     # the design matrix and was not penalized.
@@ -87,9 +92,15 @@ def test_one_dim_bspline_der_2_agumented(one_dim_bspline_penalty):
     # an unsafe Cholesky decomposition, if failed, used the safe eig
     # truncation method to get a square root of a matrix that is implemented
     # here. I.e. in order to compare we need to check the square of the matrix
+    with set_debug(True):
+        # this context sets the original Cholesky sqrt algorithm
+        # the equivalence of the sqrt is checked with: test_orig_vs_new_sqrt
+        out = penalty_utils.tree_compute_sqrt_penalty(
+            pen_list,
+            [jax.numpy.log(one_dim_bspline_penalty["reg_strength"])]
+        )
     orig_agu_pen = one_dim_bspline_penalty["agumented_penalty"][:, 1:]
-    orig_agu_pen_square = orig_agu_pen.T.dot(orig_agu_pen)
-    assert np.allclose(out.T.dot(out), orig_agu_pen_square)
+    assert np.allclose(out, orig_agu_pen)
 
 
 def test_two_dim_bspline_der_2_energy_penalty(two_dim_bspline_penalty):
@@ -145,14 +156,11 @@ def test_two_dim_bspline_der_2_penalty_tensor(two_dim_bspline_penalty):
 
 
 def test_two_dim_bspline_der_2_agumented(two_dim_bspline_penalty):
+    jax.config.update("jax_enable_x64", True)
     bspline_params = two_dim_bspline_penalty["bspline_params"]
     n_basis = bspline_params["knots"].shape[0] - bspline_params["order"]
     bas = GAMBSplineEval(n_basis, order=bspline_params["order"], identifiability=False) ** 2
-    pen_list = penalty_utils.compute_energy_penalty_tensor(bas)
-    out = penalty_utils.tree_compute_sqrt_penalty(
-        pen_list,
-        [jax.numpy.log(two_dim_bspline_penalty["reg_strength"])]
-    )
+    pen_list = penalty_utils.compute_energy_penalty_tensor(bas, n_sample=10**6)
     # the first col of agumented pen in original gam was a column of 0s
     # since the intercept term was treated as a column of 1s in
     # the design matrix and was not penalized.
@@ -160,12 +168,50 @@ def test_two_dim_bspline_der_2_agumented(two_dim_bspline_penalty):
     # an unsafe Cholesky decomposition, if failed, used the safe eig
     # truncation method to get a square root of a matrix that is implemented
     # here. I.e. in order to compare we need to check the square of the matrix
+    with set_debug(True):
+        # this context sets the original Cholesky sqrt algorithm
+        # the equivalence of the sqrt is checked with: test_orig_vs_new_sqrt
+        out = penalty_utils.tree_compute_sqrt_penalty(
+            pen_list,
+            [jax.numpy.log(two_dim_bspline_penalty["reg_strength"])]
+        )
+    # slight differences in the integral results in sizable changes in the
+    # cholesky output for this poorly conditioned matrix. The square is still
+    # unaffected. Check the square instead.
     orig_agu_pen = two_dim_bspline_penalty["agumented_penalty"][:, 1:]
     orig_agu_pen_square = orig_agu_pen.T.dot(orig_agu_pen)
     assert np.allclose(out.T.dot(out), orig_agu_pen_square)
 
+def test_orig_vs_new_sqrt():
+    M = np.random.randn(10, 10)
+    M = M.dot(M.T)
+    # compare the sqrt with the original implementation
+    with set_debug(True):
+        sqrtM = penalty_utils.symmetric_sqrt(M)
+    sqrtM_new = penalty_utils.symmetric_sqrt(M)
+    assert isinstance(sqrtM, np.ndarray)
+    assert isinstance(sqrtM_new, jax.numpy.ndarray)
+    assert np.allclose(sqrtM.T.dot(sqrtM), sqrtM_new.T.dot(sqrtM_new))
+
+
+def test_sum_two_dim_bspline_penalty_tensor(sum_two_one_dim_bspline_penalty):
+    jax.config.update("jax_enable_x64", True)
+    params1 = sum_two_one_dim_bspline_penalty["bspline_1_params"]
+    params2 = sum_two_one_dim_bspline_penalty["bspline_2_params"]
+    n_basis1 = params1["knots"].shape[0] - params1["order"]
+    n_basis2 = params2["knots"].shape[0] - params2["order"]
+    bas = GAMBSplineEval(n_basis1, identifiability=False) + GAMBSplineEval(n_basis2, identifiability=False)
+    reg_strength = np.log(sum_two_one_dim_bspline_penalty["reg_strength"])
+    with set_debug(True):
+        # use Cholesky sqrt
+        pen_new = penalty_utils.compute_penalty_agumented_from_basis(bas, list(reg_strength))
+    pen_orig = sum_two_one_dim_bspline_penalty["block_penalty"]
+    # remove first col of zeros from orig
+    assert np.allclose(pen_new, pen_orig[:, 1:])
+
+
+
 # TODO:
-# - create a json for an additive basis summing 2 1D basis
 # - create a json for an additive basis summing 1 1D basis and 1 2D basis
 # - create a json for an additive basis summing 2 2D basis
 # - test that the block-diagonal agumented matrix matches original implementation in all cases
