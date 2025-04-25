@@ -977,7 +977,7 @@ class general_additive_model(object):
                 wagu[:n_obs] = w
                 model = sm.WLS(yagu, Xagu, wagu)
 
-                # begin STEP HALVINB
+                # begin STEP HALVING
                 Slam = create_Slam(np.log(smooth_pen), self.sm_handler, var_list)
                 func = lambda beta: -(
                     unpenalized_ll(beta, yfit, exog[:n_obs, :], self.family, 1, omega=1)

@@ -60,15 +60,17 @@ def compute_start_block(tree_penalty: Any, shift_by=0):
         A tree containing the cumulative sum of block indices.
     """
     flat, struct = jax.tree_util.tree_flatten(tree_penalty)
-    vals = (shift_by, *(arr.shape[0] for arr in flat[:-1]))
+    rows = (shift_by, *(arr.shape[0] for arr in flat[:-1]))
+    cols = (shift_by, *(arr.shape[1] for arr in flat[:-1]))
 
     def cum_sum(val_iter):
         v_prev = 0
         for v_curr in val_iter:
             yield v_curr + v_prev
             v_prev = v_curr + v_prev
-
-    return jax.tree_util.tree_unflatten(struct, [k for k in cum_sum(vals)])
+    idx_start_row = jax.tree_util.tree_unflatten(struct, [k for k in cum_sum(rows)])
+    idx_start_col = jax.tree_util.tree_unflatten(struct, [k for k in cum_sum(cols)])
+    return idx_start_row, idx_start_col
 
 
 def tree_compute_sqrt_penalty(tree_penalty: Any, reg_strength: Any, shift_by: Optional[int]=0, positive_mon_func: Callable=jnp.exp, apply_identifiability: Callable[[jnp.ndarray], jnp.ndarray] = lambda x: x[...,:-1]):
@@ -104,12 +106,12 @@ def tree_compute_sqrt_penalty(tree_penalty: Any, reg_strength: Any, shift_by: Op
         reg_strength
     )
     sqrt_tree = jax.tree_util.tree_map(lambda x: apply_identifiability(symmetric_sqrt(x)), scaled_pen)
-    tree_start = compute_start_block(sqrt_tree, shift_by=shift_by)
+    tree_start_row, tree_start_col = compute_start_block(sqrt_tree, shift_by=shift_by)
     tot_shape = (
         pytree_map_and_reduce(lambda x: x.shape[0], sum, sqrt_tree),
         pytree_map_and_reduce(lambda x: x.shape[1], sum, sqrt_tree)
     )
-    return tree_create_block(sqrt_tree, tree_start, tot_shape)
+    return tree_create_block(sqrt_tree, tree_start_row, tree_start_col, tot_shape)
 
 
 def compute_energy_penalty(n_samples: int, basis_derivative: Callable):
@@ -183,7 +185,7 @@ def compute_weighted_penalty(penalty_tensor: jnp.ndarray, reg_strength: jnp.ndar
     return jnp.sum(penalty_tensor * pos_reg[:, None, None], axis=0)
 
 
-def create_block_penalty(full_penalty: jnp.ndarray, start_idx: int, block_shape: Tuple[int, int]):
+def create_block_penalty(full_penalty: jnp.ndarray, start_idx_row: int, start_idx_col: int, block_shape: Tuple[int, int]):
     """
     Create a block penalty matrix.
 
@@ -191,8 +193,10 @@ def create_block_penalty(full_penalty: jnp.ndarray, start_idx: int, block_shape:
     ----------
     full_penalty :
         Penalty matrix to insert in the block.
-    start_idx :
-        Start index of the block.
+    start_idx_row :
+        Row start index of the block.
+    start_idx_col :
+        Column start index of the row block.
     block_shape :
         Shape of the block
 
@@ -203,12 +207,12 @@ def create_block_penalty(full_penalty: jnp.ndarray, start_idx: int, block_shape:
     """
     block_rows, block_cols = full_penalty.shape
     block_penalty = jnp.zeros(block_shape).at[
-                    start_idx: start_idx+block_rows, start_idx: start_idx+block_cols
+                    start_idx_row: start_idx_row+block_rows, start_idx_col: start_idx_col+block_cols
                     ].set(full_penalty)
     return block_penalty
 
 
-def tree_create_block(tree_penalty_blocks, start_idx, block_shape: Tuple[int, int]):
+def tree_create_block(tree_penalty_blocks, start_idx_row, start_idx_col, block_shape: Tuple[int, int]):
     """
     Create a block diagonal penalty matrix from a tree of penalty blocks.
 
@@ -216,8 +220,10 @@ def tree_create_block(tree_penalty_blocks, start_idx, block_shape: Tuple[int, in
     ----------
     tree_penalty_blocks :
         Tree containing penalty blocks.
-    start_idx :
-        Tree containing start indices for each block.
+    start_idx_row :
+        Tree containing row start indices for each block.
+    start_idx_col:
+        Tree containing column start indices for each block.
     block_shape :
         Shape of the block diag terms.
 
@@ -227,9 +233,13 @@ def tree_create_block(tree_penalty_blocks, start_idx, block_shape: Tuple[int, in
         Block penalty matrix of shape (block_matrix_n_rows, block_matrix_n_rows).
     """
     tree_penalty_blocks = jax.tree_util.tree_leaves(tree_penalty_blocks)
-    start_idx = jax.tree_util.tree_leaves(start_idx)
+    start_idx_row = jax.tree_util.tree_leaves(start_idx_row)
+    start_idx_col = jax.tree_util.tree_leaves(start_idx_col)
 
-    return sum(create_block_penalty(x, y, block_shape) for x,y in zip(tree_penalty_blocks, start_idx))
+    return sum(
+        create_block_penalty(x, y, z, block_shape)
+        for x, y, z in zip(tree_penalty_blocks, start_idx_row, start_idx_col)
+    )
 
 
 def ndim_tensor_product_basis_penalty(*penalty: jnp.ndarray) -> jnp.ndarray:

@@ -163,3 +163,16 @@ def test_two_dim_bspline_der_2_agumented(two_dim_bspline_penalty):
     orig_agu_pen = two_dim_bspline_penalty["agumented_penalty"][:, 1:]
     orig_agu_pen_square = orig_agu_pen.T.dot(orig_agu_pen)
     assert np.allclose(out.T.dot(out), orig_agu_pen_square)
+
+# TODO:
+# - create a json for an additive basis summing 2 1D basis
+# - create a json for an additive basis summing 1 1D basis and 1 2D basis
+# - create a json for an additive basis summing 2 2D basis
+# - test that the block-diagonal agumented matrix matches original implementation in all cases
+# - implement the agumentation of the design matrix:
+#   - compute weights based on the link function and observation model
+#   - scale by weight, should match model.wexog[:n_obs, :] (line 1042 of GAM_library.py)
+#   - QR decompose the scaled design
+# - implement the GCV computation taking as input the QR decomp, the list of penalty tensor etc.
+# - test the GCV values against the original implementation
+#
