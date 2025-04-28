@@ -20,7 +20,15 @@ def _tree_map_list_to_array():
 
     is_leaf = lambda x: treedef_is_leaf(tree_structure(x)) or isinstance(x, list)
     def map_list_to_array(params):
-        return tree_map(lambda x: x if not isinstance(x, list) else np.asarray(x), params, is_leaf=is_leaf)
+        if "reg_strength" in params:
+            rs = params.pop("reg_strength")
+        try:
+            reg_strength = {"reg_strength": jax.numpy.array(rs)}
+        except:
+            reg_strength = {"reg_strength": [np.array(r) for r in rs]}
+        params = tree_map(lambda x: x if not isinstance(x, list) else np.asarray(x), params, is_leaf=is_leaf)
+        params.update(reg_strength)
+        return params
     return map_list_to_array
 
 @pytest.fixture()
@@ -43,6 +51,15 @@ def sum_two_one_dim_bspline_penalty(_tree_map_list_to_array, script_dir):
         params = json.load(f)
         params = _tree_map_list_to_array(params)
     return params
+
+
+@pytest.fixture()
+def sum_one_dim_two_dim_bspline_penalty(_tree_map_list_to_array, script_dir):
+    with open(script_dir / "sum_of_one_dim_two_dim_bspline_penalty.json", "r", encoding="utf-8") as f:
+        params = json.load(f)
+        params = _tree_map_list_to_array(params)
+    return params
+
 
 def test_one_dim_bspline_der_2_energy_penalty(one_dim_bspline_penalty):
     """Check that the full penalty matches the original PGAM implementation."""
@@ -97,7 +114,7 @@ def test_one_dim_bspline_der_2_agumented(one_dim_bspline_penalty):
         # the equivalence of the sqrt is checked with: test_orig_vs_new_sqrt
         out = penalty_utils.tree_compute_sqrt_penalty(
             pen_list,
-            [jax.numpy.log(one_dim_bspline_penalty["reg_strength"])]
+            [jax.numpy.log(jax.numpy.asarray(one_dim_bspline_penalty["reg_strength"]))]
         )
     orig_agu_pen = one_dim_bspline_penalty["agumented_penalty"][:, 1:]
     assert np.allclose(out, orig_agu_pen)
@@ -175,12 +192,8 @@ def test_two_dim_bspline_der_2_agumented(two_dim_bspline_penalty):
             pen_list,
             [jax.numpy.log(two_dim_bspline_penalty["reg_strength"])]
         )
-    # slight differences in the integral results in sizable changes in the
-    # cholesky output for this poorly conditioned matrix. The square is still
-    # unaffected. Check the square instead.
     orig_agu_pen = two_dim_bspline_penalty["agumented_penalty"][:, 1:]
-    orig_agu_pen_square = orig_agu_pen.T.dot(orig_agu_pen)
-    assert np.allclose(out.T.dot(out), orig_agu_pen_square)
+    assert np.allclose(out, orig_agu_pen)
 
 def test_orig_vs_new_sqrt():
     M = np.random.randn(10, 10)
@@ -210,9 +223,24 @@ def test_sum_two_dim_bspline_penalty_tensor(sum_two_one_dim_bspline_penalty):
     assert np.allclose(pen_new, pen_orig[:, 1:])
 
 
+def test_sum_two_dim_bspline_penalty_tensor(sum_one_dim_two_dim_bspline_penalty):
+    jax.config.update("jax_enable_x64", True)
+    params1 = sum_one_dim_two_dim_bspline_penalty["bspline_1_params"]
+    params2 = sum_one_dim_two_dim_bspline_penalty["bspline_2_params"]
+    n_basis1 = params1["knots"].shape[0] - params1["order"]
+    n_basis2 = params2["knots"].shape[0] - params2["order"]
+    bas = GAMBSplineEval(n_basis1, identifiability=False) + GAMBSplineEval(n_basis2, identifiability=False)**2
+    reg_strength = [np.log(r) for r in sum_one_dim_two_dim_bspline_penalty["reg_strength"]]
+    with set_debug(True):
+        # use Cholesky sqrt
+        pen_new = penalty_utils.compute_penalty_agumented_from_basis(bas, list(reg_strength))
+    pen_orig = sum_one_dim_two_dim_bspline_penalty["block_penalty"]
+    # remove first col of zeros from orig
+    assert np.allclose(pen_new, pen_orig[:, 1:])
+
+
 
 # TODO:
-# - create a json for an additive basis summing 1 1D basis and 1 2D basis
 # - create a json for an additive basis summing 2 2D basis
 # - test that the block-diagonal agumented matrix matches original implementation in all cases
 # - implement the agumentation of the design matrix:
