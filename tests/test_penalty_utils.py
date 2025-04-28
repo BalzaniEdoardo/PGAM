@@ -60,6 +60,12 @@ def sum_one_dim_two_dim_bspline_penalty(_tree_map_list_to_array, script_dir):
         params = _tree_map_list_to_array(params)
     return params
 
+@pytest.fixture()
+def sum_of_two_dim_two_dim_bspline_penalty(_tree_map_list_to_array, script_dir):
+    with open(script_dir / "sum_of_two_dim_two_dim_bspline_penalty.json", "r", encoding="utf-8") as f:
+        params = json.load(f)
+        params = _tree_map_list_to_array(params)
+    return params
 
 def test_one_dim_bspline_der_2_energy_penalty(one_dim_bspline_penalty):
     """Check that the full penalty matches the original PGAM implementation."""
@@ -74,7 +80,7 @@ def test_one_dim_bspline_der_2_null_space_penalty(one_dim_bspline_penalty):
     basis_params = one_dim_bspline_penalty["bspline_params"]
     der_basis = lambda x : nmo.basis._spline_basis.bspline(x, basis_params["knots"], basis_params["order"], der=basis_params["der"], outer_ok=False)
     pen = penalty_utils.compute_energy_penalty(one_dim_bspline_penalty["n_samples"], der_basis)
-    null_pen = penalty_utils.compute_penalty_null_space(pen)
+    null_pen = penalty_utils.compute_penalty_null_space(pen[None])
     assert np.allclose(null_pen, one_dim_bspline_penalty["null_space_penalty"])
 
 
@@ -136,7 +142,7 @@ def test_two_dim_bspline_der_2_null_space_penalty(two_dim_bspline_penalty):
     der_basis = lambda x : nmo.basis._spline_basis.bspline(x, basis_params["knots"], basis_params["order"], der=basis_params["der"], outer_ok=False)
     pen = penalty_utils.compute_energy_penalty(two_dim_bspline_penalty["n_samples"], der_basis)
     pen = penalty_utils.ndim_tensor_product_basis_penalty(pen, pen)
-    null_pen = penalty_utils.compute_penalty_null_space(pen.mean(axis=0))
+    null_pen = penalty_utils.compute_penalty_null_space(pen)
     # due to poor conditioning of the penalty and different LAPACK versions
     # used by numpy and jaxlib, cannot compare directly the null-space penalty match.
     # Instead, check that the null_pen is orthogonal to the energy penalty (which is all
@@ -207,7 +213,7 @@ def test_orig_vs_new_sqrt():
     assert np.allclose(sqrtM.T.dot(sqrtM), sqrtM_new.T.dot(sqrtM_new))
 
 
-def test_sum_two_dim_bspline_penalty_tensor(sum_two_one_dim_bspline_penalty):
+def test_sum_two_one_dim_bspline_penalty_tensor(sum_two_one_dim_bspline_penalty):
     jax.config.update("jax_enable_x64", True)
     params1 = sum_two_one_dim_bspline_penalty["bspline_1_params"]
     params2 = sum_two_one_dim_bspline_penalty["bspline_2_params"]
@@ -223,18 +229,18 @@ def test_sum_two_dim_bspline_penalty_tensor(sum_two_one_dim_bspline_penalty):
     assert np.allclose(pen_new, pen_orig[:, 1:])
 
 
-def test_sum_two_dim_bspline_penalty_tensor(sum_one_dim_two_dim_bspline_penalty):
+def test_sum_two_two_dim_bspline_penalty_tensor(sum_of_two_dim_two_dim_bspline_penalty):
     jax.config.update("jax_enable_x64", True)
-    params1 = sum_one_dim_two_dim_bspline_penalty["bspline_1_params"]
-    params2 = sum_one_dim_two_dim_bspline_penalty["bspline_2_params"]
+    params1 = sum_of_two_dim_two_dim_bspline_penalty["bspline_1_params"]
+    params2 = sum_of_two_dim_two_dim_bspline_penalty["bspline_2_params"]
     n_basis1 = params1["knots"].shape[0] - params1["order"]
     n_basis2 = params2["knots"].shape[0] - params2["order"]
-    bas = GAMBSplineEval(n_basis1, identifiability=False) + GAMBSplineEval(n_basis2, identifiability=False)**2
-    reg_strength = [np.log(r) for r in sum_one_dim_two_dim_bspline_penalty["reg_strength"]]
+    bas = GAMBSplineEval(n_basis1, identifiability=False)**2 + GAMBSplineEval(n_basis2, identifiability=False)**2
+    reg_strength = sum_of_two_dim_two_dim_bspline_penalty["reg_strength"]
     with set_debug(True):
         # use Cholesky sqrt
-        pen_new = penalty_utils.compute_penalty_agumented_from_basis(bas, list(reg_strength))
-    pen_orig = sum_one_dim_two_dim_bspline_penalty["block_penalty"]
+        pen_new = penalty_utils.compute_penalty_agumented_from_basis(bas, list(np.log(reg_strength)))
+    pen_orig = sum_of_two_dim_two_dim_bspline_penalty["block_penalty"]
     # remove first col of zeros from orig
     assert np.allclose(pen_new, pen_orig[:, 1:])
 

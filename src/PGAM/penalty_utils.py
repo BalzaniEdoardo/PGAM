@@ -161,6 +161,28 @@ def compute_energy_penalty(n_samples: int, basis_derivative: Callable):
     energy_pen:
         Energy penalty matrix of shape (K, K), where K is the number of basis functions.
     """
+    if config.DEBUG:
+        return compute_energy_penalty_numpy(n_samples, basis_derivative)
+    else:
+        return compute_energy_penalty_jax(n_samples, basis_derivative)
+
+
+def compute_energy_penalty_jax(n_samples: int, basis_derivative: Callable):
+    """
+    Compute the energy penalty for a basis derivative.
+
+    Parameters
+    ----------
+    n_samples :
+        Number of samples for integration.
+    basis_derivative :
+        Function that computes the derivative of the basis.
+
+    Returns
+    -------
+    energy_pen:
+        Energy penalty matrix of shape (K, K), where K is the number of basis functions.
+    """
     samples = jnp.linspace(0, 1, n_samples)
     eval_bas = jnp.asarray(basis_derivative(samples))
     indices = jnp.triu_indices(eval_bas.shape[1])
@@ -170,24 +192,68 @@ def compute_energy_penalty(n_samples: int, basis_derivative: Callable):
     integr = vmap_simpson_regular(dx, square_bas)
     energy_pen = jnp.zeros((eval_bas.shape[1], eval_bas.shape[1]))
     energy_pen = energy_pen.at[indices].set(integr)
-    energy_pen = energy_pen + energy_pen.T - jnp.diag(energy_pen.diagonal())
+    energy_pen = energy_pen + jnp.triu(energy_pen, 1).T
     return energy_pen
 
 
+def compute_energy_penalty_numpy(n_samples: int, basis_derivative: Callable):
+    from scipy.integrate import simpson
+    samples = np.linspace(0, 1, n_samples)
+    eval_bas = np.asarray(basis_derivative(samples))
+    dx = samples[1] - samples[0]
+    # Simpson integration of squared basis.
+    integr = np.zeros((eval_bas.shape[1], eval_bas.shape[1]))
+    for i in range(eval_bas.shape[1]):
+        for j in range(i, eval_bas.shape[1]):
+            integr[i, j] = simpson(eval_bas[:, i] * eval_bas[:, j], dx=dx)
+    integr += np.triu(integr, 1).T
+    return integr
+
+
 def compute_penalty_null_space(penalty):
+    if not config.DEBUG:
+        return compute_penalty_null_space_jax(penalty)
+    else:
+        return compute_penalty_null_space_numpy(penalty)
+
+
+def compute_penalty_null_space_numpy(penalty):
     """
     Compute the null space projection of a penalty matrix.
 
     Parameters
     ----------
     penalty :
-        Penalty matrix of shape (K, K).
+        Penalty matrix of shape (m, K, K).
 
     Returns
     -------
     :
         Null space projection matrix of shape (K, K).
     """
+    # original algorith summed (null-space should be the same)
+    penalty = penalty.sum(axis=0)
+    eig, U = np.linalg.eigh(penalty)
+    zero_idx = np.abs(eig) < np.finfo(float).eps * np.max(eig)
+    U = U[:, zero_idx]
+    return np.dot(U, U.T)
+
+
+def compute_penalty_null_space_jax(penalty):
+    """
+    Compute the null space projection of a penalty matrix.
+
+    Parameters
+    ----------
+    penalty :
+        Penalty matrix of shape (m, K, K).
+
+    Returns
+    -------
+    :
+        Null space projection matrix of shape (K, K).
+    """
+    penalty = penalty.mean(axis=0)
     eig, U = jnp.linalg.eigh(penalty)
     zero_idx = jnp.abs(eig) < jnp.finfo(float).eps * jnp.max(eig)
     U = U[:, zero_idx]
@@ -358,7 +424,7 @@ def compute_energy_penalty_tensor_additive_component(
         # (v.T * A * v) = (v.T * B * v) = 0, since A and B are positive semidef. I.e. v is in null(A) intersect
         # null(B). For this reason we can compute the null-space of the sum of the penality matrices and penalize that.
         # In the original code the sum was used, however, the mean is more stable when summing many matrices.
-        null_pen = compute_penalty_null_space(out.mean(axis=0))
+        null_pen = compute_penalty_null_space(out)
         full_rank = null_pen[None] if ~np.all(null_pen == 0) else jnp.zeros((0, *null_pen.shape))
         out = jnp.concatenate(
             (out, full_rank),
