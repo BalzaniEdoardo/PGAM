@@ -247,8 +247,6 @@ def test_sum_two_two_dim_bspline_penalty_tensor(sum_of_two_dim_two_dim_bspline_p
 
 
 # TODO:
-# - create a json for an additive basis summing 2 2D basis
-# - test that the block-diagonal agumented matrix matches original implementation in all cases
 # - implement the agumentation of the design matrix:
 #   - compute weights based on the link function and observation model
 #   - scale by weight, should match model.wexog[:n_obs, :] (line 1042 of GAM_library.py)
