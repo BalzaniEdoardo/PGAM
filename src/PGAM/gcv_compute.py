@@ -1,13 +1,12 @@
 from functools import partial
+from typing import Any, Callable, Optional
 
 import jax
-import jax.tree_util as jtu
 import jax.numpy as jnp
-from typing import Any, Callable, Optional
+import jax.tree_util as jtu
 from numpy.typing import NDArray
-from . import penalty_utils
-import numpy as np
 
+from . import penalty_utils
 
 FLOAT_EPS = jnp.finfo(jnp.float32).eps
 
@@ -15,24 +14,27 @@ FLOAT_EPS = jnp.finfo(jnp.float32).eps
 _vmap_where = jax.vmap(jnp.where, (None, None, 0), out_axes=0)
 
 
-@partial(jax.jit, static_argnames=("positive_mon_func", "apply_identifiability", "gamma"))
+@partial(
+    jax.jit, static_argnames=("positive_mon_func", "apply_identifiability", "gamma")
+)
 def _compute_gcv_and_states(
-        regularization_strength: Any,
-        penalty_tree: Any,
-        X: NDArray,
-        Q: NDArray,
-        R: NDArray,
-        y: NDArray,
-        positive_mon_func: Callable[[jnp.ndarray], jnp.ndarray] = jnp.exp,
-        apply_identifiability: Optional[Callable] = None,
-        gamma=1.5):
+    regularization_strength: Any,
+    penalty_tree: Any,
+    X: NDArray,
+    Q: NDArray,
+    R: NDArray,
+    y: NDArray,
+    positive_mon_func: Callable[[jnp.ndarray], jnp.ndarray] = jnp.exp,
+    apply_identifiability: Optional[Callable] = None,
+    gamma=1.5,
+):
     # identifiability constraint drops column by default
     sqrt_penalty = penalty_utils.tree_compute_sqrt_penalty(
         penalty_tree,
         regularization_strength,
         shift_by=0,
         positive_mon_func=positive_mon_func,
-        apply_identifiability=apply_identifiability
+        apply_identifiability=apply_identifiability,
     )
 
     # add a zero corresponding to not-penalizing the intercept
@@ -47,35 +49,55 @@ def _compute_gcv_and_states(
     U = _vmap_where(low_vals, 0, U)
     V_T = _vmap_where(low_vals, 0, V_T.T).T
 
-    U1 = U[:R.shape[0]]
+    U1 = U[: R.shape[0]]
 
     # make sure it is 2D
     y = y[:n_obs].reshape(n_obs, -1)
-    s_inv = jnp.where(low_vals, 0., 1. / s)
-    square_s_inv = s_inv ** 2
+    s_inv = jnp.where(low_vals, 0.0, 1.0 / s)
+    square_s_inv = s_inv**2
 
     # compute A.dot(y) and trA without forming the n_obs x n_obs matrix.
     mat_vec = jnp.dot(V_T, jnp.dot(X.T, y[:n_obs]))
     Ay = X.dot(V_T.T.dot((mat_vec.T * square_s_inv).T))
-    trA = (U1 ** 2).sum()
+    trA = (U1**2).sum()
     delta = n_obs - gamma * trA
     alpha = jnp.sum(jnp.power(Ay - y, 2))
-    gcv = n_obs * alpha / (delta ** 2)
-    return  gcv, alpha, delta, n_obs, U1, V_T, Q, trA, Ay, s_inv, square_s_inv
+    gcv = n_obs * alpha / (delta**2)
+    return gcv, alpha, delta, n_obs, U1, V_T, Q, trA, Ay, s_inv, square_s_inv
 
 
 def symm_mult(sym_mat, factor):
     return jnp.squeeze(
         jnp.dot(
             jnp.dot(factor.T, sym_mat, precision=jax.lax.Precision.HIGHEST),
-            factor, precision=jax.lax.Precision.HIGHEST)
+            factor,
+            precision=jax.lax.Precision.HIGHEST,
+        )
     )
+
 
 _vmap_symm_mult = jax.vmap(symm_mult, in_axes=(0, None), out_axes=0)
 _vmap_trace = jax.vmap(jnp.linalg.trace, in_axes=0, out_axes=0)
 
-@partial(jax.jit, static_argnames=("positive_mon_func", "apply_identifiability", "gamma"))
-def _gcv_grad_compute_from_states(regularization_strength, penalty_tree, y, gamma, alpha, delta, n_obs, U1, V_T, Q, s_inv, positive_mon_func, apply_identifiability):
+
+@partial(
+    jax.jit, static_argnames=("positive_mon_func", "apply_identifiability", "gamma")
+)
+def _gcv_grad_compute_from_states(
+    regularization_strength,
+    penalty_tree,
+    y,
+    gamma,
+    alpha,
+    delta,
+    n_obs,
+    U1,
+    V_T,
+    Q,
+    s_inv,
+    positive_mon_func,
+    apply_identifiability,
+):
     # compute useful vector
     y1 = U1.T @ (Q.T @ y)
     UTU = U1.T @ U1
@@ -93,25 +115,31 @@ def _gcv_grad_compute_from_states(regularization_strength, penalty_tree, y, gamm
     alpha_grad = jtu.tree_map(
         lambda x, y: y * _vmap_symm_mult(x, y1),
         jtu.tree_map(lambda x, y: 2 * x - y - jnp.transpose(y, (0, 2, 1)), M, F),
-        lams
+        lams,
     )
-    delta_grad = jtu.tree_map(lambda x, y: jnp.squeeze(gamma * x * _vmap_trace(y)), lams, F)
+    delta_grad = jtu.tree_map(
+        lambda x, y: jnp.squeeze(gamma * x * _vmap_trace(y)), lams, F
+    )
     gcv_grad = jtu.tree_map(
-        lambda x, y: (n_obs / delta ** 2) * x - 2 * n_obs * alpha / delta ** 3 * y, alpha_grad, delta_grad
+        lambda x, y: (n_obs / delta**2) * x - 2 * n_obs * alpha / delta**3 * y,
+        alpha_grad,
+        delta_grad,
     )
     return gcv_grad
 
 
-def gcv_compute_factory(positive_mon_func, apply_identifiability_columns, apply_identifiability, gamma):
+def gcv_compute_factory(
+    positive_mon_func, apply_identifiability_columns, apply_identifiability, gamma
+):
 
     @jax.custom_vjp
     def _gcv_compute(
-            regularization_strength: Any,
-            penalty_tree: Any,
-            X: NDArray,
-            Q: NDArray,
-            R: NDArray,
-            y: NDArray,
+        regularization_strength: Any,
+        penalty_tree: Any,
+        X: NDArray,
+        Q: NDArray,
+        R: NDArray,
+        y: NDArray,
     ):
         """
         Compute the Generalized Cross-validation score.
@@ -138,10 +166,16 @@ def gcv_compute_factory(positive_mon_func, apply_identifiability_columns, apply_
 
         """
         gcv = _compute_gcv_and_states(
-            regularization_strength, penalty_tree, X, Q, R, y,
+            regularization_strength,
+            penalty_tree,
+            X,
+            Q,
+            R,
+            y,
             positive_mon_func=positive_mon_func,
             apply_identifiability=apply_identifiability_columns,
-            gamma=gamma)[0]
+            gamma=gamma,
+        )[0]
         return gcv
 
     def _gcv_compute_fwd(
@@ -153,27 +187,54 @@ def gcv_compute_factory(positive_mon_func, apply_identifiability_columns, apply_
         y,
     ):
         # Compute and return GCV + intermediates for backward
-        gcv, alpha, delta, n_obs, U1, V_T, Q_, trA, Ay, s_inv, square_s_inv = _compute_gcv_and_states(
-            regularization_strength, penalty_tree, X, Q, R, y,
-            positive_mon_func=positive_mon_func,
-            apply_identifiability=apply_identifiability_columns,
-            gamma=gamma,
-        )
-
-        # Save inputs for backward (must be JAX types only)
-        return gcv, (
-                gcv, alpha, delta, n_obs, U1, V_T, Q_, trA, Ay, s_inv, square_s_inv,
+        gcv, alpha, delta, n_obs, U1, V_T, Q_, trA, Ay, s_inv, square_s_inv = (
+            _compute_gcv_and_states(
                 regularization_strength,
                 penalty_tree,
                 X,
                 Q,
                 R,
                 y,
+                positive_mon_func=positive_mon_func,
+                apply_identifiability=apply_identifiability_columns,
+                gamma=gamma,
             )
+        )
+
+        # Save inputs for backward (must be JAX types only)
+        return gcv, (
+            gcv,
+            alpha,
+            delta,
+            n_obs,
+            U1,
+            V_T,
+            Q_,
+            trA,
+            Ay,
+            s_inv,
+            square_s_inv,
+            regularization_strength,
+            penalty_tree,
+            X,
+            Q,
+            R,
+            y,
+        )
 
     def _gcv_compute_bwd(res, gcv_bar):
         (
-            gcv, alpha, delta, n_obs, U1, V_T, Q, trA, Ay, s_inv, square_s_inv,
+            gcv,
+            alpha,
+            delta,
+            n_obs,
+            U1,
+            V_T,
+            Q,
+            trA,
+            Ay,
+            s_inv,
+            square_s_inv,
             regularization_strength,
             penalty_tree,
             X,
@@ -196,7 +257,7 @@ def gcv_compute_factory(positive_mon_func, apply_identifiability_columns, apply_
             Q,
             s_inv,
             positive_mon_func,
-            apply_identifiability
+            apply_identifiability,
         )
         return (jtu.tree_map(lambda g: gcv_bar * g, gcv_grad),) + (None,) * 5
 
