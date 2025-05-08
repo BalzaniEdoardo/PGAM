@@ -145,6 +145,54 @@ def tree_compute_sqrt_penalty(tree_penalty: Any, reg_strength: Any, shift_by: Op
     return tree_create_block(sqrt_tree, tree_start_row, tree_start_col, tot_shape)
 
 
+@partial(jax.jit, static_argnums=(1, 2))
+def compute_penalty_blocks(
+        tree_penalty: Any,
+        shift_by: Optional[int]=0,
+        apply_identifiability: Callable[[jnp.ndarray], jnp.ndarray] = lambda x: x[...,:-1,:-1]
+):
+    """
+    Compute the penalty blocks for a pytree and apply weighting.
+
+    Parameters
+    ----------
+    tree_penalty:
+        Tree containing penalty matrices.
+    shift_by:
+        Shift blocks by. For GCV compute the penalty is shifted by one block. The reason for that is
+        that the design matrix must include the intercept, which is not penalized. No penalization
+        corresponds to a 1x1 block of 0s.
+    apply_identifiability:
+        Function that applies identifiability constraint. Note that here we are not working with
+        square roots, i.e. both rows and columns must be dropped when applied an identifiability
+        constraint.
+
+    Returns
+    -------
+        A tree with the individual basis penalties inserted in a block structure of size the overall
+        block penalty matrix.
+
+    Notes
+    -----
+        The output is very sparse, if JAX support for sparse representation improves, consider using
+        a compressed representation for sparse matrices.
+
+    """
+    scaled_penalties = jax.tree_util.tree_map(apply_identifiability, tree_penalty)
+    tree_start_row, tree_start_col = compute_start_block(scaled_penalties, shift_by=shift_by)
+
+    # compute shape of blocks (individual penalty matrices)
+    block_shapes = jax.tree_util.tree_map(lambda x: x.shape[1:], scaled_penalties)
+    num_pen_per_block = jax.tree_util.tree_map(lambda x: x.shape[0], scaled_penalties)
+
+    # compute size of the full block penalty and allocate the blocks
+    size = 1 + sum(jax.tree_util.tree_leaves(block_shapes)[1::2])
+    penalty_blocks = jax.tree_util.tree_map(lambda n: jnp.zeros((n, size, size)), num_pen_per_block)
+    # function that build the blocks
+    func = lambda pen, full, start_row, start_col: pen.at[:, start_row: start_row+size, start_col: start_col+size].set(full)
+    return jax.tree_util.tree_map(func, penalty_blocks, scaled_penalties, tree_start_row, tree_start_col)
+
+
 def compute_energy_penalty(n_samples: int, basis_derivative: Callable):
     """
     Compute the energy penalty for a basis derivative.
@@ -390,7 +438,7 @@ def compute_energy_penalty_tensor_additive_component(
         n_samples: int = 10 ** 4,
         penalize_null_space: bool = True,
 ) -> jnp.ndarray:
-    """
+    r"""
     Define a penalty tensor for an additive component.
 
     Parameters
@@ -482,9 +530,16 @@ def compute_penalty_agumented_from_basis(
         Number of samples for computing the numerical integral of the basis energy.
     penalize_null_space:
         Boolean, if true penalize the null space of every energy penalty component.
-    shift_by
-    positive_mon_func
-    apply_identifiability
+    shift_by:
+        Shift columns by this integer.
+    positive_mon_func:
+        Non-linearity applied to the regularization strengths enforce positivity.
+    apply_identifiability:
+        A function that matches the identifiability constrain at the level of the penalty matrix.
+        If for example, we dropped a b-spline element, i.e. dropped a column of the design matrix,
+        we should drop the corresponding column of the penalty. Default assumes that we are dropping
+        the last column of the design matrix.
+
 
     Returns
     -------
