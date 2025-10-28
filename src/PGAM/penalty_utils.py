@@ -91,8 +91,8 @@ def compute_start_block(tree_penalty: Any, shift_by=0):
         A tree containing the cumulative sum of block indices.
     """
     flat, struct = jax.tree_util.tree_flatten(tree_penalty)
-    rows = (shift_by, *(arr.shape[0] for arr in flat[:-1]))
-    cols = (shift_by, *(arr.shape[1] for arr in flat[:-1]))
+    rows = (shift_by, *(arr.shape[-2] for arr in flat[:-1]))
+    cols = (shift_by, *(arr.shape[-1] for arr in flat[:-1]))
 
     def cum_sum(val_iter):
         v_prev = 0
@@ -189,8 +189,8 @@ def compute_penalty_blocks(
     size = 1 + sum(jax.tree_util.tree_leaves(block_shapes)[1::2])
     penalty_blocks = jax.tree_util.tree_map(lambda n: jnp.zeros((n, size, size)), num_pen_per_block)
     # function that build the blocks
-    func = lambda pen, full, start_row, start_col: pen.at[:, start_row: start_row+size, start_col: start_col+size].set(full)
-    return jax.tree_util.tree_map(func, penalty_blocks, scaled_penalties, tree_start_row, tree_start_col)
+    func = lambda pen, full, start_row, start_col, shape: pen.at[:, start_row: start_row+shape[0], start_col: start_col+shape[1]].set(full)
+    return jax.tree_util.tree_map(func, penalty_blocks, scaled_penalties, tree_start_row, tree_start_col, block_shapes)
 
 
 def compute_energy_penalty(n_samples: int, basis_derivative: Callable):

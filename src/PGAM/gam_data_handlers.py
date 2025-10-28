@@ -1805,7 +1805,7 @@ class smooths_handler(object):
             # update the starting index
             count += X.shape[1]
 
-            if type(X) is sparse.csr.csr_matrix:
+            if type(X) is sparse.csr_matrix:
                 hstack_X = sparse.hstack
             else:
                 # print('full matrix stack')
@@ -1819,7 +1819,7 @@ class smooths_handler(object):
         # t1 = perf_counter()
         # print('hstack:', t1 - t0, 'sec')
         # t0 = perf_counter()
-        if type(fullX) is sparse.csr.csr_matrix or type(fullX) is sparse.coo.coo_matrix:
+        if type(fullX) is sparse.csr_matrix or type(fullX) is sparse.coo_matrix:
             fullX = fullX.toarray()
         t1 = perf_counter()
         # print('tranform to full matrix: ', t1 - t0, 'sec')

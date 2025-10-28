@@ -1088,7 +1088,8 @@ class general_additive_model(object):
 
                 if np.sum(np.isnan(gcv_func(rho0))):
                     print("NaN here")
-
+                # print("init pen", rho0)
+                # print("init coeff", bhat)
                 res = minimize(
                     gcv_func,
                     rho0,
