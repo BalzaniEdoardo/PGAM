@@ -8,7 +8,7 @@ Statsmodels terminology:
 import jax.numpy as jnp
 import jax
 import jax.tree_util as jtu
-from nemos.initialize_regressor import INVERSE_FUNCS
+from nemos.glm.initialize_parameters import INVERSE_FUNCS
 from nemos.tree_utils import pytree_map_and_reduce
 from jaxopt import LBFGSB,LBFGS
 from nemos.observation_models import PoissonObservations
@@ -139,7 +139,7 @@ def pql_outer_iteration(
     -------
 
     """
-    inv_link_func = obs_model.inverse_link_function
+    inv_link_func = obs_model.default_inverse_link_function
     solver = LBFGSB(inner_func, tol=tol_optim)
     # make sure everything is float
     reg_strength = jtu.tree_map(lambda x: jnp.asarray(x.astype(float)), reg_strength)

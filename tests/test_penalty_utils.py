@@ -180,10 +180,10 @@ def test_two_dim_bspline_der_2_penalty_tensor(two_dim_bspline_penalty):
 
 def test_two_dim_bspline_der_2_agumented(two_dim_bspline_penalty):
     jax.config.update("jax_enable_x64", True)
-    bspline_params = two_dim_bspline_penalty["bspline_params"]
-    n_basis = bspline_params["knots"].shape[0] - bspline_params["order"]
-    bas = GAMBSplineEval(n_basis, order=bspline_params["order"], identifiability=False) ** 2
-    pen_list = penalty_utils.compute_energy_penalty_tensor(bas, n_sample=10**6)
+    # Use the stored penalties instead of recomputing, since the null-space
+    # computation is unstable and the agumented_penalty was computed from
+    # penalties_for_compute_sqrt in the generating script.
+    pen_list = [two_dim_bspline_penalty["penalties_for_compute_sqrt"]]
     # the first col of agumented pen in original gam was a column of 0s
     # since the intercept term was treated as a column of 1s in
     # the design matrix and was not penalized.
