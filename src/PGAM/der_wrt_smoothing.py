@@ -100,9 +100,9 @@ class deriv3_link(sm.genmod.families.links.Link):
 def link_deriv3(self, x):
     if isinstance(self, sm.genmod.families.links.identity):
         return np.zeros(shape=x.shape)
-    elif isinstance(self, sm.genmod.families.links.log):
+    elif isinstance(self, sm.genmod.families.links.Log):
         return 2 / x**3
-    elif isinstance(self, sm.genmod.families.links.logit):
+    elif isinstance(self, sm.genmod.families.links.Logit):
         return -((-2 + 6 * x - 6 * x**2) / ((1 - x) ** 3 * x**3))
     elif isinstance(self, sm.genmod.families.links.inverse_power):
         return -6 / x**4
@@ -121,9 +121,9 @@ def link_deriv3(self, x):
 def link_deriv4(self, x):
     if isinstance(self, sm.genmod.families.links.identity):
         return np.zeros(shape=x.shape)
-    elif isinstance(self, sm.genmod.families.links.log):
+    elif isinstance(self, sm.genmod.families.links.Log):
         return -6 / x**4
-    elif isinstance(self, sm.genmod.families.links.logit):
+    elif isinstance(self, sm.genmod.families.links.Logit):
         return 6 * (4 * x**3 - 6 * x**2 + 4 * x - 1) / (((1 - x) ** 4) * x**4)
     elif isinstance(self, sm.genmod.families.links.inverse_power):
         return 24 / x**5

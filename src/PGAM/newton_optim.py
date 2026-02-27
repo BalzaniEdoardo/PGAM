@@ -432,7 +432,7 @@ def single_similarity_transform(lamSall):
 
 if __name__ == "__main__":
     np.random.seed(4)
-    link = sm.genmod.families.links.log()
+    link = sm.genmod.families.links.Log()
     family = sm.genmod.families.family.Gamma(link=link)
     tp = 5 * 10**4
     x1, x2, x3 = (

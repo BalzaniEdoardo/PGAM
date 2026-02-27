@@ -1684,7 +1684,7 @@ if __name__ == "__main__":
 
     var_list = ["1d_var", "1d_var2", "1d_var3"]
 
-    link = deriv3_link(sm.genmod.families.links.log())
+    link = deriv3_link(sm.genmod.families.links.Log())
     poissFam = sm.genmod.families.family.Poisson(link=link)
     family = d2variance_family(poissFam)
 

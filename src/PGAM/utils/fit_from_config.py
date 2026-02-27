@@ -134,7 +134,7 @@ def fit_from_config(
             np.round(1 / frac_eval)
         ) != 0
 
-    link = sm.genmod.families.links.log()
+    link = sm.genmod.families.links.Log()
     poissFam = sm.genmod.families.family.Poisson(link=link)
 
     spk_counts = np.squeeze(counts[:, neuron_num])

@@ -45,7 +45,7 @@ def compute_tuning(
     mu = np.dot(exog[filter_trials], fit.beta)
 
     # convert to rate space (the sima2 works for log-normal, only log link)
-    if type(fit.family.link) == sm.genmod.families.links.log:
+    if type(fit.family.link) == sm.genmod.families.links.Log:
         sigma2 = np.einsum(
             "ij,jk,ik->i",
             exog[filter_trials],
