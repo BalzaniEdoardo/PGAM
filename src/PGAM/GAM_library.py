@@ -283,7 +283,7 @@ class GAM_result(object):
             )
             self.covariate_significance["covariate"][cc] = var_name
             self.covariate_significance["Tc"][cc] = T_c
-            self.covariate_significance["p-val"][cc] = p_val.item()
+            self.covariate_significance["p-val"][cc] = p_val.item() if hasattr(p_val, "item") else p_val
             self.covariate_significance["nu"][cc] = nu
             self.covariate_significance["nu1"][cc] = nu1
             self.covariate_significance["nu2"][cc] = nu2

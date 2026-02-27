@@ -708,10 +708,10 @@ def postprocess_results(
                 use_tp=~(train_bool),
                 exog=exog_reduced,
             )
-        results["pval"][cc] = cs_var["p-val"]
+        results["pval"][cc] = cs_var["p-val"].item()
         if not reduced_fit is None:
             if var in reduced_fit.var_list:
-                results["reduced_pval"][cc] = cs_var_red["p-val"]
+                results["reduced_pval"][cc] = cs_var_red["p-val"].item()
             else:
                 results["reduced_pval"][cc] = np.nan
         try:
