@@ -295,16 +295,57 @@ def test_set_new_covariate_reapplies_mask():
 
     assert sm.X.shape[1] == k + 1
 
-    # new data in the same sparse region; pass stored expanded knots
+    # new data in the same sparse region; pass stored expanded knots and the mask
     stored_knots = list(sm.knots)
     x2 = rng.uniform(0, 4, 400)
     y2 = rng.uniform(0, 4, 400)
-    sm.set_new_covariate([x2, y2], knots=stored_knots)
+    sm.set_new_covariate([x2, y2], knots=stored_knots, col_mask=mask)
 
     assert sm.X.shape[1] == k + 1,   "mask should be re-applied after set_new_covariate"
     assert len(sm.colMean_X) == k,    "colMean_X length should stay k after re-apply"
     for S in sm.S_list:
         assert S.shape == (k + 1, k + 1)
+
+
+def test_set_new_covariate_no_mask_by_default():
+    """set_new_covariate without col_mask returns full-width basis regardless of stored mask."""
+    rng = np.random.default_rng(42)
+    k1d = np.linspace(0, 10, 6)
+    x1 = rng.uniform(0, 4, 200)
+    y1 = rng.uniform(0, 4, 200)
+    sm = covarate_smooth(
+        [x1, y1], knots=[k1d, k1d], is_cyclic=np.array([False, False]),
+        penalty_type="EqSpaced",
+    )
+    full_width = sm.X.shape[1]
+    mask = sm.get_active_col_mask()
+    sm._apply_col_mask(mask)
+    assert sm.X.shape[1] < full_width   # mask was applied
+
+    stored_knots = list(sm.knots)
+    x2 = rng.uniform(0, 4, 200)
+    y2 = rng.uniform(0, 4, 200)
+    sm.set_new_covariate([x2, y2], knots=stored_knots)  # no col_mask → full basis
+    assert sm.X.shape[1] == full_width
+    assert sm.col_mask is None
+
+
+def test_set_new_covariate_changed_knots_raises_with_mask():
+    """Passing a stale mask with different knots raises ValueError."""
+    import pytest
+    rng = np.random.default_rng(1)
+    k1d_6 = np.linspace(0, 10, 6)
+    x = rng.uniform(0, 4, 200)
+    y = rng.uniform(0, 4, 200)
+    sm = covarate_smooth(
+        [x, y], knots=[k1d_6, k1d_6], is_cyclic=np.array([False, False]),
+        penalty_type="EqSpaced",
+    )
+    mask = sm.get_active_col_mask()  # length matches 6-knot basis
+
+    k1d_8 = np.linspace(0, 10, 8)  # different knot count → different basis dim
+    with pytest.raises(ValueError, match="col_mask must have length"):
+        sm.set_new_covariate([x, y], knots=[k1d_8, k1d_8], col_mask=mask)
 
 
 # ---------------------------------------------------------------------------

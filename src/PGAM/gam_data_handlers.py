@@ -1389,9 +1389,17 @@ class covarate_smooth(object):
         perc_out_range=None,
         kernel_length=None,
         kernel_direction=None,
+        col_mask=None,
     ):
         """
-        Set new kovariates and refresh the results
+        Set new covariates and refresh the basis and penalty.
+
+        col_mask : bool array or None
+            Mask to apply after rebuilding the basis.  Defaults to None (no
+            masking).  Pass the same mask used at construction time to preserve
+            a previously-reduced basis, or a new mask to change the reduction.
+            If the knots changed and the new basis has a different dimension the
+            length check in _apply_col_mask will raise a clear ValueError.
         """
         if self.is_temporal_kernel:
             self.set_knots(knots_num, kernel_length, kernel_direction)
@@ -1407,7 +1415,7 @@ class covarate_smooth(object):
             self.basis_dim,
             self.basis_kernel,
         ) = self.eval_basis_and_penalty()
-        self._apply_col_mask(self.col_mask)
+        self._apply_col_mask(col_mask)
 
     def _apply_col_mask(self, col_mask):
         """
