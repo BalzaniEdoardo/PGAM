@@ -1027,6 +1027,7 @@ class covarate_smooth(object):
         domain_fun=lambda x: np.ones(x.shape, dtype=bool),
         prercomp_SandB=None,
         repeat_extreme_knots=True,
+        col_mask=None,
     ):
         """
         x_cov: n-dim sampled points in which to evaluate the basis function
@@ -1117,6 +1118,7 @@ class covarate_smooth(object):
             self.basis_kernel,
         ) = self.eval_basis_and_penalty()
 
+        self._apply_col_mask(col_mask)
         self.set_lam(lam)
 
     def __eq__(self, other):
@@ -1164,13 +1166,15 @@ class covarate_smooth(object):
         knots,
         knots_num=None,
         perc_out_range=None,
-        is_cyclic=[False],
+        is_cyclic=None,
         percentiles=(2, 98),
         repeat_extreme_knots=False,
     ):
         """
         Set new knots
         """
+        if is_cyclic is None:
+            is_cyclic = self.is_cyclic
         if knots is None:
             self.knots = self.computeKnots(
                 knots_num, perc_out_range, percentiles=percentiles
@@ -1403,6 +1407,63 @@ class covarate_smooth(object):
             self.basis_dim,
             self.basis_kernel,
         ) = self.eval_basis_and_penalty()
+        self._apply_col_mask(self.col_mask)
+
+    def _apply_col_mask(self, col_mask):
+        """
+        Filter basis columns according to a boolean mask.
+
+        col_mask : bool array of length X.shape[1]-1  (the active basis columns,
+                   excluding the last column that additive_model_preprocessing always drops).
+                   True  → keep the column
+                   False → drop the column
+
+        The last column of X is always preserved so that the existing [:, :-1]
+        convention in additive_model_preprocessing and compute_Sjs stays intact.
+        Call get_active_col_mask() to auto-build a mask from the current data.
+        """
+        if col_mask is None:
+            self.col_mask = None
+            return
+        col_mask = np.asarray(col_mask, dtype=bool)
+        n_active = self.X.shape[1] - 1
+        if col_mask.shape[0] != n_active:
+            raise ValueError(
+                f"col_mask must have length {n_active} (= X.shape[1]-1), got {col_mask.shape[0]}"
+            )
+        self.col_mask = col_mask
+        # keep the last column unchanged so [:, :-1] convention is preserved
+        full_mask = np.append(col_mask, True)
+
+        if sparse.issparse(self.X):
+            self.X = self.X[:, full_mask]
+        else:
+            self.X = self.X[:, full_mask]
+
+        self.colMean_X = self.colMean_X[col_mask]
+        self.S_list = [S[np.ix_(full_mask, full_mask)] for S in self.S_list]
+        # B_list is only used by compute_Bx in the 1D EqSpaced/diff branch
+        if self.dim == 1:
+            self.B_list = [B[np.ix_(full_mask, full_mask)] for B in self.B_list]
+
+    def get_active_col_mask(self, min_obs=1):
+        """
+        Return a boolean mask of length X.shape[1]-1 marking columns that have
+        at least `min_obs` non-zero observations in the current data.
+
+        Typical use: call this on the unmasked smooth, then pass the result to
+        _apply_col_mask (or re-construct with col_mask=).
+
+            sm = covarate_smooth(x_bat, ...)
+            mask = sm.get_active_col_mask()
+            sm._apply_col_mask(mask)
+        """
+        Xactive = self.X[:, :-1]
+        if sparse.issparse(Xactive):
+            counts = np.array((Xactive != 0).sum(axis=0)).flatten()
+        else:
+            counts = np.count_nonzero(Xactive, axis=0)
+        return counts >= min_obs
 
     def compute_Bx(self):
         if self.dim == 1 and (
@@ -1549,6 +1610,7 @@ class smooths_handler(object):
         domain_fun=lambda x: np.zeros(x.shape, dtype=bool),
         prercomp_SandB=None,
         repeat_extreme_knots=True,
+        col_mask=None,
     ):
         """
         :param name: string, name of the variable
@@ -1602,6 +1664,7 @@ class smooths_handler(object):
             domain_fun=domain_fun,
             prercomp_SandB=prercomp_SandB,
             repeat_extreme_knots=repeat_extreme_knots,
+            col_mask=col_mask,
         )
         return True
 

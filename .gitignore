@@ -38,3 +38,4 @@ firefly_utils/*
 TMP/
 plotting
 NatComm_reviews/*
+build/*
