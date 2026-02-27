@@ -359,7 +359,7 @@ def gcv_hess_comp(
                 + yT_hes_AT_A_y
                 + yT_AT_hes_A_y
                 + 2 * yT_grad_Aj_grad_Ak_y
-            )
+            ).item()
 
             if return_par == "A":
                 A_hes[j, k] = (

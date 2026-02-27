@@ -430,6 +430,7 @@ class GAM_result(object):
             self.smooth_info[var_name]["der"] = smooth.der
             self.smooth_info[var_name]["is_event_input"] = smooth.is_event_input
             self.smooth_info[var_name]["colMean_X"] = smooth.colMean_X
+            self.smooth_info[var_name]["col_mask"] = smooth.col_mask
 
     def eval_basis(
         self,
@@ -512,6 +513,13 @@ class GAM_result(object):
                 self.time_bin,
                 sparseX=sparseX,
             )
+        col_mask = self.smooth_info[var_name].get("col_mask", None)
+        if col_mask is not None:
+            full_mask = np.append(col_mask, True)
+            if sparse.issparse(fX):
+                fX = fX[:, full_mask]
+            else:
+                fX = fX[:, full_mask]
         return fX
 
     def compute_AIC(self, y, sm_handler, Vb, phi_est=1, family=None):
@@ -862,8 +870,8 @@ class general_additive_model(object):
         conv_criteria="gcv",
         perform_PQL=True,
         use_dgcv=True,
-        method="Newton-CG",
-        methodInit="Newton-CG",
+        method="L-BFGS-B",
+        methodInit="L-BFGS-B",
         compute_AIC=False,
         random_init=False,
         bounds_rho=None,
