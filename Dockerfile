@@ -11,6 +11,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         build-essential \
         libgomp1 \
         r-base \
+        r-base-dev \
         pkg-config \
         libhdf5-dev \
     && rm -rf /var/lib/apt/lists/*
