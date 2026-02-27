@@ -16,7 +16,7 @@ from time import perf_counter
 
 import scipy.signal as signal
 from numba import jit
-from scipy.integrate import dblquad, simps
+from scipy.integrate import dblquad, simpson
 from scipy.spatial import Delaunay
 
 
@@ -219,7 +219,7 @@ def smPenalty_1D_derBased(
     M = np.zeros((D.shape[1], D.shape[1]))
     for i in range(D.shape[1]):
         for j in range(i, D.shape[1]):
-            M[i, j] = simps(D[:, i] * D[:, j] * mux, dx=dx)
+            M[i, j] = simpson(D[:, i] * D[:, j] * mux, dx=dx)
     M = M + np.triu(M, 1).T
     Bx = smoothPen_sqrt(M)
     M = sparse.csr_matrix(M)
@@ -266,7 +266,7 @@ def adaptiveSmoother_1D_derBased(
         M = np.zeros((D.shape[1], D.shape[1]))
         for i in range(D.shape[1]):
             for j in range(i, D.shape[1]):
-                M[i, j] = simps(D[:, i] * D[:, j] * kX[:, k], dx=dx)
+                M[i, j] = simpson(D[:, i] * D[:, j] * kX[:, k], dx=dx)
         M[:, :] = M[:, :] + np.triu(M[:, :], 1).T
         Bx += [smoothPen_sqrt(M[:, :])]
         M_list += [M]
@@ -494,7 +494,7 @@ def rowWiseKron_fullPython(a, b):
 def multiRowWiseKron(*M, sparseX=True):
     KP = M[0]
     if len(M) == 1:
-        if type(KP) is sparse.csr.csr_matrix and sparseX:
+        if type(KP) is sparse.csr_matrix and sparseX:
             return KP
         elif sparseX:
             return sparse.csr_matrix(KP, dtype=np.float64)
@@ -1805,7 +1805,7 @@ class smooths_handler(object):
             # update the starting index
             count += X.shape[1]
 
-            if type(X) is sparse.csr.csr_matrix:
+            if type(X) is sparse.csr_matrix:
                 hstack_X = sparse.hstack
             else:
                 # print('full matrix stack')
@@ -1819,7 +1819,7 @@ class smooths_handler(object):
         # t1 = perf_counter()
         # print('hstack:', t1 - t0, 'sec')
         # t0 = perf_counter()
-        if type(fullX) is sparse.csr.csr_matrix or type(fullX) is sparse.coo.coo_matrix:
+        if type(fullX) is sparse.csr_matrix or type(fullX) is sparse.coo_matrix:
             fullX = fullX.toarray()
         t1 = perf_counter()
         # print('tranform to full matrix: ', t1 - t0, 'sec')

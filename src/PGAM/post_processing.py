@@ -12,7 +12,7 @@ import numpy as np
 import scipy.stats as sts
 from GAM_library import *
 from numba import njit
-from scipy.integrate import simps
+from scipy.integrate import simpson as simps
 
 
 def pseudo_r2_comp(spk, fit, sm_handler, family, use_tp=None, exog=None):

@@ -13,10 +13,7 @@ try:
         pass
 except IndexError:
     pass
-from copy import deepcopy
-from time import perf_counter
 
-import matplotlib.pyplot as plt
 import numpy as np
 import scipy.linalg as linalg
 import scipy.sparse as sparse
@@ -48,7 +45,9 @@ class empty_container(object):
         pass
 
 
+import rpy2.robjects as ro
 import rpy2.robjects.numpy2ri as numpy2ri
+from rpy2.robjects.conversion import localconverter
 from rpy2.robjects.packages import importr
 
 survey = importr("survey")
@@ -56,18 +55,17 @@ from neg_weights_WLS import robust_WLS
 
 
 def wSumChisq_cdf(x, df, w):
-    numpy2ri.activate()
     x = np.array(x)
     df = np.array(df)
     w = np.array(w)
-    try:
-        r_cdf = survey.pchisqsum(
-            x, df=df, a=w, method="int", lower=False
-        )  # cdf from 0 to inf
-        pval = np.asarray(r_cdf)  # probabiliry of Tfj under H0
-    except:
-        pval = np.nan
-    numpy2ri.deactivate()
+    with localconverter(ro.default_converter + numpy2ri.converter):
+        try:
+            r_cdf = survey.pchisqsum(
+                x, df=df, a=w, method="int", lower=False
+            )  # cdf from 0 to inf
+            pval = np.asarray(r_cdf)  # probabiliry of Tfj under H0
+        except:
+            pval = np.nan
     return np.clip(pval, 0, 1)
 
 
@@ -980,7 +978,7 @@ class general_additive_model(object):
                 wagu[:n_obs] = w
                 model = sm.WLS(yagu, Xagu, wagu)
 
-                # begin STEP HALVINB
+                # begin STEP HALVING
                 Slam = create_Slam(np.log(smooth_pen), self.sm_handler, var_list)
                 func = lambda beta: -(
                     unpenalized_ll(beta, yfit, exog[:n_obs, :], self.family, 1, omega=1)
