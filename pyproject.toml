@@ -49,6 +49,7 @@ dev = [
     "coverage",                     # Test coverage measurement
     "pytest-cov",                   # Test coverage plugin for pytest
     "scikit-learn",                 # Testing compatibility with CV & pipelines
+    "dill",                         # Pickle and unpicke models
 ]
 docs = [
     "mkdocs",                       # Documentation generator
