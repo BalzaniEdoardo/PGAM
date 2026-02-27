@@ -19,11 +19,10 @@ Covers:
 import sys
 import os
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src", "PGAM"))
 
 import numpy as np
 import scipy.sparse as sparse
-from gam_data_handlers import covarate_smooth
+from PGAM.gam_data_handlers import covarate_smooth
 
 
 # ---------------------------------------------------------------------------
