@@ -12,7 +12,7 @@ from Cython.Build import cythonize
 
 
 # Load the README file.
-with open(file="Readme.md", mode="r") as readme_handle:
+with open(file="README.md", mode="r") as readme_handle:
     long_description = readme_handle.read()
 
 # Load metadata from pyproject.toml
