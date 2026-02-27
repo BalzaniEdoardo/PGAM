@@ -4,7 +4,7 @@ from time import perf_counter
 
 import numpy as np
 import scipy.linalg as linalg
-from newton_optim import weights_and_data
+from .newton_optim import weights_and_data
 
 
 def pivoted_QR(A, return_Q=True):

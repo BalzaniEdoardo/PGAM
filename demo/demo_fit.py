@@ -1,13 +1,8 @@
 import scipy.stats as sts
 import numpy as np
 import matplotlib.pylab as plt
-import sys, inspect, os
-
-path = '/Users/ebalzani/Code/Demo_PGAM/PGAM/src/PGAM'
-sys.path.append(path)
-print(path)
-from GAM_library import *
-from gam_data_handlers import *
+from PGAM.GAM_library import *
+from PGAM.gam_data_handlers import *
 import statsmodels.api as sm
 
 np.random.seed(4)

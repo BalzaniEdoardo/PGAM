@@ -3,8 +3,8 @@ from time import perf_counter
 import numpy as np
 import scipy.linalg as linalg
 import statsmodels.api as sm
-from gam_data_handlers import *
-from utils.linalg_utils import inner1d_sum
+from .gam_data_handlers import *
+from .utils.linalg_utils import inner1d_sum
 
 useCuda = False
 try:

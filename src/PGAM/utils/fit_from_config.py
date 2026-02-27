@@ -8,20 +8,15 @@ Created on Thu Sep  8 11:51:08 2022
 
 
 import os
-import sys
 
 # import libs
 import numpy as np
 
-# apped path to GAM_library if not in the envs (not needed if working within a Docker container or
-# if GAM_library is in the PATH or PYTHONPATH environment variables)
-sys.path.append("../")
-
-import gam_data_handlers as gdh
-import GAM_library as gamlib
+from .. import gam_data_handlers as gdh
+from .. import GAM_library as gamlib
 import statsmodels.api as sm
 import yaml
-from post_processing import postprocess_results
+from ..post_processing import postprocess_results
 from scipy.io import savemat
 
 np.random.seed(4)

@@ -1,14 +1,10 @@
-import sys
-
 import numpy as np
-
-sys.path.append("/Users/edoardo/Work/Code/Angelaki-Savin/GAM_library")
 from copy import deepcopy
 
 import statsmodels.api as sm
 from basis_set_param_per_session import *
-from gam_data_handlers import *
-from knots_util import *
+from .gam_data_handlers import *
+from .knots_util import *
 
 
 class spline_basis_element(object):

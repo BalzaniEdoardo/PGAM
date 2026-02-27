@@ -1,8 +1,8 @@
 import numpy as np
 import scipy.stats as sts
-from der_wrt_smoothing import *
-from gam_data_handlers import *
-from utils.linalg_utils import inner1d_sum
+from .der_wrt_smoothing import *
+from .gam_data_handlers import *
+from .utils.linalg_utils import inner1d_sum
 
 
 def symmetrize_tensor(S_tens):

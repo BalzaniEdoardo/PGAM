@@ -1,27 +1,11 @@
-import inspect
-import os
-import sys
-
-filename = inspect.getframeinfo(inspect.currentframe()).filename
-path = os.path.dirname(os.path.abspath(filename))
-sys.path.append(path)
-try:
-    if os.path.exists(sys.argv[1]):
-        sys.path.append(sys.argv[1])
-        print("path set to", sys.argv[1])
-    else:
-        pass
-except IndexError:
-    pass
-
 import numpy as np
 import scipy.linalg as linalg
 import scipy.sparse as sparse
 import scipy.stats as sts
 import statsmodels.api as sm
-from der_wrt_smoothing import *
-from gam_data_handlers import *
-from newton_optim import *
+from .der_wrt_smoothing import *
+from .gam_data_handlers import *
+from .newton_optim import *
 from scipy.optimize import minimize
 
 tryCuda = False
@@ -37,7 +21,7 @@ except ModuleNotFoundError as e:
     # print(e)
     flagUseCuda = False
 
-from utils.linalg_utils import inner1d_sum
+from .utils.linalg_utils import inner1d_sum
 
 
 class empty_container(object):
@@ -51,7 +35,7 @@ from rpy2.robjects.conversion import localconverter
 from rpy2.robjects.packages import importr
 
 survey = importr("survey")
-from neg_weights_WLS import robust_WLS
+from .neg_weights_WLS import robust_WLS
 
 
 def wSumChisq_cdf(x, df, w):
