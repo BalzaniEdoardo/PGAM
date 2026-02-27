@@ -901,7 +901,7 @@ class general_additive_model(object):
             self.y[filter_trials], self.family, fisher_scoring=self.fisher_scoring
         )
 
-        # otherwise use the one setted when defining the covariate smooths
+        # otherwise use the one set when defining the covariate smooths
         if smooth_pen is None:
             smooth_pen = []
             for var in var_list:
