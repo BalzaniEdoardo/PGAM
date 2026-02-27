@@ -1,4 +1,4 @@
-FROM continuumio/miniconda3:latest
+FROM python:3.11-slim
 
 LABEL maintainer="Edoardo Balzani"
 
@@ -6,10 +6,13 @@ LABEL maintainer="Edoardo Balzani"
 # build-essential : gcc/g++ for Cython extensions (OpenMP via -fopenmp)
 # libgomp1        : OpenMP runtime linked by the Cython .so files
 # r-base          : R interpreter required by rpy2
+# pkg-config      : needed by some pip source builds (e.g. h5py)
 RUN apt-get update && apt-get install -y --no-install-recommends \
         build-essential \
         libgomp1 \
         r-base \
+        pkg-config \
+        libhdf5-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # ── R packages ────────────────────────────────────────────────────────────────
@@ -19,27 +22,27 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN R -e "install.packages(c('survey', 'CompQuadForm'), \
           dependencies=TRUE, repos='http://cran.rstudio.com/')"
 
-# ── Python 3.11 + conda-managed binary deps ──────────────────────────────────
-RUN /opt/conda/bin/conda install -y python=3.11 && \
-    /opt/conda/bin/conda clean -afy
-
-RUN /opt/conda/bin/conda install -y \
+# ── Python dependencies ───────────────────────────────────────────────────────
+# All packages installed via pip — works natively on both amd64 and arm64
+# without the SSL/QEMU issues that affect conda in emulated builds.
+# rpy2 is built from source (--no-binary rpy2-rinterface) so it links against
+# the system R installed above.
+RUN pip install --no-cache-dir \
         numpy \
         pandas \
         scipy \
         scikit-learn \
         matplotlib \
         seaborn \
-        jupyter \
-        jupyterlab \
-        numba \
         h5py \
         pyyaml \
-    && /opt/conda/bin/conda clean -afy
+        numba
 
-# ── pip-only / source-built deps ─────────────────────────────────────────────
-# rpy2 must be compiled against the system R; --no-binary rpy2-rinterface
-# forces a source build that picks up /usr/bin/R automatically.
+RUN pip install --no-cache-dir \
+        jupyter \
+        jupyterlab \
+        jupytext
+
 RUN pip install --no-cache-dir \
         "rpy2" \
         --no-binary rpy2-rinterface
@@ -48,7 +51,6 @@ RUN pip install --no-cache-dir \
         opt-einsum \
         statsmodels \
         dill \
-        jupytext \
         csr \
         Cython
 
