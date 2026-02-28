@@ -1,0 +1,13 @@
+build/
+dist/
+*.egg-info/
+venv/
+__pycache__/
+**/__pycache__/
+*.pyc
+*.pyo
+*.so
+src/PGAM/*.so
+src/PGAM/*.c
+.git/
+.github/

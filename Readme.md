@@ -68,7 +68,7 @@ Start Docker.
 Download the PGAM Docker image with the terminal/command prompt command
 
 ```
-docker pull  edoardobalzani87/pgam:1.0
+docker pull  edoardobalzani87/pgam:1.1
 ```
 
 You can check the list of all the downloaded images with the command,
@@ -79,7 +79,7 @@ docker images
 You can run the image in a Docker container and inspect the contents with the command,
 
 ```
-docker run -ti  edoardobalzani87/pgam:1.0 /bin/bash
+docker run -ti  edoardobalzani87/pgam:1.1 /bin/bash
 ```
  
 The command will run a Linux bash shell that allows you to inspect the image content. python, R, and all the required packages are already installed and the environment variables are set up. Type ```exit```, to exit the bash shell and stop the container. 
@@ -93,7 +93,7 @@ You can delete a stopped container with the command  ```docker rm CONTAINER-ID``
 To run the PGAM image in a container and launch jupyter notebook use the following command,
 
 ```
-	docker run   -v your-notebook-folder:/notebooks -ti -p 8888:8888 edoardobalzani87/pgam:1.0
+	docker run   -v your-notebook-folder:/notebooks -ti -p 8888:8888 edoardobalzani87/pgam:1.1
 ```
 
 The -v option mounts the folder *your-notebook-folder*  on your computer as a volume in the Docker container virtual file system linking it to the virtual folder */notebook* .  
@@ -120,7 +120,7 @@ to connect to jupyter. You can test the library by working with the "PGAM Tutori
 If you want to run *yourscript.py*  enter the code,
 
 ```
-docker run -v your-script-folder/:/scripts -ti -p 8888:8888 edoardobalzani87/pgam:1.0 /bin/bash -c "python scripts/yourscript.py"
+docker run -v your-script-folder/:/scripts -ti -p 8888:8888 edoardobalzani87/pgam:1.1 /bin/bash -c "python scripts/yourscript.py"
 ```
 
 The -v option mounts *your-script-folder* as a volume in the container, and links it to the virtual folder */scripts*, while the -c option executes a shell command, in this case, *python yourscript.py*. 
