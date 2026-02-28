@@ -73,6 +73,17 @@ COPY conf/.jupyter /root/.jupyter
 COPY PGAM_Tutorial.ipynb        /notebooks/
 COPY island_col_mask_demo.ipynb /notebooks/
 
+# Strip JetBrains-injected 'jetTransient' field so Jupyter Server accepts the outputs
+RUN python - <<'EOF'
+import nbformat, glob
+for path in glob.glob('/notebooks/*.ipynb'):
+    nb = nbformat.read(path, as_version=4)
+    for cell in nb.cells:
+        for out in cell.get('outputs', []):
+            out.pop('jetTransient', None)
+    nbformat.write(nb, path)
+EOF
+
 COPY run_jupyter.sh /
 RUN chmod +x /run_jupyter.sh
 

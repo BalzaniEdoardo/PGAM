@@ -55,7 +55,7 @@ def fit_from_config(
     neu_names = data["neu_names"]
     trial_ids = data["trial_ids"]
     if "neu_info" in data.keys():
-        neu_info = data["neu_info"].all()
+        neu_info = data["neu_info"].item().get(neu_names[neuron_num], {})
     else:
         neu_info = {}
 
@@ -172,9 +172,6 @@ def fit_from_config(
     )
 
     print("post-process fit results...")
-    if type(neu_info) is dict:
-        val = neu_info.pop(neu_names[neuron_num])
-        neu_info = {neu_names[neuron_num]: val}
     res = postprocess_results(
         neu_names[neuron_num],
         spk_counts,
