@@ -39,3 +39,6 @@ TMP/
 plotting
 NatComm_reviews/*
 build/*
+*.egg-info
+UMAP/
+pgam_docker.sh

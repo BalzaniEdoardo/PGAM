@@ -24,7 +24,6 @@ classifiers = [
 
 # Define dependencies for the project
 dependencies = [
-    "nemos",
     "rpy2",
     "opt-einsum",
     "statsmodels"

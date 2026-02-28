@@ -1,13 +1,11 @@
-build/
-dist/
-*.egg-info/
-venv/
-__pycache__/
-**/__pycache__/
-*.pyc
-*.pyo
-*.so
-src/PGAM/*.so
-src/PGAM/*.c
-.git/
-.github/
+# Whitelist: exclude everything, re-include only what pip install needs
+*
+!src/
+!setup.py
+!pyproject.toml
+!README.md
+!LICENSE.md
+!conf/
+!PGAM_Tutorial.ipynb
+!island_col_mask_demo.ipynb
+!run_jupyter.sh
