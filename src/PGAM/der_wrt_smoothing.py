@@ -1,3 +1,4 @@
+import inspect
 from .deriv_det_Slam import *
 from .gam_data_handlers import *
 from .newton_optim import *
@@ -106,15 +107,9 @@ class deriv3_link(sm.genmod.families.links.Link):
 
 def link_deriv3(self, x):
     """Third derivative of the link function g'''(x), dispatched by family type."""
-    if isinstance(self, sm.genmod.families.links.identity):
-        return np.zeros(shape=x.shape)
-    elif isinstance(self, sm.genmod.families.links.Log):
-        return 2 / x**3
-    elif isinstance(self, sm.genmod.families.links.Logit):
-        return -((-2 + 6 * x - 6 * x**2) / ((1 - x) ** 3 * x**3))
-    elif isinstance(self, sm.genmod.families.links.inverse_power):
-        return -6 / x**4
-    elif isinstance(self, sm.genmod.families.links.probit):
+    # probit must come before Logit: in current statsmodels Probit inherits from
+    # CDFLink -> Logit, so isinstance(probit_instance, Logit) is True.
+    if isinstance(self, sm.genmod.families.links.probit):
         return (
             2
             * np.sqrt(2)
@@ -122,21 +117,23 @@ def link_deriv3(self, x):
             * np.exp(3 * erfinv(-1 + 2 * x) ** 2)
             * (1 + 4 * erfinv(-1 + 2 * x) ** 2)
         )
+    elif isinstance(self, sm.genmod.families.links.identity):
+        return np.zeros(shape=x.shape)
+    elif isinstance(self, sm.genmod.families.links.Log):
+        return 2 / x**3
+    elif isinstance(self, sm.genmod.families.links.Logit):
+        return -((-2 + 6 * x - 6 * x**2) / ((1 - x) ** 3 * x**3))
+    elif isinstance(self, sm.genmod.families.links.inverse_power):
+        return -6 / x**4
     else:
         raise NotImplementedError("deriv3 not implemented for %s" % self.__class__)
 
 
 def link_deriv4(self, x):
     """Fourth derivative of the link function g''''(x), dispatched by family type."""
-    if isinstance(self, sm.genmod.families.links.identity):
-        return np.zeros(shape=x.shape)
-    elif isinstance(self, sm.genmod.families.links.Log):
-        return -6 / x**4
-    elif isinstance(self, sm.genmod.families.links.Logit):
-        return 6 * (4 * x**3 - 6 * x**2 + 4 * x - 1) / (((1 - x) ** 4) * x**4)
-    elif isinstance(self, sm.genmod.families.links.inverse_power):
-        return 24 / x**5
-    elif isinstance(self, sm.genmod.families.links.probit):
+    # probit must come before Logit: in current statsmodels Probit inherits from
+    # CDFLink -> Logit, so isinstance(probit_instance, Logit) is True.
+    if isinstance(self, sm.genmod.families.links.probit):
         return (
             4
             * np.sqrt(2)
@@ -145,6 +142,14 @@ def link_deriv4(self, x):
             * erfinv(2 * x - 1)
             * (12 * erfinv(2 * x - 1) ** 2 + 7)
         )
+    elif isinstance(self, sm.genmod.families.links.identity):
+        return np.zeros(shape=x.shape)
+    elif isinstance(self, sm.genmod.families.links.Log):
+        return -6 / x**4
+    elif isinstance(self, sm.genmod.families.links.Logit):
+        return 6 * (4 * x**3 - 6 * x**2 + 4 * x - 1) / (((1 - x) ** 4) * x**4)
+    elif isinstance(self, sm.genmod.families.links.inverse_power):
+        return 24 / x**5
     else:
         raise NotImplementedError("deriv3 not implemented for %s" % self.__class__)
 
@@ -486,10 +491,9 @@ def ll_MLE_rho(
         iteration += 1
     if returnMLE:
         return fit_OLS.params
-    S_all = compute_Sall(sm_handler, var_list)
     ll_beta_hat = dbeta_unpenalized_ll(
         fit_OLS.params, y, X, family, phi_est
-    ) + penalty_ll(rho, fit_OLS.params, S_all, phi_est)
+    ) + dbeta_penalty_ll(rho, fit_OLS.params, sm_handler, var_list, phi_est)
     return ll_beta_hat
 
 
@@ -673,9 +677,9 @@ def Vbeta_rho(
     else:
         D[di] = (s) ** 2 / phi_est
 
-    D = np.matrix(D)
-    D, V_T = matrix_transform(D, V_T)
-    sum_hes_inv = -V_T.T * D * V_T
+    # np.matrix deprecated in NumPy 2.x; use @ for matrix products instead
+    V_T = np.asarray(V_T)
+    sum_hes_inv = -(V_T.T @ D @ V_T)
     return sum_hes_inv
 
 
@@ -1147,7 +1151,7 @@ def deriv_compute(
     D = np.zeros((s.shape[0], s.shape[0]))
     D[di] = (s) ** 2 / phi_est
 
-    Dinv, V_T, D = matrix_transform(Dinv, V_T, D)
+    V_T = np.asarray(V_T)
 
     M = beta_hat.shape[0] - np.linalg.matrix_rank(Slam_trans)
 
@@ -1172,7 +1176,7 @@ def deriv_compute(
         )
         print("REML", np.max(np.abs(REML1 - REML)))
 
-    sum_hes_inv = -V_T.T * Dinv * V_T
+    sum_hes_inv = -(V_T.T @ Dinv @ V_T)
 
     if test:
         sum_hes_inv1 = Vbeta_rho(
