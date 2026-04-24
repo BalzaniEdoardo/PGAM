@@ -37,6 +37,13 @@ from PGAM.der_wrt_smoothing import (
     mle_gradient_bassed_optim,
     dbeta_hat,
     d2beta_hat,
+    H_rho,
+    grad_H_drho,
+    hes_H_drho,
+    Vbeta_rho,
+    dVb_drho,
+    d2Vb_drho,
+    grad_chol_Vb_rho,
 )
 
 # ---------------------------------------------------------------------------
@@ -437,3 +444,221 @@ class TestD2betaHat:
         prob["sm"].set_smooth_penalties(np.exp(rho), prob["var_list"])
 
         np.testing.assert_allclose(H_analytical, H_fd, rtol=1e-2, atol=1e-5)
+
+
+# ===========================================================================
+# Batch 4 – grad_H_drho and hes_H_drho
+# ===========================================================================
+
+def _H_at_rho(rho, prob):
+    """Compute H = X^T diag(w) X / phi at the optimised beta_hat(rho)."""
+    b = _beta_hat_at_rho(rho, prob)
+    prob["sm"].set_smooth_penalties(np.exp(rho), prob["var_list"])
+    return np.array(H_rho(
+        rho, b, prob["y"], prob["X"], prob["family"], prob["phi_est"],
+        prob["sm"], prob["var_list"], comp_gradient=False,
+    ))
+
+
+class TestGradHDrho:
+    """dH/dρ_k, shape (M, p, p): FD of H(ρ) at optimised β̂(ρ)."""
+
+    def test_fd(self, gam_problem):
+        prob = gam_problem
+        rho = prob["rho"]
+        beta_hat = prob["beta_hat"]
+        S_all = prob["S_all"]
+        eps = 1e-4
+
+        gH_analytical = grad_H_drho(
+            rho, beta_hat, prob["y"], prob["X"],
+            prob["sm"], prob["var_list"], prob["family"],
+            S_all, prob["phi_est"],
+        )
+
+        M = len(rho)
+        gH_fd = np.zeros_like(gH_analytical)
+        for k in range(M):
+            drho = np.zeros(M)
+            drho[k] = eps
+            H_plus  = _H_at_rho(rho + drho, prob)
+            H_minus = _H_at_rho(rho - drho, prob)
+            gH_fd[k] = (H_plus - H_minus) / (2 * eps)
+
+        prob["sm"].set_smooth_penalties(np.exp(rho), prob["var_list"])
+        np.testing.assert_allclose(gH_analytical, gH_fd, rtol=1e-3, atol=1e-6)
+
+
+class TestHesHDrho:
+    """d²H/(dρ_h dρ_k), shape (M, M, p, p): FD of grad_H_drho."""
+
+    def test_fd(self, gam_problem):
+        prob = gam_problem
+        rho = prob["rho"]
+        beta_hat = prob["beta_hat"]
+        S_all = prob["S_all"]
+        eps = 1e-3
+
+        hH_analytical = hes_H_drho(
+            rho, beta_hat, prob["y"], prob["X"],
+            S_all, prob["sm"], prob["var_list"], prob["family"], prob["phi_est"],
+        )
+
+        def gH_at_rho(r):
+            b = _beta_hat_at_rho(r, prob)
+            prob["sm"].set_smooth_penalties(np.exp(r), prob["var_list"])
+            return grad_H_drho(
+                r, b, prob["y"], prob["X"],
+                prob["sm"], prob["var_list"], prob["family"],
+                S_all, prob["phi_est"],
+            )
+
+        M = len(rho)
+        hH_fd = np.zeros_like(hH_analytical)
+        for k in range(M):
+            drho = np.zeros(M)
+            drho[k] = eps
+            gH_plus  = gH_at_rho(rho + drho)
+            gH_minus = gH_at_rho(rho - drho)
+            hH_fd[k] = (gH_plus - gH_minus) / (2 * eps)
+
+        prob["sm"].set_smooth_penalties(np.exp(rho), prob["var_list"])
+        np.testing.assert_allclose(hH_analytical, hH_fd, rtol=1e-2, atol=1e-5)
+
+
+# ===========================================================================
+# Batch 5 – dVb_drho, d2Vb_drho, grad_chol_Vb_rho
+# ===========================================================================
+
+def _Vb_inv_at_rho(rho, prob):
+    """H(rho) + S_lambda(rho) at the optimised beta_hat(rho).
+
+    Vbeta_rho(..., inverse=False) returns -(H+S), so we negate it.
+    """
+    b = _beta_hat_at_rho(rho, prob)
+    prob["sm"].set_smooth_penalties(np.exp(rho), prob["var_list"])
+    return -np.array(Vbeta_rho(
+        rho, b, prob["y"], prob["X"], prob["family"],
+        prob["sm"], prob["var_list"], prob["phi_est"],
+        inverse=False,
+    ))
+
+
+def _chol_Vb_at_rho(rho, prob):
+    """Upper-triangular Cholesky factor of (H+S)^{-1} at optimised beta_hat(rho)."""
+    b = _beta_hat_at_rho(rho, prob)
+    prob["sm"].set_smooth_penalties(np.exp(rho), prob["var_list"])
+    Vb = -np.array(Vbeta_rho(
+        rho, b, prob["y"], prob["X"], prob["family"],
+        prob["sm"], prob["var_list"], prob["phi_est"],
+        inverse=True,
+    ))
+    return np.linalg.cholesky(Vb).T  # upper triangular R s.t. R.T @ R = (H+S)^{-1}
+
+
+class TestDVbDrho:
+    """dVb/drho_k, shape (M, p, p): FD of (H+S)(rho) at optimised beta_hat(rho).
+
+    dVb_drho computes d(H+S)/drho_k = dH/drho_k + exp(rho_k)*S_k/phi,
+    verified by centred FD of the full matrix H(rho)+S_lambda(rho).
+    """
+
+    def test_fd(self, gam_problem):
+        prob = gam_problem
+        rho = prob["rho"]
+        beta_hat = prob["beta_hat"]
+        S_all = prob["S_all"]
+        eps = 1e-4
+
+        dVb_analytical = dVb_drho(
+            rho, beta_hat, S_all, prob["y"], prob["X"], prob["family"],
+            prob["sm"], prob["var_list"], prob["phi_est"],
+        )
+
+        M = len(rho)
+        dVb_fd = np.zeros_like(dVb_analytical)
+        for k in range(M):
+            drho = np.zeros(M)
+            drho[k] = eps
+            Vb_plus  = _Vb_inv_at_rho(rho + drho, prob)
+            Vb_minus = _Vb_inv_at_rho(rho - drho, prob)
+            dVb_fd[k] = (Vb_plus - Vb_minus) / (2 * eps)
+
+        prob["sm"].set_smooth_penalties(np.exp(rho), prob["var_list"])
+        np.testing.assert_allclose(dVb_analytical, dVb_fd, rtol=1e-3, atol=1e-6)
+
+
+class TestD2VbDrho:
+    """d2Vb/(drho_h drho_k), shape (M, M, p, p): FD of dVb_drho.
+
+    d2Vb_drho adds delta_{hk} * exp(rho_k)*S_k/phi to hes_H_drho on the diagonal.
+    Verified by centred FD of dVb_drho(rho).
+    """
+
+    def test_fd(self, gam_problem):
+        prob = gam_problem
+        rho = prob["rho"]
+        beta_hat = prob["beta_hat"]
+        S_all = prob["S_all"]
+        eps = 1e-3
+
+        d2Vb_analytical = d2Vb_drho(
+            rho, beta_hat, S_all, prob["y"], prob["X"], prob["family"],
+            prob["sm"], prob["var_list"], prob["phi_est"],
+        )
+
+        def dVb_at_rho(r):
+            b = _beta_hat_at_rho(r, prob)
+            prob["sm"].set_smooth_penalties(np.exp(r), prob["var_list"])
+            return dVb_drho(
+                r, b, S_all, prob["y"], prob["X"], prob["family"],
+                prob["sm"], prob["var_list"], prob["phi_est"],
+            )
+
+        M = len(rho)
+        d2Vb_fd = np.zeros_like(d2Vb_analytical)
+        for k in range(M):
+            drho = np.zeros(M)
+            drho[k] = eps
+            dVb_plus  = dVb_at_rho(rho + drho)
+            dVb_minus = dVb_at_rho(rho - drho)
+            d2Vb_fd[k] = (dVb_plus - dVb_minus) / (2 * eps)
+
+        prob["sm"].set_smooth_penalties(np.exp(rho), prob["var_list"])
+        np.testing.assert_allclose(d2Vb_analytical, d2Vb_fd, rtol=1e-2, atol=1e-5)
+
+
+class TestGradCholVbRho:
+    """dR/drho_k, shape (M, p, p): FD of the upper Cholesky factor R of (H+S)^{-1}.
+
+    grad_chol_Vb_rho uses the Cholesky recurrence (Wood 2017 App. B.7).
+    Verified by centred FD of chol((H+S)^{-1})(rho).
+    """
+
+    def test_fd(self, gam_problem):
+        prob = gam_problem
+        rho = prob["rho"]
+        beta_hat = prob["beta_hat"]
+        S_all = prob["S_all"]
+        eps = 1e-4
+
+        dR_analytical = grad_chol_Vb_rho(
+            rho, beta_hat, S_all, prob["y"], prob["X"], prob["family"],
+            prob["sm"], prob["var_list"], prob["phi_est"],
+        )
+
+        M = len(rho)
+        dR_fd = np.zeros_like(dR_analytical)
+        for k in range(M):
+            drho = np.zeros(M)
+            drho[k] = eps
+            R_plus  = _chol_Vb_at_rho(rho + drho, prob)
+            R_minus = _chol_Vb_at_rho(rho - drho, prob)
+            dR_fd[k] = (R_plus - R_minus) / (2 * eps)
+
+        prob["sm"].set_smooth_penalties(np.exp(rho), prob["var_list"])
+        # Only upper-triangular entries are meaningful (lower triangle is zero by construction)
+        mask = np.triu(np.ones(dR_analytical.shape[-2:], dtype=bool))
+        np.testing.assert_allclose(
+            dR_analytical[:, mask], dR_fd[:, mask], rtol=1e-3, atol=1e-6
+        )
