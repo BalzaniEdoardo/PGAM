@@ -1445,37 +1445,73 @@ def hes_H_drho(
     h_prime = deriv_small_h(mu, y, family)
     h = small_h_mu(mu, y, family)
     g_prime = family.link.deriv(mu)
+    g_prime_inv = np.array(1 / g_prime, order="C")
     dB = dbeta_hat(rho, beta_hat, S_all, sm_handler, var_list, y, X, family)
     d2B = d2beta_hat(rho, beta_hat, S_all, sm_handler, var_list, y, X, family)
-    if np.isfortran(X):
-        X = np.array(X, order="C")
-    if np.isfortran(dB):
-        dB = np.array(dB, order="C")
-    if np.isfortran(h_prime):
-        h_prime = np.array(h_prime, order="C")
-    if np.isfortran(d2B):
-        d2B = np.array(d2B, order="C")
-    if np.isfortran(h):
-        h = np.array(h, order="C")
+    return hes_H_blas(X, dB, d2B, h, h_prime, g_prime_inv, phi_est)
 
-    g_prime_inv = np.array(1 / g_prime, order="C")
-    try:
-        part1 = fast_summations.hessian_H_summation_1(X, dB, h_prime, g_prime_inv)
-    except:
-        part1 = np.einsum(
-            "ki,kj,kl,ky,k,k,hy,rl->hrij", X, X, X, X, h_prime, 1 / g_prime, dB, dB
-        )
+# BELOW THE UNOPTIMIZED IMPLEMENTATION
+#     if np.isfortran(X):
+#         X = np.array(X, order="C")
+#     if np.isfortran(dB):
+#         dB = np.array(dB, order="C")
+#     if np.isfortran(h_prime):
+#         h_prime = np.array(h_prime, order="C")
+#     if np.isfortran(d2B):
+#         d2B = np.array(d2B, order="C")
+#     if np.isfortran(h):
+#         h = np.array(h, order="C")
+#
+#
+#     try:
+#         part1 = fast_summations.hessian_H_summation_1(X, dB, h_prime, g_prime_inv)
+#     except:
+#         part1 = np.einsum(
+#             "ki,kj,kl,ky,k,k,hy,rl->hrij", X, X, X, X, h_prime, 1 / g_prime, dB, dB
+#         )
+#
+#     try:
+#         part2 = fast_summations.hessian_H_summation_2(X, d2B, h)
+#     except:
+#         part2 = np.einsum("ki,kj,kl,k,hrl->hrij", X, X, X, h, d2B)
+#     hes_H = (part1 + part2) / phi_est
+#     if return_all:
+#         return hes_H, part1, part2, g_prime_inv, dB, d2B, h, h_prime
+#
+#     return hes_H
+#
 
-    try:
-        part2 = fast_summations.hessian_H_summation_2(X, d2B, h)
-    except:
-        part2 = np.einsum("ki,kj,kl,k,hrl->hrij", X, X, X, h, d2B)
-    hes_H = (part1 + part2) / phi_est
-    if return_all:
-        return hes_H, part1, part2, g_prime_inv, dB, d2B, h, h_prime
 
-    return hes_H
+def hes_H_blas(X, dB, d2B, h, h_prime, g_prime_inv, phi_est):
+    """BLAS-explicit: two large matrix multiplies, no Python loop."""
+    n, p = X.shape
+    M = dB.shape[0]
 
+    # ---- Term 1 ---------------------------------------------------------
+    # A[k,h] = (X J^T)[k,h],  E[k, h*p+i] = A[k,h] * X[k,i]
+    A = X @ dB.T                                          # (n, M)
+    tilde_h = h_prime * g_prime_inv                       # (n,)
+    E = (A[:, :, None] * X[:, None, :]).reshape(n, M * p) # (n, M*p)
+    # E^T diag(tilde_h) E = E^T @ (tilde_h[:,None] * E)
+    part1 = (
+        (E.T @ (tilde_h[:, None] * E))   # (M*p, M*p)
+        .reshape(M, p, M, p)
+        .transpose(0, 2, 1, 3)           # (M, M, p, p)
+    )
+
+    # ---- Term 2 ---------------------------------------------------------
+    # v[k,h,r] = ∑_l X[k,l] d2B[h,r,l]
+    v = np.tensordot(X, d2B, axes=([1], [2]))  # (n, M, M)
+    # For each (h,r): X^T diag(h * v[:,h,r]) X
+    part2 = np.empty((M, M, p, p))
+    hv = h[:, None, None] * v  # (n, M, M)
+    for h_idx in range(M):
+        for r_idx in range(M):
+            w = hv[:, h_idx, r_idx]           # (n,)
+            WX = w[:, None] * X               # (n, p): one broadcast
+            part2[h_idx, r_idx] = WX.T @ X   # (p, p): one BLAS dgemm
+
+    return (part1 + part2) / phi_est
 
 def compute_T_matrices(rho, X, y, family, beta_hat, var_list, phi_est, S_all, sm_handler):
     """Compute d2w/drho (second derivative of PIRLS weights wrt rho), shape (M, M, n).
