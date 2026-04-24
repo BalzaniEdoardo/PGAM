@@ -555,14 +555,15 @@ class GAM_result(object):
         V_2prime = np.einsum(
             "kij,kl,lim->jm", dR_drho, V_rho, dR_drho, optimize="optimal"
         )
-        H = H_rho(rho, self.beta, y, X, self.family, phi_est, comp_gradient=False)
+        H = H_rho(rho, self.beta, y, X, self.family, phi_est, sm_handler, self.var_list, comp_gradient=False)
         V_corr = Vb + V_prime + V_2prime
         H = np.array(H)
         V_corr = np.array(V_corr)
         self.edf2 = inner1d_sum(V_corr, H.T)
+        # AIC = -2 l(beta_hat) + 2 omega_2  (Wood 2017 eq. 6.32)
+        # omega_2 = tr(V'_beta * I_hat) already accounts for the penalty through edf2
         self.AIC = (
             -2 * unpenalized_ll(self.beta, y, X, family, phi_est, omega=1)
-            - 2 * penalty_ll(rho, self.beta, sm_handler, self.var_list, phi_est)
             + 2 * self.edf2
         )
 
