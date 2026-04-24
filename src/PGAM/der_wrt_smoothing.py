@@ -13,6 +13,14 @@ from opt_einsum import contract
 
 
 class d2variance_family(sm.genmod.families.Family):
+    """Wraps a statsmodels Family to add second and third order variance derivatives.
+
+    The penalty-likelihood machinery requires dV/dmu, d2V/dmu2, and d3V/dmu3.
+    statsmodels only supplies dV/dmu via variance.deriv.  This class monkey-patches
+    the remaining derivatives onto the variance object and optionally runs a finite-
+    difference sanity check at construction time.
+    """
+
     def __init__(self, family, run_tests=True):
         self.__class__ = family.__class__
 
@@ -56,6 +64,13 @@ class d2variance_family(sm.genmod.families.Family):
 
 
 class deriv3_link(sm.genmod.families.links.Link):
+    """Wraps a statsmodels Link to add third and fourth order link derivatives.
+
+    The REML Hessian computation requires g'''(mu) and g''''(mu).  This class
+    monkey-patches deriv3 and deriv4 onto the link object and runs a finite-
+    difference sanity check at construction time.
+    """
+
     def __init__(self, link, run_tests=True):
         self.__class__ = link.__class__
 
@@ -90,6 +105,7 @@ class deriv3_link(sm.genmod.families.links.Link):
 
 
 def link_deriv3(self, x):
+    """Third derivative of the link function g'''(x), dispatched by family type."""
     if isinstance(self, sm.genmod.families.links.identity):
         return np.zeros(shape=x.shape)
     elif isinstance(self, sm.genmod.families.links.Log):
@@ -111,6 +127,7 @@ def link_deriv3(self, x):
 
 
 def link_deriv4(self, x):
+    """Fourth derivative of the link function g''''(x), dispatched by family type."""
     if isinstance(self, sm.genmod.families.links.identity):
         return np.zeros(shape=x.shape)
     elif isinstance(self, sm.genmod.families.links.Log):
@@ -133,6 +150,7 @@ def link_deriv4(self, x):
 
 
 def variance_deriv2(family_object, x):
+    """Second derivative of the variance function V''(mu), dispatched by family type."""
     if isinstance(family_object, sm.genmod.families.family.Poisson):
         return np.zeros(shape=x.shape)
     elif isinstance(family_object, sm.genmod.families.family.Gamma):
@@ -154,6 +172,7 @@ def variance_deriv2(family_object, x):
 
 
 def variance_deriv3(family_object, x):
+    """Third derivative of the variance function V'''(mu), dispatched by family type."""
     if isinstance(family_object, sm.genmod.families.family.Poisson):
         return np.zeros(shape=x.shape)
     elif isinstance(family_object, sm.genmod.families.family.Gamma):
@@ -177,6 +196,22 @@ def variance_deriv3(family_object, x):
 
 
 def create_Slam(rho, sm_handler, var_list):
+    """Assemble the total penalty matrix S_lambda = sum_j exp(rho_j) * S_j.
+
+    Parameters
+    ----------
+    rho : ndarray, shape (M,)
+        Log smoothing parameters.  lambda_j = exp(rho_j).
+    sm_handler : smooths_handler
+        Object holding the per-covariate smoothing matrices.
+    var_list : list of str
+        Variable names whose penalties to include.
+
+    Returns
+    -------
+    Slam : ndarray, shape (p, p)
+        Weighted sum of all penalty matrices.
+    """
     S_list = compute_Sjs(sm_handler, var_list)
     S_tens = np.zeros((len(S_list),) + S_list[0].shape)
     S_tens[:, :, :] = S_list
@@ -185,6 +220,18 @@ def create_Slam(rho, sm_handler, var_list):
 
 
 def compute_Sall(sm_handler, var_list):
+    """Return a flat list of all raw penalty matrices S_j (unweighted, one per lambda).
+
+    Parameters
+    ----------
+    sm_handler : smooths_handler
+    var_list : list of str
+
+    Returns
+    -------
+    Sall : list of ndarray
+        One matrix per smoothing parameter, in the order they appear in var_list.
+    """
     Sall = []
     for var_name in var_list:
         S_list = sm_handler[var_name].S_list
@@ -195,46 +242,82 @@ def compute_Sall(sm_handler, var_list):
 
 
 def penalty_ll(rho, beta, sm_handler, var_list, phi_est):
+    """Log-prior (penalty) contribution to the penalised log-likelihood.
+
+    Returns  -0.5 / phi * beta^T S_lambda beta,  where S_lambda = sum_j lambda_j S_j.
+
+    Parameters
+    ----------
+    rho : ndarray, shape (M,)
+    beta : ndarray, shape (p,)
+    sm_handler : smooths_handler
+    var_list : list of str
+    phi_est : float
+        Scale parameter phi.
+    """
     Slam = create_Slam(rho, sm_handler, var_list)
     penalty = -0.5 / phi_est * np.dot(np.dot(beta, Slam), beta)
     return penalty
 
 
 def penalty_ll_Slam(Slam, beta, phi_est):
-    # Slam = create_Slam(rho, sm_handler, var_list)
+    """Penalty contribution when the assembled S_lambda matrix is already available.
+
+    Returns  -0.5 / phi * beta^T Slam beta.
+    """
     penalty = -0.5 / phi_est * np.dot(np.dot(beta, Slam), beta)
     return penalty
 
 
 def dbeta_penalty_ll(rho, beta, sm_handler, var_list, phi_est):
+    """Gradient of the penalty log-likelihood wrt beta: -S_lambda beta / phi."""
     Slam = create_Slam(rho, sm_handler, var_list)
     grad = -1 / phi_est * np.dot(Slam, beta)
     return grad
 
 
 def dbeta_penalty_ll_Slam(Slam, beta, phi_est):
+    """Gradient of the penalty log-likelihood wrt beta, given pre-assembled Slam."""
     grad = -1 / phi_est * np.dot(Slam, beta)
     return grad
 
 
 def d2beta_penalty_ll(rho, beta, sm_handler, var_list, phi_est):
+    """Hessian of the penalty log-likelihood wrt beta: -S_lambda / phi."""
     Slam = create_Slam(rho, sm_handler, var_list)
     grad = -1 / phi_est * Slam
     return grad
 
 
 def d2beta_penalty_ll_Slam(Slam, beta, phi_est):
+    """Hessian of the penalty log-likelihood wrt beta, given pre-assembled Slam."""
     grad = -1 / phi_est * Slam
     return grad
 
 
 def unpenalized_ll(beta, y, X, family, phi_est, omega=1):
+    """Unpenalised log-likelihood l(beta; y) evaluated at beta.
+
+    Parameters
+    ----------
+    beta : ndarray, shape (p,)
+    y : ndarray, shape (n,)
+    X : ndarray, shape (n, p)
+    family : d2variance_family
+    phi_est : float
+    omega : float or ndarray
+        Prior weights.
+    """
     mu = family.link.inverse(np.dot(X, beta))
     ll = family.loglike(y, mu, var_weights=omega, scale=phi_est)
     return ll
 
 
 def dbeta_unpenalized_ll(beta, y, X, family, phi_est):
+    """Score vector dl/dbeta of the unpenalised log-likelihood.
+
+    Returns (y - mu) / (g'(mu) * V(mu) * phi), contracted with X.
+    """
     mu = family.link.inverse(np.dot(X, beta))
     vector = (y - mu) / (family.link.deriv(mu) * family.variance(mu))
     grad_unp_ll = 1.0 / phi_est * np.dot(vector, X)
@@ -242,6 +325,12 @@ def dbeta_unpenalized_ll(beta, y, X, family, phi_est):
 
 
 def d2beta_unpenalized_ll(beta, y, X, family, phi_est):
+    """Expected (working) Hessian H = d2l/dbeta2 of the unpenalised log-likelihood.
+
+    Uses the PIRLS weight  w = alpha * (dmu/deta)^2 / V(mu)  so the result is
+    -X^T diag(w) X / phi.  Negative weights below 1e-15 in absolute value are
+    clipped to zero; larger negative values raise ValueError.
+    """
     FLOAT_EPS = np.finfo(float).eps
     mu = family.link.inverse(np.dot(X, beta))
     dy = y - mu
@@ -257,16 +346,15 @@ def d2beta_unpenalized_ll(beta, y, X, family, phi_est):
     else:
         w = np.clip(w, 0, np.inf)
     WX = (np.sqrt(w) * X.T).T
-    ## test
-    # wX1 = np.dot(np.diag(np.sqrt(w)),X)
     hess = -1 / phi_est * np.dot(WX.T, WX)
     return hess
 
 
 def alpha_mu(y, mu, family):
-    """
-    alpha as a funciton of mu
-    :return:
+    """PIRLS correction factor alpha(mu) = 1 + (y - mu) * c(mu).
+
+    c(mu) = V'(mu)/V(mu) + g''(mu)/g'(mu) captures the departure from canonical
+    link / unit variance.  For canonical families alpha = 1 (c = 0).
     """
     FLOAT_EPS = np.finfo(float).eps
     dy = y - mu
@@ -280,8 +368,10 @@ def alpha_mu(y, mu, family):
 
 
 def alpha_deriv(y, mu, family):
-    """
-    Derivative of alpha wrt mu (model specific derivatives)
+    """First derivative of alpha wrt mu: dalpha/dmu.
+
+    Used when computing the gradient of the PIRLS weights w wrt mu, which in turn
+    feeds into dH/drho.
     """
     FLOAT_EPS = np.finfo(float).eps
     term1 = -(
@@ -300,11 +390,15 @@ def alpha_deriv(y, mu, family):
 
 
 def d3beta_unpenalized_ll(beta, y, X, family, phi_est):
+    """Third-order derivative of the unpenalised log-likelihood wrt beta.
+
+    Returns a rank-3 tensor of shape (p, p, p).  Expensive: O(n p^3).
+    Falls back from fast_summations C extension to plain einsum if unavailable.
+    """
     FLOAT_EPS = np.finfo(float).eps
     mu = family.link.inverse(np.dot(X, beta))
     dalpha_dmu = alpha_deriv(y, mu, family)
     dmu_deta = np.clip(1 / family.link.deriv(mu), FLOAT_EPS, np.inf)
-    # d3beta_ll = -1/phi_est * np.einsum('i,i,im,ir,il->mrl',dalpha_dmu,dmu_deta,X,X,X)
     t0 = perf_counter()
     temp = -1 / phi_est * contract("i,i,im,ir,il->mrl", dalpha_dmu, dmu_deta, X, X, X)
     t1 = perf_counter()
@@ -340,9 +434,22 @@ def ll_MLE_rho(
     tol=1e-10,
     returnMLE=False,
 ):
+    """Run PIRLS to convergence at fixed rho and return the penalised score or beta.
+
+    Parameters
+    ----------
+    rho : ndarray, shape (M,)
+    y, X, family, sm_handler, var_list, phi_est : standard GAM inputs.
+    conv_criteria : 'deviance' or 'gcv'
+    max_iter, tol : PIRLS stopping criteria.
+    returnMLE : bool
+        If True, return beta_hat instead of the penalised score gradient.
+
+    Returns
+    -------
+    beta_hat or penalised_score_gradient : ndarray
+    """
     mu = family.starting_mu(y)
-    # mu = y + delta
-    # eta = self.family.link(mu)
     converged = False
     old_conv_score = -100
     n_obs = y.shape[0]
@@ -350,32 +457,25 @@ def ll_MLE_rho(
     smooth_pen = np.exp(rho)
     sm_handler.set_smooth_penalties(smooth_pen, var_list)
     print("Start optim: criteria", conv_criteria, "smoothing par", smooth_pen)
-    # get full penalty matrix
     pen_matrix = sm_handler.get_penalty_agumented(var_list)
-    # agument X
     Xagu = np.vstack((X, pen_matrix))
     yagu = np.zeros(Xagu.shape[0])
     wagu = np.ones(Xagu.shape[0])
 
     while not converged:
-        # get parameters w and z
         FLOAT_EPS = np.finfo(float).eps
         alpha = alpha_mu(y, mu, family)
         dmu_deta = np.clip(1 / family.link.deriv(mu), FLOAT_EPS, np.inf)
         w = alpha * dmu_deta**2 / family.variance(mu)
         lin_pred = family.predict(mu)
         z = lin_pred + family.link.deriv(mu) * (y - mu) / alpha
-        # agument variables
         yagu[:n_obs] = z
         wagu[:n_obs] = w
-        # fit WLS
         model = sm.WLS(yagu, Xagu, wagu)
         fit_OLS = model.fit()
         lin_pred = np.dot(X[:n_obs, :], fit_OLS.params)
-        # get new mu
         mu = family.fitted(lin_pred)
 
-        # check convergence
         conv_score = convergence_score(
             y, model, family, eta=lin_pred, criteria=conv_criteria
         )
@@ -394,6 +494,7 @@ def ll_MLE_rho(
 
 
 def convergence_score(y, model, family, criteria="gcv", eta=None):
+    """Dispatch to the chosen PIRLS convergence criterion."""
     if criteria == "gcv":
         return compute_gcv_convergence(y, model)
     if criteria == "deviance":
@@ -401,11 +502,11 @@ def convergence_score(y, model, family, criteria="gcv", eta=None):
 
 
 def compute_gcv_convergence(y, model):
+    """GCV score used as a PIRLS convergence criterion."""
     res = sm.OLS(model.wendog, model.wexog).fit()
     n_obs = y.shape[0]
     hat_diag = res.get_influence().hat_matrix_diag[:n_obs]
     trA = hat_diag.sum()
-    # print('trA form old',trA)
     rsd = model.wendog[:n_obs] - res.fittedvalues[:n_obs]
     rss = np.sum(np.power(rsd, 2))
     sig_hat = rss / (n_obs - trA)
@@ -414,6 +515,7 @@ def compute_gcv_convergence(y, model):
 
 
 def compute_deviance(y, eta, family):
+    """Deviance used as a PIRLS convergence criterion."""
     mu = family.link.inverse(eta)
     return family.deviance(y, mu)
 
@@ -432,6 +534,29 @@ def mle_gradient_bassed_optim(
     tol=10**-8,
     max_iter=1000,
 ):
+    """Fit beta_hat at fixed rho via gradient-based optimisation of the penalised likelihood.
+
+    Minimises  -l(beta) - penalty(beta; rho)  using scipy.optimize.minimize.
+    With method='Newton-CG' the exact Hessian is passed; other methods use gradient only.
+
+    Parameters
+    ----------
+    rho : ndarray, shape (M,)
+    sm_handler, var_list, y, X, family, phi_est : standard GAM inputs.
+    method : str
+        scipy optimiser name.  'Newton-CG' is most reliable.
+    num_random_init : int
+        Number of random restarts when beta_zero is None.
+    beta_zero : ndarray or None
+        Starting point; if None, num_random_init random N(0, 0.1) starts are tried.
+    tol, max_iter : stopping criteria.
+
+    Returns
+    -------
+    beta_hat : ndarray, shape (p,)
+    res : OptimizeResult
+    beta_zero : ndarray
+    """
     Slam = create_Slam(rho, sm_handler, var_list)
     func = lambda beta: -1 * (
         unpenalized_ll(beta, y, X, family, phi_est, omega=1)
@@ -442,14 +567,12 @@ def mle_gradient_bassed_optim(
         + dbeta_penalty_ll_Slam(Slam, beta, phi_est)
     )
     if method == "Newton-CG":
-        # much more reliable estimate
         hess_func = lambda beta: -1 * (
             d2beta_penalty_ll_Slam(Slam, beta, phi_est)
             + d2beta_unpenalized_ll(beta, y, X, family, phi_est)
         )
     else:
         hess_func = None
-    # res = minimize(gcv_func,rho0,method='Newton-CG',jac=gcv_grad,hess=gcv_hess,tol=10**-8)
     if beta_zero is None:
         curr_min = np.inf
         for kk in range(num_random_init):
@@ -486,7 +609,30 @@ def Vbeta_rho(
     inverse=False,
     compute_grad=False,
 ):
-    ## numerically stable method to compute Vb
+    """Bayesian posterior covariance V_beta = -(H + S_lambda)^{-1}, or its inverse.
+
+    Computed via QR decomposition of sqrt(W) X followed by SVD of [R; B], where B
+    is the Cholesky square root of S_lambda.  This avoids forming X^T W X explicitly
+    and is numerically stable when p is large relative to n.
+
+    Parameters
+    ----------
+    rho : ndarray, shape (M,)
+    b_hat : ndarray, shape (p,)
+        MAP estimate of beta at which to evaluate V_beta.
+    y, X, family, sm_handler, var_list, phi_est : standard GAM inputs.
+    inverse : bool
+        If False (default), returns -(H + S_lambda)  (i.e. the negative Hessian
+        of the penalised log-likelihood, which equals V_beta^{-1} up to sign).
+        If True, returns -(H + S_lambda)^{-1} = V_beta.
+    compute_grad : bool
+        If True, re-optimise beta_hat before computing (expensive; for debugging).
+
+    Returns
+    -------
+    sum_hes_inv : np.matrix, shape (p, p)
+        Either -(H + S_lambda) or V_beta depending on `inverse`.
+    """
     if compute_grad:
         b_hat = mle_gradient_bassed_optim(
             rho,
@@ -516,24 +662,18 @@ def Vbeta_rho(
     B = np.array(B, dtype=np.float64)
     _, s, V_T = linalg.svd(np.vstack((R, B)))
 
-    # remove low val singolar values
     i_rem = np.where(s < 10 ** (-8) * s.max())[0]
-
-    # remove cols
     s = np.delete(s, i_rem, 0)
     V_T = np.delete(V_T, i_rem, 0)
 
-    # compute the diag matrix with the singolar vals
     di = np.diag_indices(s.shape[0])
-    D = np.zeros((s.shape[0], s.shape[0]))  # Dinv * Dinv
+    D = np.zeros((s.shape[0], s.shape[0]))
     if inverse:
         D[di] = phi_est / (s) ** 2
     else:
         D[di] = (s) ** 2 / phi_est
 
     D = np.matrix(D)
-
-    # transform everything needed in matrix
     D, V_T = matrix_transform(D, V_T)
     sum_hes_inv = -V_T.T * D * V_T
     return sum_hes_inv
@@ -552,6 +692,30 @@ def dbeta_hat(
     compute_gradient=False,
     method="Newton-CG",
 ):
+    """Gradient of the MAP estimate beta_hat wrt log-smoothing parameters rho.
+
+    From implicit differentiation of the score equations
+        (H + S_lambda) beta_hat = H_score,
+    one obtains
+        J = d beta_hat / d rho_k = -(H + S_lambda)^{-1} (d S_lambda / d rho_k) beta_hat
+                                 = V_beta * lambda_k * S_k * beta_hat / phi
+
+    Parameters
+    ----------
+    rho : ndarray, shape (M,)
+    b_hat : ndarray, shape (p,)
+        MAP estimate (reused unless compute_gradient=True).
+    S_all : list of ndarray
+        Flat list of raw penalty matrices, one per smoothing parameter.
+    sm_handler, var_list, y, X, family, phi_est : standard GAM inputs.
+    compute_gradient : bool
+        If True, re-optimise beta_hat first (expensive).
+
+    Returns
+    -------
+    true_grad : ndarray, shape (M, p)
+        J[k, :] = d beta_hat / d rho_k.
+    """
     if compute_gradient:
         beta = mle_gradient_bassed_optim(
             rho,
@@ -571,32 +735,34 @@ def dbeta_hat(
         rho, beta, y, X, family, sm_handler, var_list, phi_est, inverse=True
     )
 
-    # use broadcasting for multiply Sj * lam[j]
     Slam_tensor = np.zeros((len(S_all),) + S_all[0].shape)
     Slam_tensor[:, :, :] = S_all
     Slam_tensor = (Slam_tensor.T * np.exp(rho)).T / phi_est
-    # use einsum to perform desired combinaiton
     P1 = np.einsum("kij,j->ki", Slam_tensor, beta)
     true_grad = np.einsum("li,ki->kl", sum_hes_inv, P1)
     return true_grad
 
 
 def d2beta_hat(rho, b_hat, S_all, sm_handler, var_list, y, X, family, phi_est=1):
-    r"""
-    This function compute the hessian of the MLE \hat{\beta} wrt to the smoothing
-    paramters (the formula in the paper and in the book is wrong! check out overleaf)
+    r"""Second derivative of beta_hat wrt rho: d^2 beta_hat / (d rho_h d rho_k).
+
+    Differentiates the expression for J = d beta_hat / d rho a second time.
+    The formula in the book (Wood 2017) contains a sign error; the correct
+    expression is implemented here (see project Overleaf notes).
+
+    Returns
+    -------
+    hes_beta : ndarray, shape (M, M, p)
+        hes_beta[h, k, :] = d^2 beta_hat / (d rho_h d rho_k).
     """
-    # compute gradient of H
     dH_drho = grad_H_drho(
         rho, b_hat, y, X, sm_handler, var_list, family, S_all, phi_est
     )
-    # compute gradient of Slam
     Slam_tensor = np.zeros((len(S_all),) + S_all[0].shape)
     Slam_tensor[:, :, :] = S_all
     exp_rho = np.exp(rho)
     dSlam_drho = (Slam_tensor.T * exp_rho).T / phi_est
 
-    # compute -np.linalg.inv(H + Slam)
     neg_sum_inv = np.array(
         Vbeta_rho(
             rho,
@@ -631,7 +797,7 @@ def d2beta_hat(rho, b_hat, S_all, sm_handler, var_list, y, X, family, phi_est=1)
     try:
         add1 = fast_summations.d2beta_hat_summation_1(
             neg_sum_inv, grad_neg_sum, dSlam_drho, b_hat
-        )  # add1 = np.einsum('ij,hjl,lr,krp,p->hki', neg_sum_inv, grad_neg_sum, -neg_sum_inv, dSlam_drho, b_hat)
+        )
         add2 = fast_summations.d2beta_hat_summation_2(
             neg_sum_inv, dSlam_drho, grad_beta
         )
@@ -651,12 +817,13 @@ def d2beta_hat(rho, b_hat, S_all, sm_handler, var_list, y, X, family, phi_est=1)
     hes_beta = add1 + add2
     hes_beta[di1, di2] = hes_beta[di1, di2] + np.einsum(
         "ij,hjl,l->hi", neg_sum_inv, dSlam_drho, b_hat
-    )  # equiv np.einsum('ij,kjl,hl->hki', neg_sum_inv, dSlam_drho, grad_beta)
+    )
 
     return hes_beta
 
 
 def w_mu(mu, y, family):
+    """PIRLS weights w(mu) = alpha(mu) * (dmu/deta)^2 / V(mu)."""
     FLOAT_EPS = np.finfo(float).eps
     alpha = alpha_mu(y, mu, family)
     dmu_deta = np.clip(1 / family.link.deriv(mu), FLOAT_EPS, np.inf)
@@ -665,9 +832,7 @@ def w_mu(mu, y, family):
 
 
 def w_deriv(mu, y, family):
-    """
-    Derivatives of the wrt mu (model specific, useful to compute dH/drho
-    """
+    """First derivative of the PIRLS weights wrt mu: dw/dmu."""
     FLOAT_EPS = np.finfo(float).eps
     alpha_prime = alpha_deriv(y, mu, family)
     g_prime = family.link.deriv(mu)
@@ -682,9 +847,7 @@ def w_deriv(mu, y, family):
 
 
 def w_2deriv(mu, y, family):
-    """
-    Derivatives of the wrt mu (model specific, useful to compute dH/drho
-    """
+    """Second derivative of the PIRLS weights wrt mu: d2w/dmu2."""
     FLOAT_EPS = np.finfo(float).eps
     alpha = alpha_mu(y, mu, family)
     alpha_prime = alpha_deriv(y, mu, family)
@@ -719,6 +882,10 @@ def w_2deriv(mu, y, family):
 
 
 def dw_dbeta(beta, y, family, X):
+    """Gradient of PIRLS weights wrt beta: dw/dbeta, shape (n, p).
+
+    dw/dbeta_l = (dw/dmu)(dmu/deta) * X_l  for each observation.
+    """
     mu = family.link.inverse(np.dot(X, beta))
     w_prime = w_deriv(mu, y, family)
     g_prime = np.clip(family.link.deriv(mu), np.finfo(float).eps, np.inf)
@@ -739,6 +906,7 @@ def w_rho(
     compute_grad=False,
     method="Newton-CG",
 ):
+    """PIRLS weights evaluated at beta_hat(rho).  Primarily a convenience wrapper."""
     if compute_grad:
         beta_hat = mle_gradient_bassed_optim(
             rho,
@@ -772,6 +940,10 @@ def dw_drho(
     compute_grad=False,
     method="Newton-CG",
 ):
+    """Gradient of PIRLS weights wrt rho: dw/drho, shape (M, n).
+
+    Uses the chain rule  dw/drho_h = sum_l (dw/dbeta_l)(dbeta_l/drho_h).
+    """
     if compute_grad:
         np.random.seed(4)
         beta_hat = mle_gradient_bassed_optim(
@@ -805,6 +977,11 @@ def dw_drho(
 def grad_H_drho(
     rho, beta, y, X, sm_handler, var_list, family, S_all, phi_est, compute_grad=False
 ):
+    """Gradient of the unpenalised Hessian H wrt rho: dH/drho, shape (M, p, p).
+
+    H = X^T diag(w) X / phi.  Differentiating through w gives
+        dH[k]/drho_h = X^T diag(dw/drho_h) X / phi.
+    """
     if compute_grad:
         beta_hat = mle_gradient_bassed_optim(
             rho,
@@ -822,7 +999,6 @@ def grad_H_drho(
     w_prime = dw_dbeta(beta_hat, y, family, X)
     dB = dbeta_hat(rho, beta_hat, S_all, sm_handler, var_list, y, X, family)
 
-    # this sum computes \sum_l dH/dB_l * dB_l/d\rho_k
     if np.isfortran(X):
         X = np.array(X, order="C")
     if np.isfortran(dB):
@@ -832,7 +1008,7 @@ def grad_H_drho(
     try:
         grad_H = (
             fast_summations.grad_H_summation(X, dB, w_prime) / phi_est
-        )  # equivalent np.einsum('ki,lk,kj,rl->rij', X, w_prime, X, dB)/(phi_est)
+        )
     except:
         grad_H = np.einsum("ki,lk,kj,rl->rij", X, w_prime, X, dB) / phi_est
     return grad_H
@@ -851,10 +1027,35 @@ def deriv_compute(
     omega=1,
     fix_beta=False,
 ):
-    # if all(rho==deriv_compute.last_rho):
-    #     # print('fetch cached value')
-    #     return deriv_compute.last_res
+    """One-pass computation of the REML value, its gradient, and its Hessian wrt rho.
 
+    This is the efficient version that reuses intermediate results (beta_hat, V_beta,
+    dV_beta/drho, d2V_beta/drho2) instead of recomputing them in separate calls to
+    laplace_appr_REML, grad_laplace_appr_REML, and hess_laplace_appr_REML.
+
+    When test=True, each intermediate is cross-checked against the standalone
+    reference implementations and the maximum absolute difference is printed.
+
+    Parameters
+    ----------
+    rho : ndarray, shape (M,)
+    y, X, sm_handler, var_list, family, S_all, phi_est : standard GAM inputs.
+    test : bool
+        Run internal consistency checks (slower but useful during development).
+    omega : float
+        Prior observation weights.
+    fix_beta : bool or ndarray
+        If an ndarray, use it as beta_hat instead of re-optimising.
+
+    Returns
+    -------
+    REML : float
+        Laplace-approximated REML (marginal likelihood) value.
+    grad_REML : ndarray, shape (M,)
+        Gradient of REML wrt rho.
+    hess_REML : ndarray, shape (M, M)
+        Hessian of REML wrt rho.  Invert its negative to get V_rho (eq. 6.30).
+    """
     print("rho", rho)
 
     FLOAT_EPS = np.finfo(float).eps
@@ -878,15 +1079,12 @@ def deriv_compute(
     ll_penalty = penalty_ll(rho, beta_hat, sm_handler, var_list, phi_est)
     ll_unpen = unpenalized_ll(beta_hat, y, X, family, phi_est, omega=omega)
 
-    # create Slam and transform it to compute determinant
     Slam_trans, S_transf = transform_Slam(S_all, rho)
 
-    # every time rho is changed, S_transf is recomputed, so no need for compute_grad to be true
     log_det_Slam = (
         -0.5 * logDet_Slam(rho, S_transf, compute_grad=False, S_all=S_all) / phi_est
     )
 
-    # compute the derivatives for the grad_REML
     alpha_prime = alpha_deriv(y, mu, family)
     g_prime = family.link.deriv(mu)
     g_2prime = family.link.deriv2(mu)
@@ -917,7 +1115,6 @@ def deriv_compute(
         alpha_prime * g_prime * V - alpha * (2 * g_2prime * V + V_prime * g_prime)
     ) * (4 * g_2prime * V + 2 * g_prime * V_prime)
 
-    # used in hessian computation
     small_h_prime = (term1 + term2) / (g_prime**5 * V**3)
     small_h = w_prime / g_prime
 
@@ -939,17 +1136,12 @@ def deriv_compute(
 
     log_det_sum = -np.sum(np.log(s)) + X.shape[1] * np.log(phi_est)
 
-    # remove low val singolar values
     i_rem = np.where(s < 10 ** (-8) * s.max())[0]
-
-    # remove cols
     s = np.delete(s, i_rem, 0)
     V_T = np.delete(V_T, i_rem, 0)
 
-    # compute the diag matrix with the singolar vals
     di = np.diag_indices(s.shape[0])
-    Dinv = np.zeros((s.shape[0], s.shape[0]))  # Dinv * Dinv
-
+    Dinv = np.zeros((s.shape[0], s.shape[0]))
     Dinv[di] = phi_est / (s) ** 2
 
     D = np.zeros((s.shape[0], s.shape[0]))
@@ -957,11 +1149,6 @@ def deriv_compute(
 
     Dinv, V_T, D = matrix_transform(Dinv, V_T, D)
 
-    # sum_H_Slam = V_T.T * D * V_T
-    # log_det_sum = -0.5*np.log(np.linalg.det(sum_H_Slam))
-    # eig = np.linalg.eigh(V_T.T * D * V_T)[0]
-
-    # null space of Slam
     M = beta_hat.shape[0] - np.linalg.matrix_rank(Slam_trans)
 
     REML = ll_unpen + ll_penalty + log_det_Slam + log_det_sum + M * np.log(np.pi * 2)
@@ -984,7 +1171,6 @@ def deriv_compute(
             num_random_init=1,
         )
         print("REML", np.max(np.abs(REML1 - REML)))
-    # transform everything needed in matrix
 
     sum_hes_inv = -V_T.T * Dinv * V_T
 
@@ -994,11 +1180,9 @@ def deriv_compute(
         )
         print("Vb_inv check", np.max(np.abs(sum_hes_inv - sum_hes_inv1)))
 
-    # use broadcasting for multiply Sj * lam[j]
     Slam_tensor = np.zeros((len(S_all),) + S_all[0].shape)
     Slam_tensor[:, :, :] = S_all
     Slam_tensor = (Slam_tensor.T * np.exp(rho)).T / phi_est
-    # use einsum to perform desired combinaiton
     P1 = np.einsum("kij,j->ki", Slam_tensor, beta_hat)
     dB_drho = np.einsum("li,ki->kl", sum_hes_inv, P1)
 
@@ -1006,9 +1190,8 @@ def deriv_compute(
     dH_drho = np.zeros((rho.shape[0], beta_hat.shape[0], beta_hat.shape[0]))
     t0 = perf_counter()
     for k in range(rho.shape[0]):
-        dw_drho_array[:, k] = np.dot(dw_dB, dB_drho[k, :])  # nxk
+        dw_drho_array[:, k] = np.dot(dw_dB, dB_drho[k, :])
         dH_drho[k, :, :] = np.dot(X.T * dw_drho_array[:, k], X) / phi_est
-    # print('done: %s'%(perf_counter()-t0))
 
     if test:
         dw_drho1 = dw_drho(
@@ -1060,7 +1243,6 @@ def deriv_compute(
 
     add1 = -0.5 * np.einsum("i,rij,j->r", beta_hat, Slam_tensor, beta_hat)
 
-    # every time rho is changed, S_transf is recomputed, so no need for compute_grad to be true
     add2 = (
         -0.5
         * grad_logDet_Slam(rho, S_transf, compute_grad=False, S_all=S_all)
@@ -1069,7 +1251,6 @@ def deriv_compute(
 
     add3 = np.zeros(add1.shape)
     for j in range(rho.shape[0]):
-        # compute the trace of a product with inner1d
         add3[j] = -0.5 * inner1d_sum(-sum_hes_inv, dVb_drho_arr[j].T)
 
     grad_REML = add1 + add2 + add3
@@ -1093,7 +1274,6 @@ def deriv_compute(
         )
         print("grad_reml", np.max(np.abs(grad_REML - grad_REML1)))
 
-    # t0 = perf_counter()
     grad_neg_sum = -dVb_drho_arr
     if np.isfortran(sum_hes_inv):
         sum_hes_inv = np.array(sum_hes_inv, order="C")
@@ -1109,7 +1289,7 @@ def deriv_compute(
     try:
         add1 = fast_summations.d2beta_hat_summation_1(
             sum_hes_inv, grad_neg_sum, Slam_tensor, beta_hat
-        )  # add1 = np.einsum('ij,hjl,lr,krp,p->hki', neg_sum_inv, grad_neg_sum, -neg_sum_inv, dSlam_drho, b_hat)
+        )
         add2 = fast_summations.d2beta_hat_summation_2(sum_hes_inv, Slam_tensor, dB_drho)
     except:
         add1 = np.einsum(
@@ -1127,9 +1307,7 @@ def deriv_compute(
     hes_beta = add1 + add2
     hes_beta[di1, di2] = hes_beta[di1, di2] + np.einsum(
         "ij,hjl,l->hi", sum_hes_inv, Slam_tensor, beta_hat
-    )  # equiv np.einsum('ij,kjl,hl->hki', neg_sum_inv, dSlam_drho, grad_beta)
-    # t1 = perf_counter()
-    # print('done db2',t1-t0)
+    )
     if test:
         d2b = d2beta_hat(
             rho, beta_hat, S_all, sm_handler, var_list, y, X, family, phi_est=1
@@ -1162,16 +1340,15 @@ def deriv_compute(
     )
 
     for i in range(rho.shape[0]):
-        tmp_i = np.dot((X.T * small_h_prime * g_prime_inv).T, dB_drho[i, :])  # N x 1
+        tmp_i = np.dot((X.T * small_h_prime * g_prime_inv).T, dB_drho[i, :])
         for j in range(i, rho.shape[0]):
-            tmp_j = np.dot(X, dB_drho[j, :])  # N*1
+            tmp_j = np.dot(X, dB_drho[j, :])
             hess_H_term1 = np.dot(X.T * (tmp_i * tmp_j), X)
             hess_H_term2 = np.dot(X.T * np.dot((X.T * small_h).T, hes_beta[i, j, :]), X)
             hess_H[i, j] = (hess_H_term1 + hess_H_term2) / phi_est
             hess_H[j, i] = hess_H[i, j]
 
     t1 = perf_counter()
-    # print('done hess time',t1-t0)
     if test:
         t0 = perf_counter()
         hes_H = hes_H_drho(
@@ -1200,7 +1377,6 @@ def deriv_compute(
         )
         print(np.max(np.abs(d2Vb2 - d2Vb)))
 
-    # Vb1 = -Vbeta_rho(rho, beta_hat, y, X, family, sm_handler, var_list, phi_est, inverse=False, compute_grad=False)
     Vb = V_T.T * D * V_T
     add1 = np.einsum("hj,ji,ki->hk", dB_drho, Vb, dB_drho, optimize="optimal")
     di1, di2 = np.diag_indices(rho.shape[0])
@@ -1211,8 +1387,6 @@ def deriv_compute(
     add2 = -0.5 * hes_logDet_Slam(rho, S_transf) / phi_est
 
     Vb_inv = -sum_hes_inv
-    # dVb = dVb_drho(rho, beta_hat, S_all, y, X, family, sm_handler, var_list, phi_est)
-    # d2Vb1 = d2Vb_drho(rho,beta_hat,S_all,y,X,family,sm_handler,var_list,phi_est)
     try:
         add3 = 0.5 * fast_summations.trace_log_det_H_summation_1(
             Vb_inv, dVb_drho_arr, d2Vb
@@ -1225,7 +1399,6 @@ def deriv_compute(
 
     hess_REML = add1 + add2 + add3
     tt1 = perf_counter()
-    # print('time hess new:',tt1-tt0)
     if test:
         t0 = perf_counter()
         hess_REML1 = hess_laplace_appr_REML(
@@ -1253,6 +1426,17 @@ def deriv_compute(
 def hes_H_drho(
     rho, beta_hat, y, X, S_all, sm_handler, var_list, family, phi_est, return_all=False
 ):
+    """Second derivative of the unpenalised Hessian H wrt rho: d2H/drho, shape (M, M, p, p).
+
+    Uses the chain rule applied twice through the PIRLS weights w(beta_hat(rho)).
+    Falls back to plain einsum if fast_summations C extension is unavailable.
+
+    Parameters
+    ----------
+    return_all : bool
+        If True, also return intermediate quantities (part1, part2, g_prime_inv,
+        dB, d2B, h, h_prime) for debugging.
+    """
     mu = family.link.inverse(np.dot(X, beta_hat))
     h_prime = deriv_small_h(mu, y, family)
     h = small_h_mu(mu, y, family)
@@ -1271,20 +1455,15 @@ def hes_H_drho(
         h = np.array(h, order="C")
 
     g_prime_inv = np.array(1 / g_prime, order="C")
-    # np.einsum_path('ki,kj,kl,ky,k,k,hy,rl->hrij', X, X, X, X, h_prime, 1 / g_prime, dB, dB)
     try:
-        part1 = fast_summations.hessian_H_summation_1(
-            X, dB, h_prime, g_prime_inv
-        )  # equivalent to np.einsum('ki,kj,kl,ky,k,k,hy,rl->hrij',X,X,X,X,h_prime,1/g_prime,dB,dB)
+        part1 = fast_summations.hessian_H_summation_1(X, dB, h_prime, g_prime_inv)
     except:
         part1 = np.einsum(
             "ki,kj,kl,ky,k,k,hy,rl->hrij", X, X, X, X, h_prime, 1 / g_prime, dB, dB
         )
 
     try:
-        part2 = fast_summations.hessian_H_summation_2(
-            X, d2B, h
-        )  # equivalent to np.einsum('ki,kj,kl,k,hrl->hrij',X,X,X,h,d2B)
+        part2 = fast_summations.hessian_H_summation_2(X, d2B, h)
     except:
         part2 = np.einsum("ki,kj,kl,k,hrl->hrij", X, X, X, h, d2B)
     hes_H = (part1 + part2) / phi_est
@@ -1294,18 +1473,40 @@ def hes_H_drho(
     return hes_H
 
 
-def compute_T_matrices(rho, X, y, family, beta_hat, var_list, phi_est):
+def compute_T_matrices(rho, X, y, family, beta_hat, var_list, phi_est, S_all, sm_handler):
+    """Compute d2w/drho (second derivative of PIRLS weights wrt rho), shape (M, M, n).
+
+    This is an alternative implementation to hes_w_wrt_rho, kept for reference.
+    S_all and sm_handler are required to evaluate dbeta_hat and d2beta_hat.
+
+    Parameters
+    ----------
+    rho : ndarray, shape (M,)
+    X : ndarray, shape (n, p)
+    y : ndarray, shape (n,)
+    family : d2variance_family
+    beta_hat : ndarray, shape (p,)
+    var_list : list of str
+    phi_est : float
+    S_all : list of ndarray
+        Raw penalty matrices.
+    sm_handler : smooths_handler
+
+    Returns
+    -------
+    d2w_drho : ndarray, shape (M, M, n)
+    """
     FLOAT_EPS = np.finfo(float).eps
     dw_dB = dw_dbeta(beta_hat, y, family, X)
     dB = dbeta_hat(
         rho, beta_hat, S_all, sm_handler, var_list, y, X, family, phi_est=phi_est
     )
-    dw_drho = np.einsum("li,rl->ri", dw_dB, dB, optimize="optimal")
+    dw_drho_vals = np.einsum("li,rl->ri", dw_dB, dB, optimize="optimal")
 
     mu = family.link.inverse(np.dot(X, beta_hat))
     w = w_mu(mu, y, family)
 
-    Tj = dw_drho / np.abs(w)
+    Tj = dw_drho_vals / np.abs(w)
     d2B = d2beta_hat(
         rho, beta_hat, S_all, sm_handler, var_list, y, X, family, phi_est=phi_est
     )
@@ -1335,6 +1536,10 @@ def compute_T_matrices(rho, X, y, family, beta_hat, var_list, phi_est):
 def hes_w_wrt_rho(
     rho, beta, y, X, sm_handler, var_list, family, S_all, phi_est, compute_grad=False
 ):
+    """Second derivative of PIRLS weights wrt rho: d2w/drho, shape (M, M, n).
+
+    Used in the Hessian of the REML objective.
+    """
     FLOAT_EPS = np.finfo(float).eps
     if compute_grad:
         beta_hat = mle_gradient_bassed_optim(
@@ -1362,7 +1567,6 @@ def hes_w_wrt_rho(
     w_prime = w_deriv(mu, y, family)
     w_2prime = w_2deriv(mu, y, family)
     g_prime = family.link.deriv(mu)
-    # g_prime = np.clip(family.link.deriv(mu),FLOAT_EPS,np.inf)
     g_2prime = np.clip(family.link.deriv2(mu), FLOAT_EPS, np.inf)
     add2 = np.zeros((rho.shape[0], rho.shape[0], X.shape[0]))
     add1 = np.zeros((rho.shape[0], rho.shape[0], X.shape[0]))
@@ -1382,23 +1586,46 @@ def hes_w_wrt_rho(
                 )
 
     d2w = add1 + add2
-    # dw = np.zeros((rho.shape[0],X.shape[0]))
-    # for h in range(rho.shape[0]):
-    #     for k in range(X.shape[0]):
-    #         dw[h,k] = np.dot(dB[h, :], X[k, :])*w_prime[k]/g_prime[k]
-
     return d2w
 
 
-def det_H_rho(X, y, family, w, beta_hat):
+def det_H_rho(X, y, family, w, beta_hat, rho, S_all, sm_handler, var_list):
+    """Placeholder: intended to compute det(H) as a function of rho.
+
+    Not yet implemented.  The variable assignments below were left from an
+    incomplete draft; the function currently does nothing.
+
+    Parameters
+    ----------
+    X, y, family, w, beta_hat : standard GAM quantities.
+    rho : ndarray, shape (M,)
+    S_all : list of ndarray
+    sm_handler : smooths_handler
+    var_list : list of str
+    """
     w_prime = dw_dbeta(beta_hat, y, family, X)
     dB = dbeta_hat(rho, beta_hat, S_all, sm_handler, var_list, y, X, family)
     pass
 
 
-def H_rho(rho, beta, y, X, family, phi_est, comp_gradient=True):
+def H_rho(rho, beta, y, X, family, phi_est, sm_handler, var_list, comp_gradient=True):
+    """Unpenalised Hessian H = X^T diag(w) X / phi evaluated at beta(rho).
+
+    Parameters
+    ----------
+    rho : ndarray, shape (M,)
+    beta : ndarray, shape (p,)
+    y, X, family, phi_est : standard GAM inputs.
+    sm_handler : smooths_handler
+    var_list : list of str
+    comp_gradient : bool
+        If True, re-optimise beta at rho before computing H (for testing only).
+
+    Returns
+    -------
+    H : ndarray, shape (p, p)
+    """
     if comp_gradient:
-        # only for test purposes
         beta = mle_gradient_bassed_optim(
             rho,
             sm_handler,
@@ -1417,6 +1644,12 @@ def H_rho(rho, beta, y, X, family, phi_est, comp_gradient=True):
 
 
 def R_rho(rho, b_hat, y, X, family, sm_handler, var_list, phi_est):
+    """Cholesky factor R of V_beta = R^T R.
+
+    Returns
+    -------
+    R : ndarray, shape (p, p)  (upper triangular)
+    """
     Vb = -Vbeta_rho(
         rho, b_hat, y, X, family, sm_handler, var_list, phi_est, inverse=False
     )
@@ -1427,6 +1660,11 @@ def R_rho(rho, b_hat, y, X, family, sm_handler, var_list, phi_est):
 def dVb_drho(
     rho, beta, S_all, y, X, family, sm_handler, var_list, phi_est, compute_grad=False
 ):
+    """Gradient of V_beta wrt rho: dV_beta/drho, shape (M, p, p).
+
+    dV_beta/drho_k = dH/drho_k + dS_lambda/drho_k,
+    where dS_lambda/drho_k = lambda_k * S_k / phi.
+    """
     if compute_grad:
         b_hat = mle_gradient_bassed_optim(
             rho,
@@ -1441,7 +1679,6 @@ def dVb_drho(
         )[0]
     else:
         b_hat = beta
-    # R = R_rho(rho, b_hat, y, X, family, sm_handler, var_list, phi_est)
     dH = grad_H_drho(rho, b_hat, y, X, sm_handler, var_list, family, S_all, phi_est)
     Slam_tensor = np.zeros((len(S_all),) + S_all[0].shape)
     Slam_tensor[:, :, :] = S_all
@@ -1451,7 +1688,10 @@ def dVb_drho(
 
 
 def d2Vb_drho(rho, b_hat, S_all, y, X, family, sm_handler, var_list, phi_est):
-    # R = R_rho(rho, b_hat, y, X, family, sm_handler, var_list, phi_est)
+    """Second derivative of V_beta wrt rho: d2V_beta/drho2, shape (M, M, p, p).
+
+    d2V_beta/(drho_h drho_k) = d2H/(drho_h drho_k) + delta_{hk} * lambda_k * S_k / phi.
+    """
     d2Vb = hes_H_drho(rho, b_hat, y, X, S_all, sm_handler, var_list, family, phi_est)
     Slam_tensor = np.zeros((len(S_all),) + S_all[0].shape)
     Slam_tensor[:, :, :] = S_all
@@ -1464,6 +1704,7 @@ def d2Vb_drho(rho, b_hat, S_all, y, X, family, sm_handler, var_list, phi_est):
 def test_dVb_drho(
     rho, S_all, y, X, family, sm_handler, var_list, phi_est, inverse=False
 ):
+    """Compute V_beta at rho, re-optimising beta.  Used only for numerical testing."""
     beta = mle_gradient_bassed_optim(
         rho,
         sm_handler,
@@ -1475,8 +1716,6 @@ def test_dVb_drho(
         method="Newton-CG",
         num_random_init=10,
     )[0]
-    # print('estim in test',beta[:4])
-    # R = R_rho(rho, b_hat, y, X, family, sm_handler, var_list, phi_est)
     Vb = -Vbeta_rho(
         rho, beta, y, X, family, sm_handler, var_list, phi_est, inverse=inverse
     )
@@ -1484,14 +1723,22 @@ def test_dVb_drho(
 
 
 def grad_cholesky(grad_D_rho, R):
-    """
+    """Derivative of the Cholesky factor R wrt a scalar parameter.
 
-    :param grad_D_rho: gradient of the matrix before the cholesky decomposition
-    :param R: cholesky decomposition result : D = R.T*R
-    :return:
+    Given dD/d(param) and R such that D = R^T R, returns dR/d(param) using
+    the upper-triangular recurrence from Appendix B.7 of Wood (2017).
+
+    Parameters
+    ----------
+    grad_D_rho : ndarray, shape (p, p)
+        Symmetric matrix dD/d(param).
+    R : ndarray, shape (p, p)
+        Upper-triangular Cholesky factor.
+
+    Returns
+    -------
+    grad_chol : ndarray, shape (p, p)  (upper triangular)
     """
-    # if np.sum(np.triu(R,1)) == 0:
-    #     R = R.T
     grad_chol = np.zeros(grad_D_rho.shape)
     for i in range(R.shape[0]):
         Bii = (
@@ -1511,7 +1758,10 @@ def grad_cholesky(grad_D_rho, R):
 
 
 def grad_chol_Vb_rho(rho, b_hat, S_all, y, X, family, sm_handler, var_list, phi_est):
-    # Vb = test_dVb_drho(rho, S_all, y, X, family, sm_handler, var_list, phi_est)
+    """Gradient of the Cholesky factor of V_beta wrt rho, shape (M, p, p).
+
+    Needed for the V'' correction term in eq. 6.31 of Wood (2017).
+    """
     Vb = -Vbeta_rho(
         rho, b_hat, y, X, family, sm_handler, var_list, phi_est, inverse=True
     )
@@ -1527,6 +1777,7 @@ def grad_chol_Vb_rho(rho, b_hat, S_all, y, X, family, sm_handler, var_list, phi_
 
 
 def cholesky_Vb_rho(rho, S_all, y, X, family, sm_handler, var_list, phi_est):
+    """Cholesky factor of V_beta, re-optimising beta at rho.  For testing."""
     Vb = test_dVb_drho(
         rho, S_all, y, X, family, sm_handler, var_list, phi_est, inverse=True
     )
@@ -1536,10 +1787,8 @@ def cholesky_Vb_rho(rho, S_all, y, X, family, sm_handler, var_list, phi_est):
     return R
 
 
-## CONTROLLED EXAMPLE TO GET THE CORRECT CHOLSESKY DECOMPOSITION DERIVATIVE
-
-
 def ftest_for_chol_Ax(x):
+    """Symmetric 3x3 test matrix A(x) for validating grad_cholesky."""
     A = np.zeros((3, 3))
     A[0, 0] = 1 + x**2 + x**4
     A[0, 1] = 2 * x + x**3
@@ -1552,6 +1801,7 @@ def ftest_for_chol_Ax(x):
 
 
 def ftest_for_chol_dA_dx(x):
+    """Analytical derivative dA/dx of the test matrix from ftest_for_chol_Ax."""
     A = np.zeros((3, 3))
     A[0, 0] = 2 * x + 4 * x**3
     A[0, 1] = 2 + 3 * x**2
@@ -1564,6 +1814,7 @@ def ftest_for_chol_dA_dx(x):
 
 
 def cholA(x):
+    """Cholesky of the test matrix, shaped for use with numerical Jacobian checkers."""
     A = ftest_for_chol_Ax(x)
     A = A.reshape(3, 3)
     B = np.linalg.cholesky(A).T
@@ -1571,13 +1822,14 @@ def cholA(x):
 
 
 def gradcholA(x, B):
+    """Analytical Cholesky derivative for the test matrix."""
     dA = ftest_for_chol_dA_dx(x)
-    # dA = dA.reshape(3,3)
     dB = grad_cholesky(dA, B[0])
     return dB.reshape((1,) + dB.shape)
 
 
 def alpha_deriv2(y, mu, family):
+    """Second derivative of alpha wrt mu: d2alpha/dmu2."""
     FLOAT_EPS = np.finfo(float).eps
     dy = y - mu
     add1 = (
@@ -1610,13 +1862,14 @@ def alpha_deriv2(y, mu, family):
 
 
 def small_h_mu(mu, y, family):
-    ## see overleaf gradient and hessian of H
+    """Auxiliary scalar h(mu) = (dw/dmu) / g'(mu) used in d2H/drho computations."""
     g_prime = family.link.deriv(mu)
     small_h = w_deriv(mu, y, family) / g_prime
     return small_h
 
 
 def deriv_small_h(mu, y, family):
+    """Derivative of h(mu) wrt mu: dh/dmu.  Used in the Hessian of H wrt rho."""
     V = family.variance(mu)
     V_prime = family.variance.deriv(mu)
     V_2prime = family.variance.deriv2(mu)
@@ -1664,6 +1917,28 @@ def laplace_appr_REML(
     tol=10**-12,
     num_random_init=1,
 ):
+    """Laplace approximation of the REML (marginal likelihood) at rho.
+
+    Evaluates:
+        REML = l(beta_hat) + penalty(beta_hat; rho)
+               - 0.5 * log|S_lambda|+
+               - 0.5 * log|H + S_lambda|
+               + (M/2) * log(2*pi)
+
+    where M is the dimension of the penalty null space and |.|+ denotes the
+    product of non-zero eigenvalues (pseudo-determinant).
+
+    This is the objective that grad_laplace_appr_REML and hess_laplace_appr_REML
+    differentiate.  The Hessian of the negative REML wrt rho is V_rho^{-1}
+    (eq. 6.30 of Wood 2017).
+
+    Parameters
+    ----------
+    compute_grad : bool
+        If True, re-optimise beta_hat at rho before evaluating.
+    fixRand : bool
+        Fix numpy random seed before re-optimisation (reproducibility).
+    """
     if compute_grad:
         if fixRand:
             np.random.seed(4)
@@ -1684,20 +1959,16 @@ def laplace_appr_REML(
         print("mle fit: %.3f sec" % (t1 - t0))
     else:
         b_hat = beta
-    # return b_hat
 
     ll_penalty = penalty_ll(rho, b_hat, sm_handler, var_list, phi_est)
     ll_unpen = unpenalized_ll(b_hat, y, X, family, phi_est, omega=omega)
 
-    # create Slam and transform it to compute determinant
     Slam_trans, S_transf = transform_Slam(S_all, rho)
 
-    # every time rho is changed, S_transf is recomputed, so no need for compute_grad to be true
     log_det_Slam = (
         -0.5 * logDet_Slam(rho, S_transf, compute_grad=False, S_all=S_all) / phi_est
     )
 
-    # set compute grad to false because b_hat have already been recomputed
     sum_H_Slam = -Vbeta_rho(
         rho,
         b_hat,
@@ -1712,12 +1983,11 @@ def laplace_appr_REML(
     )
     log_det_sum = -0.5 * np.log(np.linalg.det(sum_H_Slam))
 
-    # null space of Slam
     M = b_hat.shape[0] - np.linalg.matrix_rank(Slam_trans)
     reml_approx = (
         ll_unpen + ll_penalty + log_det_Slam + log_det_sum + M * np.log(np.pi * 2)
     )
-    return reml_approx  # ,b_hat
+    return reml_approx
 
 
 def grad_laplace_appr_REML(
@@ -1737,6 +2007,15 @@ def grad_laplace_appr_REML(
     num_random_init=1,
     tol=10**-12,
 ):
+    """Gradient of the Laplace-approximated REML wrt rho, shape (M,).
+
+    Three additive terms:
+        add1 = -0.5 * beta_hat^T (d S_lambda / d rho) beta_hat / phi
+        add2 = -0.5 * d log|S_lambda|+ / d rho / phi
+        add3 = -0.5 * tr( V_beta^{-1} (d V_beta / d rho) )
+
+    where V_beta = -(H + S_lambda)^{-1} and d V_beta / d rho = dH/drho + dS/drho.
+    """
     if compute_grad:
         if fixRand:
             np.random.seed(4)
@@ -1755,7 +2034,6 @@ def grad_laplace_appr_REML(
     else:
         b_hat = beta
 
-    # create the -0.5 \lambda_j * \beta^T S_j \beta
     lams = np.exp(rho)
     S_tensor = np.zeros((len(S_all),) + S_all[0].shape)
     S_tensor[:, :, :] = S_all
@@ -1763,10 +2041,8 @@ def grad_laplace_appr_REML(
 
     add1 = -0.5 * np.einsum("i,rij,j->r", b_hat, S_tensor, b_hat) / phi_est
 
-    # create Slam and transform it to compute determinant
     Slam_trans, S_transf = transform_Slam(S_all, rho)
 
-    # every time rho is changed, S_transf is recomputed, so no need for compute_grad to be true
     add2 = (
         -0.5
         * grad_logDet_Slam(rho, S_transf, compute_grad=False, S_all=S_all)
@@ -1789,7 +2065,6 @@ def grad_laplace_appr_REML(
 
     add3 = np.zeros(add1.shape)
     for j in range(rho.shape[0]):
-        # compute the trace of a product with inner1d
         add3[j] = -0.5 * inner1d_sum(Vb_inv, dVb[j].T)
 
     return add1 + add2 + add3
@@ -1811,6 +2086,17 @@ def hess_laplace_appr_REML(
     num_random_init=1,
     tol=10**-12,
 ):
+    """Hessian of the Laplace-approximated REML wrt rho, shape (M, M).
+
+    Inverting the negative of this matrix gives V_rho (eq. 6.30 of Wood 2017),
+    the smoothing-parameter uncertainty needed for the corrected AIC (eq. 6.32)
+    and the corrected covariance V'_beta (eq. 6.31).
+
+    Three additive terms:
+        add1[h,k] = dB[h]^T V_beta dB[k]  - 0.5 * delta_{hk} * beta^T dSlam[h] beta / phi
+        add2      = -0.5 * d2 log|S_lambda|+ / drho2 / phi
+        add3[h,k] = 0.5 * tr( (V_beta^{-1} dVb[h])^2 - V_beta^{-1} d2Vb[h,k] )
+    """
     if compute_grad:
         if fixRand:
             np.random.seed(4)
@@ -1843,7 +2129,6 @@ def hess_laplace_appr_REML(
     )
     dB = dbeta_hat(rho, b_hat, S_all, sm_handler, var_list, y, X, family, phi_est)
 
-    # create the -0.5 \lambda_j * \beta^T S_j \beta
     lams = np.exp(rho)
     S_tensor = np.zeros((len(S_all),) + S_all[0].shape)
     S_tensor[:, :, :] = S_all
@@ -1858,13 +2143,10 @@ def hess_laplace_appr_REML(
         / phi_est
     )
 
-    # create Slam and transform it to compute determinant
     Slam_trans, S_transf = transform_Slam(S_all, rho)
 
-    # every time rho is changed, S_transf is recomputed, so no need for compute_grad to be true
     add2 = -0.5 * hes_logDet_Slam(rho, S_transf) / phi_est
 
-    # H + Slam, grad and hessian computation
     Vb_inv = -Vbeta_rho(
         rho,
         b_hat,
@@ -1886,10 +2168,11 @@ def hess_laplace_appr_REML(
         add3 = 0.5 * (
             np.einsum("hij,rji->hr", tmp, tmp) - np.einsum("ij,hrji->hr", Vb_inv, d2Vb)
         )
-    return add1 + add2 + add3  # , b_hat
+    return add1 + add2 + add3
 
 
 def balance_diag_func(rho, s, d):
+    """Objective function for balancing diagonal initialisation of smoothing parameters."""
     lam = np.exp(rho)
     lam_s = (lam * s.T).T
     vec = np.zeros(s.shape[0])
@@ -1901,6 +2184,7 @@ def balance_diag_func(rho, s, d):
 
 
 def grad_balance_diag_func(rho, s, d):
+    """Gradient of balance_diag_func wrt rho."""
     lam = np.exp(rho)
     lam_s = (lam * s.T).T
     grad = np.zeros(lam.shape[0])
