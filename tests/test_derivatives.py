@@ -44,6 +44,11 @@ from PGAM.der_wrt_smoothing import (
     dVb_drho,
     d2Vb_drho,
     grad_chol_Vb_rho,
+    unpenalized_ll,
+    penalty_ll,
+    laplace_appr_REML,
+    grad_laplace_appr_REML,
+    hess_laplace_appr_REML,
 )
 
 # ---------------------------------------------------------------------------
@@ -662,3 +667,144 @@ class TestGradCholVbRho:
         np.testing.assert_allclose(
             dR_analytical[:, mask], dR_fd[:, mask], rtol=1e-3, atol=1e-6
         )
+
+
+# ===========================================================================
+# Batch 6 – Laplace REML value, gradient, and Hessian
+# ===========================================================================
+
+def _reml_at_rho(rho, prob):
+    """REML value at rho with beta_hat re-optimised.  Restores sm state."""
+    b = _beta_hat_at_rho(rho, prob)
+    # sm state is already set to rho inside _beta_hat_at_rho -> mle_gradient_bassed_optim
+    return laplace_appr_REML(
+        rho, b, prob["S_all"], prob["y"], prob["X"],
+        prob["family"], prob["phi_est"], prob["sm"], prob["var_list"],
+        compute_grad=False,
+    )
+
+
+class TestLaplaceREML:
+    """REML value built from first principles vs laplace_appr_REML.
+
+    REML = l(β̂) + penalty_ll + [-0.5/φ * log|S_λ|+] + [-0.5 * log|H+S|] + M*log(2π)
+
+    The manual formula uses slogdet and eigenvalue decomposition so it exercises
+    a completely different code path from the internal Cholesky-based implementation.
+    """
+
+    def test_manual_formula(self, gam_problem):
+        prob = gam_problem
+        rho, beta_hat = prob["rho"], prob["beta_hat"]
+        y, X, family = prob["y"], prob["X"], prob["family"]
+        sm, var_list, phi_est = prob["sm"], prob["var_list"], prob["phi_est"]
+        S_all = prob["S_all"]
+
+        l_unpen = unpenalized_ll(beta_hat, y, X, family, phi_est)
+        pen = penalty_ll(rho, beta_hat, sm, var_list, phi_est)
+
+        # H + S_λ via Vbeta_rho (inverse=False returns -(H+S))
+        H_plus_S = -np.array(
+            Vbeta_rho(rho, beta_hat, y, X, family, sm, var_list, phi_est, inverse=False)
+        )
+        _, log_det_HpS = np.linalg.slogdet(H_plus_S)
+
+        # pseudo-log-det of S_λ via eigenvalues
+        M = len(rho)
+        S_lambda = sum(np.exp(rho[k]) * S_all[k] for k in range(M))
+        eigvals = np.linalg.eigvalsh(S_lambda)
+        tol = np.finfo(float).eps
+        nz = eigvals[eigvals > tol * eigvals.max()]
+        log_pdet_Slam = np.sum(np.log(nz))
+        M_null = len(eigvals) - len(nz)
+
+        reml_manual = (
+            l_unpen + pen
+            - 0.5 * log_pdet_Slam / phi_est
+            - 0.5 * log_det_HpS
+            + M_null * np.log(2 * np.pi)
+        )
+
+        reml_func = laplace_appr_REML(
+            rho, beta_hat, S_all, y, X, family, phi_est, sm, var_list,
+            compute_grad=False,
+        )
+
+        np.testing.assert_allclose(reml_manual, reml_func, rtol=1e-6,
+                                   err_msg="REML manual formula mismatch")
+
+
+class TestGradLaplaceREML:
+    """grad REML wrt rho: FD of REML(rho) at re-optimised beta_hat.
+
+    By the envelope theorem (stationarity of penalised l wrt beta at beta_hat),
+    the total derivative of REML(rho, beta_hat(rho)) equals the partial derivative
+    at fixed beta_hat.  So FD of re-optimised REML must match grad_laplace_appr_REML
+    which uses fixed beta_hat.
+    """
+
+    def test_fd(self, gam_problem):
+        prob = gam_problem
+        rho, beta_hat = prob["rho"], prob["beta_hat"]
+        y, X, family = prob["y"], prob["X"], prob["family"]
+        sm, var_list, phi_est = prob["sm"], prob["var_list"], prob["phi_est"]
+        S_all = prob["S_all"]
+        eps = 1e-4
+
+        grad_analytical = grad_laplace_appr_REML(
+            rho, beta_hat, S_all, y, X, family, phi_est, sm, var_list,
+            compute_grad=False,
+        )
+
+        M = len(rho)
+        grad_fd = np.zeros(M)
+        for k in range(M):
+            drho = np.zeros(M)
+            drho[k] = eps
+            grad_fd[k] = (_reml_at_rho(rho + drho, prob) - _reml_at_rho(rho - drho, prob)) / (2 * eps)
+
+        prob["sm"].set_smooth_penalties(np.exp(rho), prob["var_list"])
+        np.testing.assert_allclose(grad_analytical, grad_fd, rtol=1e-3, atol=1e-6,
+                                   err_msg="grad_laplace_appr_REML FD mismatch")
+
+
+class TestHessLaplaceREML:
+    """Hessian of REML wrt rho: FD of grad_laplace_appr_REML at re-optimised beta_hat.
+
+    The Hessian of the negative REML is V_rho^{-1} (Wood 2017 eq. 6.30), which
+    drives the smoothing-parameter uncertainty correction in eq. 6.31-6.32.
+    """
+
+    def test_fd(self, gam_problem):
+        prob = gam_problem
+        rho, beta_hat = prob["rho"], prob["beta_hat"]
+        y, X, family = prob["y"], prob["X"], prob["family"]
+        sm, var_list, phi_est = prob["sm"], prob["var_list"], prob["phi_est"]
+        S_all = prob["S_all"]
+        eps = 1e-3
+
+        hess_analytical = hess_laplace_appr_REML(
+            rho, beta_hat, S_all, y, X, family, phi_est, sm, var_list,
+            compute_grad=False,
+        )
+
+        def grad_at_rho(r):
+            b = _beta_hat_at_rho(r, prob)
+            prob["sm"].set_smooth_penalties(np.exp(r), prob["var_list"])
+            return grad_laplace_appr_REML(
+                r, b, S_all, y, X, family, phi_est, sm, var_list,
+                compute_grad=False,
+            )
+
+        M = len(rho)
+        hess_fd = np.zeros((M, M))
+        for k in range(M):
+            drho = np.zeros(M)
+            drho[k] = eps
+            g_plus  = grad_at_rho(rho + drho)
+            g_minus = grad_at_rho(rho - drho)
+            hess_fd[k] = (g_plus - g_minus) / (2 * eps)
+
+        prob["sm"].set_smooth_penalties(np.exp(rho), prob["var_list"])
+        np.testing.assert_allclose(hess_analytical, hess_fd, rtol=1e-2, atol=1e-5,
+                                   err_msg="hess_laplace_appr_REML FD mismatch")
