@@ -689,8 +689,9 @@ def _reml_at_rho(rho, prob):
 class TestLaplaceREML:
     """REML value built from first principles vs laplace_appr_REML.
 
-    REML = l(β̂) + penalty_ll + [-0.5/φ * log|S_λ|+] + [-0.5 * log|H+S|] + M*log(2π)
+    REML = l(β̂) + penalty_ll + [+0.5/φ * log|S_λ|+] + [-0.5 * log|H+S|] + M*log(2π)
 
+    Wood (2017) eq. 6.18: +0.5*log|S_λ|+ and -0.5*log|H+S_λ|.
     The manual formula uses slogdet and eigenvalue decomposition so it exercises
     a completely different code path from the internal Cholesky-based implementation.
     """
@@ -722,9 +723,9 @@ class TestLaplaceREML:
 
         reml_manual = (
             l_unpen + pen
-            - 0.5 * log_pdet_Slam / phi_est
+            + 0.5 * log_pdet_Slam / phi_est
             - 0.5 * log_det_HpS
-            + M_null * np.log(2 * np.pi)
+            + 0.5 * M_null * np.log(2 * np.pi)
         )
 
         reml_func = laplace_appr_REML(

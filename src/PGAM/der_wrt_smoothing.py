@@ -1165,7 +1165,7 @@ def deriv_compute(
 
     M = beta_hat.shape[0] - np.linalg.matrix_rank(Slam_trans)
 
-    REML = ll_unpen + ll_penalty + log_det_Slam + log_det_sum + M * np.log(np.pi * 2)
+    REML = ll_unpen + ll_penalty - log_det_Slam + log_det_sum + 0.5 * M * np.log(np.pi * 2)
     if test:
         REML1 = laplace_appr_REML(
             rho,
@@ -1258,7 +1258,7 @@ def deriv_compute(
     add1 = -0.5 * np.einsum("i,rij,j->r", beta_hat, Slam_tensor, beta_hat)
 
     add2 = (
-        -0.5
+        0.5
         * grad_logDet_Slam(rho, S_transf, compute_grad=False, S_all=S_all)
         / phi_est
     )
@@ -1398,7 +1398,7 @@ def deriv_compute(
         "i,hij,j->h", beta_hat, Slam_tensor, beta_hat, optimize="optimal"
     )
 
-    add2 = -0.5 * hes_logDet_Slam(rho, S_transf) / phi_est
+    add2 = 0.5 * hes_logDet_Slam(rho, S_transf) / phi_est
 
     Vb_inv = -sum_hes_inv
     try:
@@ -1931,9 +1931,9 @@ def laplace_appr_REML(
 
     Evaluates:
         REML = l(beta_hat) + penalty(beta_hat; rho)
-               - 0.5 * log|S_lambda|+
+               + 0.5 * log|S_lambda|+
                - 0.5 * log|H + S_lambda|
-               + (M/2) * log(2*pi)
+               + (M/2) * log(2*pi)       [Wood 2017 eq. 6.18, M = null-space dim]
 
     where M is the dimension of the penalty null space and |.|+ denotes the
     product of non-zero eigenvalues (pseudo-determinant).
@@ -1997,7 +1997,7 @@ def laplace_appr_REML(
     else:
         M = null_dim
     reml_approx = (
-        ll_unpen + ll_penalty + log_det_Slam + log_det_sum + M * np.log(np.pi * 2)
+        ll_unpen + ll_penalty - log_det_Slam + log_det_sum + 0.5 * M * np.log(np.pi * 2)
     )
     return reml_approx
 
@@ -2023,7 +2023,7 @@ def grad_laplace_appr_REML_dense(
 
     Three additive terms:
         add1 = -0.5 * beta_hat^T (d S_lambda / d rho) beta_hat / phi
-        add2 = -0.5 * d log|S_lambda|+ / d rho / phi
+        add2 = +0.5 * d log|S_lambda|+ / d rho / phi
         add3 = -0.5 * tr( V_beta^{-1} (d V_beta / d rho) )
 
     where V_beta = -(H + S_lambda)^{-1} and d V_beta / d rho = dH/drho + dS/drho.
@@ -2056,7 +2056,7 @@ def grad_laplace_appr_REML_dense(
     Slam_trans, S_transf = transform_Slam(S_all, rho)
 
     add2 = (
-        -0.5
+        0.5
         * grad_logDet_Slam(rho, S_transf, compute_grad=False, S_all=S_all)
         / phi_est
     )
@@ -2106,7 +2106,7 @@ def hess_laplace_appr_REML_dense(
 
     Three additive terms:
         add1[h,k] = dB[h]^T V_beta dB[k]  - 0.5 * delta_{hk} * beta^T dSlam[h] beta / phi
-        add2      = -0.5 * d2 log|S_lambda|+ / drho2 / phi
+        add2      = +0.5 * d2 log|S_lambda|+ / drho2 / phi
         add3[h,k] = 0.5 * tr( (V_beta^{-1} dVb[h])^2 - V_beta^{-1} d2Vb[h,k] )
     """
     if compute_grad:
@@ -2157,7 +2157,7 @@ def hess_laplace_appr_REML_dense(
 
     Slam_trans, S_transf = transform_Slam(S_all, rho)
 
-    add2 = -0.5 * hes_logDet_Slam(rho, S_transf) / phi_est
+    add2 = 0.5 * hes_logDet_Slam(rho, S_transf) / phi_est
 
     Vb_inv = -Vbeta_rho(
         rho,
@@ -2229,10 +2229,10 @@ def grad_laplace_appr_REML(
     # ── add1: -0.5 * beta^T (lam_r * S_r) beta / phi ─────────────────────────
     add1 = -0.5 * np.einsum("i,rij,j->r", b_hat, S_tensor, b_hat) / phi_est
 
-    # ── add2: -0.5 * d log|S_lambda|+ / drho / phi ────────────────────────────
+    # ── add2: +0.5 * d log|S_lambda|+ / drho / phi ────────────────────────────
     Slam_trans, S_transf = transform_Slam(S_all, rho)
     add2 = (
-        -0.5
+        0.5
         * grad_logDet_Slam(rho, S_transf, compute_grad=False, S_all=S_all)
         / phi_est
     )
@@ -2324,7 +2324,7 @@ def hess_laplace_appr_REML(
 
     # ── add2 ──────────────────────────────────────────────────────────────────
     Slam_trans, S_transf = transform_Slam(S_all, rho)
-    add2 = -0.5 * hes_logDet_Slam(rho, S_transf) / phi_est
+    add2 = 0.5 * hes_logDet_Slam(rho, S_transf) / phi_est
 
     # ── add3 — streaming trace, no (M, M, p, p) materialisation ──────────────
     # add3[h,r] = 0.5 * ( tr(A[h]@A[r]) - tr(Vb_inv @ d2Vb[h,r]) )
