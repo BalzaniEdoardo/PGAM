@@ -310,7 +310,7 @@ class GAM_result(object):
 
         # long procedure...
         if compute_AIC:
-            self.compute_AIC(y, sm_handler, H_S_inv, family=self.family)
+            self.compute_AIC(y, sm_handler, H_S_inv, family=self.family, filter_trials=filter_trials)
 
         if compute_mutual_info:
             self.tuning_Hz = empty_container()
@@ -522,13 +522,16 @@ class GAM_result(object):
                 fX = fX[:, full_mask]
         return fX
 
-    def compute_AIC(self, y, sm_handler, Vb, phi_est=1, family=None):
+    def compute_AIC(self, y, sm_handler, Vb, phi_est=1, family=None, filter_trials=None):
         # can be super slow...
+        print("Computing AIC")
         if family == None:
             family = self.family
         rho = np.log(self.smooth_pen)
         S_all = compute_Sjs(sm_handler, self.var_list)
         X, index_cov = sm_handler.get_exog_mat(self.var_list)
+        if filter_trials is not None:
+            X = X[filter_trials]
         hess = -hess_laplace_appr_REML(
             rho,
             self.beta,
@@ -542,7 +545,7 @@ class GAM_result(object):
             compute_grad=False,
             fixRand=True,
         )
-
+        print("hess computed!")
         V_rho = np.linalg.pinv(hess)
         J = dbeta_hat(
             rho, self.beta, S_all, sm_handler, self.var_list, y, X, self.family, phi_est
@@ -550,12 +553,15 @@ class GAM_result(object):
         dR_drho = grad_chol_Vb_rho(
             rho, self.beta, S_all, y, X, family, sm_handler, self.var_list, phi_est
         )
-
+        print("computed J and dR_drho")
+        H = H_rho(rho, self.beta, y, X, self.family, phi_est, sm_handler, self.var_list, comp_gradient=False)
+        print("computed H")
         V_prime = np.einsum("ri,rh,hj->ij", J, V_rho, J, optimize="optimal")
+        print("computed V_prime")
         V_2prime = np.einsum(
             "kij,kl,lim->jm", dR_drho, V_rho, dR_drho, optimize="optimal"
         )
-        H = H_rho(rho, self.beta, y, X, self.family, phi_est, sm_handler, self.var_list, comp_gradient=False)
+        print("computed V_2prime")
         V_corr = Vb + V_prime + V_2prime
         H = np.array(H)
         V_corr = np.array(V_corr)
@@ -1206,44 +1212,62 @@ class general_additive_model(object):
                     Q, R = np.linalg.qr(X, "reduced")
                 rho0 = np.log(smooth_pen)
 
-                gcv_func = lambda rho: gcv_comp(
-                    rho, X, Q, R, model.wendog, self.sm_handler, var_list,
-                    return_par="gcv", gamma=gamma,
-                )
-                gcv_grad = lambda rho: gcv_grad_comp(
-                    rho, X, Q, R, model.wendog, self.sm_handler, var_list,
-                    return_par="gcv", gamma=gamma,
-                )
+                # S matrices don't depend on rho — compute once per PIRLS step
+                _S_mat = matrix_transform(*compute_Sjs(self.sm_handler, var_list))
+                _wendog = model.wendog
+                _args = (X, Q, R, _wendog, self.sm_handler, var_list)
+                _kw = dict(gamma=gamma, S_all=_S_mat)
+
                 if method == "L-BFGS-B":
-                    gcv_hess = None
-                else:
-                    gcv_hess = lambda rho: gcv_hess_comp(
-                        rho, X, Q, R, model.wendog, self.sm_handler, var_list,
-                        return_par="gcv", gamma=gamma,
+                    # func+grad in one call — no extra SVD per step
+                    def _gcv_fg(rho):
+                        return gcv_objective(rho, *_args, return_type="eval_grad", **_kw)
+                    init_score, _ = _gcv_fg(rho0)
+                    if np.isnan(init_score):
+                        print("NaN here")
+                    res = minimize(
+                        _gcv_fg, rho0, method=method, jac=True,
+                        tol=gcv_sel_tol, bounds=bounds_rho, options={"disp": False},
                     )
-                init_score = gcv_func(rho0)
+                else:
+                    # hessian-based method: cache the full eval_grad_hess result
+                    # so f, g, H are all derived from one SVD per point
+                    _gcv_cache = [None, None]
+                    def _gcv_fgh(rho):
+                        if _gcv_cache[0] is None or not np.array_equal(_gcv_cache[0], rho):
+                            _gcv_cache[0] = rho.copy()
+                            _gcv_cache[1] = gcv_objective(
+                                rho, *_args, return_type="eval_grad_hess", **_kw
+                            )
+                        return _gcv_cache[1]
+                    init_score = _gcv_fgh(rho0)[0]
+                    if np.isnan(init_score):
+                        print("NaN here")
+                    res = minimize(
+                        lambda r: _gcv_fgh(r)[0], rho0,
+                        method=method,
+                        jac=lambda r: _gcv_fgh(r)[1],
+                        hess=lambda r: _gcv_fgh(r)[2],
+                        tol=gcv_sel_tol, bounds=bounds_rho, options={"disp": False},
+                    )
 
-                if np.sum(np.isnan(gcv_func(rho0))):
-                    print("NaN here")
-
-                res = minimize(
-                    gcv_func, rho0, method=method, jac=gcv_grad, hess=gcv_hess,
-                    tol=gcv_sel_tol, bounds=bounds_rho, options={"disp": False},
-                )
                 res.x = np.clip(res.x, -25, 30)
-
-                if res.success or (
-                    (init_score - res.fun) > init_score * np.finfo(float).eps
-                ):
+                if res.success or (init_score - res.fun) > init_score * np.finfo(float).eps:
                     smooth_pen = np.exp(res.x)
+                # rebuild gcv_func for the convergence check using the scalar-only path
+                gcv_func = lambda rho: gcv_objective(  # noqa: E731
+                    rho, *_args, return_type="eval", **_kw
+                )
 
             else:
                 if conv_criteria != "deviance":
                     X = model.wexog[:n_obs, :]
                     Q, R = np.linalg.qr(X, "reduced")
-                    gcv_func = lambda rho: gcv_comp(
-                        rho, X, Q, R, model.wendog, self.sm_handler, var_list,
-                        return_par="gcv", gamma=gamma,
+                    _S_mat = matrix_transform(*compute_Sjs(self.sm_handler, var_list))
+                    _args = (X, Q, R, model.wendog, self.sm_handler, var_list)
+                    _kw = dict(gamma=gamma, S_all=_S_mat)
+                    gcv_func = lambda rho: gcv_objective(  # noqa: E731
+                        rho, *_args, return_type="eval", **_kw
                     )
                 else:
                     gcv_func = None
