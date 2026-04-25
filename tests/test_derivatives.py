@@ -49,6 +49,7 @@ from PGAM.der_wrt_smoothing import (
     laplace_appr_REML,
     grad_laplace_appr_REML,
     hess_laplace_appr_REML,
+    hess_laplace_appr_REML_scalable,
 )
 
 # ---------------------------------------------------------------------------
@@ -808,3 +809,31 @@ class TestHessLaplaceREML:
         prob["sm"].set_smooth_penalties(np.exp(rho), prob["var_list"])
         np.testing.assert_allclose(hess_analytical, hess_fd, rtol=1e-2, atol=1e-5,
                                    err_msg="hess_laplace_appr_REML FD mismatch")
+
+
+class TestHessLaplaceREMLScalable:
+    """Scalable Hessian must match the dense version exactly on small problems.
+
+    Uses the same gam_problem fixture (M=2, p~14) so the dense (M,M,p,p)
+    tensor is cheap to materialise, giving a clean regression baseline.
+    """
+
+    def test_matches_dense(self, gam_problem):
+        prob = gam_problem
+        rho, beta_hat = prob["rho"], prob["beta_hat"]
+        y, X, family = prob["y"], prob["X"], prob["family"]
+        sm, var_list, phi_est = prob["sm"], prob["var_list"], prob["phi_est"]
+        S_all = prob["S_all"]
+
+        hess_dense = hess_laplace_appr_REML(
+            rho, beta_hat, S_all, y, X, family, phi_est, sm, var_list,
+            compute_grad=False,
+        )
+        hess_scalable = hess_laplace_appr_REML_scalable(
+            rho, beta_hat, S_all, y, X, family, phi_est, sm, var_list,
+            compute_grad=False,
+        )
+        np.testing.assert_allclose(
+            hess_scalable, hess_dense, rtol=1e-10, atol=1e-12,
+            err_msg="hess_laplace_appr_REML_scalable does not match dense version",
+        )

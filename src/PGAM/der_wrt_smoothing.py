@@ -1013,7 +1013,7 @@ def grad_H_drho(
         grad_H = (
             fast_summations.grad_H_summation(X, dB, w_prime) / phi_est
         )
-    except:
+    except Exception:
         grad_H = np.einsum("ki,lk,kj,rl->rij", X, w_prime, X, dB) / phi_est
     return grad_H
 
@@ -1428,18 +1428,11 @@ def deriv_compute(
 
 
 def hes_H_drho(
-    rho, beta_hat, y, X, S_all, sm_handler, var_list, family, phi_est, return_all=False
+    rho, beta_hat, y, X, S_all, sm_handler, var_list, family, phi_est
 ):
     """Second derivative of the unpenalised Hessian H wrt rho: d2H/drho, shape (M, M, p, p).
 
     Uses the chain rule applied twice through the PIRLS weights w(beta_hat(rho)).
-    Falls back to plain einsum if fast_summations C extension is unavailable.
-
-    Parameters
-    ----------
-    return_all : bool
-        If True, also return intermediate quantities (part1, part2, g_prime_inv,
-        dB, d2B, h, h_prime) for debugging.
     """
     mu = family.link.inverse(np.dot(X, beta_hat))
     h_prime = deriv_small_h(mu, y, family)
@@ -1448,51 +1441,19 @@ def hes_H_drho(
     g_prime_inv = np.array(1 / g_prime, order="C")
     dB = dbeta_hat(rho, beta_hat, S_all, sm_handler, var_list, y, X, family)
     d2B = d2beta_hat(rho, beta_hat, S_all, sm_handler, var_list, y, X, family)
-    return hes_H_blas(X, dB, d2B, h, h_prime, g_prime_inv, phi_est)
-
-# BELOW THE UNOPTIMIZED IMPLEMENTATION
-#     if np.isfortran(X):
-#         X = np.array(X, order="C")
-#     if np.isfortran(dB):
-#         dB = np.array(dB, order="C")
-#     if np.isfortran(h_prime):
-#         h_prime = np.array(h_prime, order="C")
-#     if np.isfortran(d2B):
-#         d2B = np.array(d2B, order="C")
-#     if np.isfortran(h):
-#         h = np.array(h, order="C")
-#
-#
-#     try:
-#         part1 = fast_summations.hessian_H_summation_1(X, dB, h_prime, g_prime_inv)
-#     except:
-#         part1 = np.einsum(
-#             "ki,kj,kl,ky,k,k,hy,rl->hrij", X, X, X, X, h_prime, 1 / g_prime, dB, dB
-#         )
-#
-#     try:
-#         part2 = fast_summations.hessian_H_summation_2(X, d2B, h)
-#     except:
-#         part2 = np.einsum("ki,kj,kl,k,hrl->hrij", X, X, X, h, d2B)
-#     hes_H = (part1 + part2) / phi_est
-#     if return_all:
-#         return hes_H, part1, part2, g_prime_inv, dB, d2B, h, h_prime
-#
-#     return hes_H
-#
+    return _hes_H_blas(X, dB, d2B, h, h_prime, g_prime_inv, phi_est)
 
 
-def hes_H_blas(X, dB, d2B, h, h_prime, g_prime_inv, phi_est):
-    """BLAS-explicit: two large matrix multiplies, no Python loop."""
+def _hes_H_blas(X, dB, d2B, h, h_prime, g_prime_inv, phi_est):
+    """BLAS-explicit computation of d2H/drho, shape (M, M, p, p)."""
     n, p = X.shape
     M = dB.shape[0]
 
     # ---- Term 1 ---------------------------------------------------------
-    # A[k,h] = (X J^T)[k,h],  E[k, h*p+i] = A[k,h] * X[k,i]
-    A = X @ dB.T                                          # (n, M)
-    tilde_h = h_prime * g_prime_inv                       # (n,)
-    E = (A[:, :, None] * X[:, None, :]).reshape(n, M * p) # (n, M*p)
-    # E^T diag(tilde_h) E = E^T @ (tilde_h[:,None] * E)
+    # part1[h,r,i,j] = Σ_k X[k,i]*X[k,j] * (h'/g')[k] * (X dB[h])_k * (X dB[r])_k
+    A = X @ dB.T                                           # (n, M)
+    tilde_h = h_prime * g_prime_inv                        # (n,)
+    E = (A[:, :, None] * X[:, None, :]).reshape(n, M * p)  # (n, M*p)
     part1 = (
         (E.T @ (tilde_h[:, None] * E))   # (M*p, M*p)
         .reshape(M, p, M, p)
@@ -1500,16 +1461,14 @@ def hes_H_blas(X, dB, d2B, h, h_prime, g_prime_inv, phi_est):
     )
 
     # ---- Term 2 ---------------------------------------------------------
-    # v[k,h,r] = ∑_l X[k,l] d2B[h,r,l]
+    # part2[h,r,i,j] = Σ_k X[k,i]*X[k,j] * h[k] * (X d2B[h,r])_k
     v = np.tensordot(X, d2B, axes=([1], [2]))  # (n, M, M)
-    # For each (h,r): X^T diag(h * v[:,h,r]) X
+    hv = h[:, None, None] * v                  # (n, M, M)
     part2 = np.empty((M, M, p, p))
-    hv = h[:, None, None] * v  # (n, M, M)
     for h_idx in range(M):
         for r_idx in range(M):
-            w = hv[:, h_idx, r_idx]           # (n,)
-            WX = w[:, None] * X               # (n, p): one broadcast
-            part2[h_idx, r_idx] = WX.T @ X   # (p, p): one BLAS dgemm
+            WX = hv[:, h_idx, r_idx, None] * X  # (n, p)
+            part2[h_idx, r_idx] = WX.T @ X       # one BLAS dgemm
 
     return (part1 + part2) / phi_est
 
@@ -2208,6 +2167,121 @@ def hess_laplace_appr_REML(
         add3 = 0.5 * (
             np.einsum("hij,rji->hr", tmp, tmp) - np.einsum("ij,hrji->hr", Vb_inv, d2Vb)
         )
+    return add1 + add2 + add3
+
+
+def hess_laplace_appr_REML_scalable(
+    rho,
+    beta,
+    S_all,
+    y,
+    X,
+    family,
+    phi_est,
+    sm_handler,
+    var_list,
+    compute_grad=False,
+    fixRand=False,
+    method="Newton-CG",
+    num_random_init=1,
+    tol=1e-12,
+):
+    """Hessian of the Laplace REML wrt rho, shape (M, M).
+
+    Scalable alternative to hess_laplace_appr_REML: avoids materialising the
+    (M, M, p, p) second-derivative tensor d2Vb by computing the required trace
+    contractions directly.
+
+    Memory : O(M·p²)   instead of O(M²·p²)
+    Compute: O(n·p² + n·M·p + M²·p²)  instead of O(n·M²·p²)
+
+    The three terms are identical to hess_laplace_appr_REML; only add3 differs
+    in implementation.  On small problems the two functions agree to machine
+    precision (validated by TestHessLaplaceREMLScalable).
+    """
+    if compute_grad:
+        if fixRand:
+            np.random.seed(4)
+        b_hat = mle_gradient_bassed_optim(
+            rho, sm_handler, var_list, y, X, family,
+            phi_est=phi_est, method=method,
+            num_random_init=num_random_init, tol=tol,
+        )[0]
+    else:
+        b_hat = beta
+
+    M = len(rho)
+    lams = np.exp(rho)
+
+    # ── add1 ──────────────────────────────────────────────────────────────────
+    Vb = -np.array(Vbeta_rho(
+        rho, b_hat, y, X, family, sm_handler, var_list, phi_est,
+        inverse=False, compute_grad=False,
+    ))
+    dB = dbeta_hat(rho, b_hat, S_all, sm_handler, var_list, y, X, family, phi_est)
+
+    S_tensor = np.array(S_all) * lams[:, None, None]               # (M, p, p)
+    add1 = np.einsum("hj,ji,ki->hk", dB, Vb, dB, optimize="optimal")
+    di = np.diag_indices(M)
+    add1[di] -= (
+        0.5 * np.einsum("i,hij,j->h", b_hat, S_tensor, b_hat, optimize="optimal")
+        / phi_est
+    )
+
+    # ── add2 ──────────────────────────────────────────────────────────────────
+    Slam_trans, S_transf = transform_Slam(S_all, rho)
+    add2 = -0.5 * hes_logDet_Slam(rho, S_transf) / phi_est
+
+    # ── add3 — streaming trace, no (M, M, p, p) materialisation ──────────────
+    # add3[h,r] = 0.5 * ( tr(A[h]@A[r]) - tr(Vb_inv @ d2Vb[h,r]) )
+    # where A[h] = Vb_inv @ dVb[h]   and   d2Vb = d2H + δ_{hr}*lam_h*S_h/phi
+
+    Vb_inv = -np.array(Vbeta_rho(
+        rho, b_hat, y, X, family, sm_handler, var_list, phi_est,
+        inverse=True, compute_grad=False,
+    ))
+    dVb = dVb_drho(rho, b_hat, S_all, y, X, family, sm_handler, var_list, phi_est)
+
+    # First part: tr( (Vb_inv dVb[h]) (Vb_inv dVb[r]) ) — O(M·p² + M²·p²)
+    tmp = np.einsum("ij,hjk->hik", Vb_inv, dVb, optimize=True)    # (M, p, p)
+    tr_AhAr = np.einsum("hij,rji->hr", tmp, tmp)                   # (M, M)
+
+    # Second part: tr(Vb_inv @ d2Vb[h,r]) via diag(X Vb_inv X^T)
+    # d2H[h,r,i,j] = Σ_k X[k,i]*X[k,j]*(tilde_h[k]*A[k,h]*A[k,r] + h[k]*v[k,h,r])/phi
+    # tr(Vb_inv @ d2H[h,r]) = Σ_k diag_XVX[k]*(tilde_h[k]*A[k,h]*A[k,r]+h[k]*v[k,h,r])/phi
+
+    mu       = family.link.inverse(np.dot(X, b_hat))
+    h_mu     = small_h_mu(mu, y, family)                           # (n,)
+    h_prime  = deriv_small_h(mu, y, family)                        # (n,)
+    g_prime  = family.link.deriv(mu)                               # (n,)
+    tilde_h  = h_prime / g_prime                                   # (n,)
+
+    d2B = d2beta_hat(                                              # (M, M, p)
+        rho, b_hat, S_all, sm_handler, var_list, y, X, family, phi_est
+    )
+
+    VX        = Vb_inv @ X.T                                       # (p, n)
+    diag_XVX  = np.sum(X * VX.T, axis=1)                          # (n,)
+
+    # Term 1 of tr(Vb_inv @ d2H): Σ_k tilde_h[k]*diag_XVX[k]*A[k,h]*A[k,r]
+    A  = X @ dB.T                                                   # (n, M)
+    w1 = tilde_h * diag_XVX                                        # (n,)
+    tr_d2H_t1 = (A * w1[:, None]).T @ A                            # (M, M)
+
+    # Term 2 of tr(Vb_inv @ d2H): Σ_{k,l} h[k]*diag_XVX[k]*X[k,l]*d2B[h,r,l]
+    q         = X.T @ (h_mu * diag_XVX)                           # (p,)
+    tr_d2H_t2 = np.einsum("l,hrl->hr", q, d2B)                    # (M, M)
+
+    tr_d2H = (tr_d2H_t1 + tr_d2H_t2) / phi_est                    # (M, M)
+
+    # Penalty diagonal: δ_{hr} * lam_h/phi * tr(Vb_inv @ S_h)
+    S_raw  = np.array(S_all)                                       # (M, p, p)
+    tr_VS  = np.einsum("ij,hji->h", Vb_inv, S_raw) / phi_est      # (M,)
+    tr_d2Vb       = tr_d2H.copy()
+    tr_d2Vb[di]  += lams * tr_VS
+
+    add3 = 0.5 * (tr_AhAr - tr_d2Vb)
+
     return add1 + add2 + add3
 
 
