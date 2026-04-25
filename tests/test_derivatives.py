@@ -18,6 +18,7 @@ import pytest
 import statsmodels.api as sm
 
 from PGAM.gam_data_handlers import smooths_handler
+from PGAM.newton_optim import gcv_objective, gcv_comp, gcv_grad_comp, gcv_hess_comp, matrix_transform
 from PGAM.der_wrt_smoothing import (
     d2variance_family,
     deriv3_link,
@@ -1077,4 +1078,133 @@ class TestCorrectedAIC:
         np.testing.assert_allclose(
             aic, -2 * l_hat + 2 * tau2, rtol=1e-15,
             err_msg="AIC = -2l + 2τ₂ decomposition mismatch",
+        )
+
+
+# ===========================================================================
+# Batch 9 – gcv_objective consolidated function
+# ===========================================================================
+
+@pytest.fixture(scope="module")
+def gcv_problem():
+    """Small Gaussian GAM working-response problem for GCV consolidation tests.
+
+    Builds the augmented WLS matrices (X, Q, R, endog) that match what
+    _fit_pql_gcv feeds to gcv_comp / gcv_grad_comp / gcv_hess_comp / gcv_objective.
+    """
+    import statsmodels.api as _sm
+    rng = np.random.default_rng(17)
+    n = 80
+    x1 = rng.uniform(0, 10, n)
+    x2 = rng.uniform(0, 10, n)
+
+    sm = smooths_handler()
+    sm.add_smooth("x1", [x1], knots_num=6, penalty_type="EqSpaced")
+    sm.add_smooth("x2", [x2], knots_num=6, penalty_type="EqSpaced")
+    var_list = ["x1", "x2"]
+
+    X_raw, _ = sm.get_exog_mat(var_list)
+    rho = np.array([1.0, 2.0])
+    sm.set_smooth_penalties(np.exp(rho), var_list)
+
+    # Gaussian: working response = y, weights = 1  →  wexog = Xagu, wendog = yagu
+    beta_true = rng.normal(0, 0.5, X_raw.shape[1])
+    y = X_raw @ beta_true + rng.normal(0, 0.3, n)
+
+    pen_matrix = sm.get_penalty_agumented(var_list)
+    Xagu = np.vstack((X_raw, pen_matrix))
+    yagu = np.zeros(Xagu.shape[0])
+    yagu[:n] = y
+    wagu = np.ones(Xagu.shape[0])
+    model = _sm.WLS(yagu, Xagu, wagu)
+
+    X = model.wexog[:n, :]
+    Q, R = np.linalg.qr(X, "reduced")
+    endog = model.wendog
+
+    # Pre-convert S matrices (mirrors the optimisation-loop caching)
+    S_mat = matrix_transform(*compute_Sjs(sm, var_list))
+
+    return dict(
+        X=X, Q=Q, R=R, endog=endog, sm=sm, var_list=var_list, rho=rho,
+        S_mat=S_mat,
+    )
+
+
+class TestGcvObjective:
+    """gcv_objective must match the standalone gcv_comp / gcv_grad_comp functions.
+
+    The Hessian is tested against a finite-difference of gcv_grad_comp rather
+    than gcv_hess_comp because gcv_hess_comp omits the α_grad / δ_grad cross
+    terms (alpha_grad and delta_grad arrays are left at zero inside that
+    function, making the cross-derivative contributions vanish).
+    gcv_objective carries the correct full Hessian.
+    """
+
+    def test_eval_matches_gcv_comp(self, gcv_problem):
+        """return_type='eval' must equal gcv_comp(return_par='gcv')."""
+        p = gcv_problem
+        val_obj = gcv_objective(
+            p["rho"], p["X"], p["Q"], p["R"], p["endog"],
+            p["sm"], p["var_list"],
+            return_type="eval", S_all=p["S_mat"],
+        )
+        val_ref = gcv_comp(
+            p["rho"], p["X"], p["Q"], p["R"], p["endog"],
+            p["sm"], p["var_list"], return_par="gcv",
+        )
+        np.testing.assert_allclose(
+            val_obj, val_ref, rtol=1e-12,
+            err_msg="gcv_objective 'eval' vs gcv_comp mismatch",
+        )
+
+    def test_eval_grad_matches_gcv_grad_comp(self, gcv_problem):
+        """return_type='eval_grad' gradient must equal gcv_grad_comp."""
+        p = gcv_problem
+        val_obj, grad_obj = gcv_objective(
+            p["rho"], p["X"], p["Q"], p["R"], p["endog"],
+            p["sm"], p["var_list"],
+            return_type="eval_grad", S_all=p["S_mat"],
+        )
+        grad_ref = gcv_grad_comp(
+            p["rho"], p["X"], p["Q"], p["R"], p["endog"],
+            p["sm"], p["var_list"], return_par="gcv",
+        )
+        np.testing.assert_allclose(
+            grad_obj, grad_ref, rtol=1e-10,
+            err_msg="gcv_objective 'eval_grad' vs gcv_grad_comp mismatch",
+        )
+
+    def test_eval_grad_hess_matches_fd(self, gcv_problem):
+        """return_type='eval_grad_hess' Hessian matches FD of gcv_grad_comp.
+
+        gcv_hess_comp is NOT used as reference because it drops the α_grad /
+        δ_grad cross terms (they are initialised to zero and never updated),
+        so its output is numerically incorrect.  Finite differences of the
+        confirmed-correct gradient provide the ground truth instead.
+        """
+        p = gcv_problem
+        rho = p["rho"]
+        _, _, hess_obj = gcv_objective(
+            rho, p["X"], p["Q"], p["R"], p["endog"],
+            p["sm"], p["var_list"],
+            return_type="eval_grad_hess", S_all=p["S_mat"],
+        )
+
+        # FD Hessian from gcv_grad_comp (centred differences, eps=1e-4)
+        eps = 1e-4
+        n_rho = len(rho)
+        hess_fd = np.zeros((n_rho, n_rho))
+        for k in range(n_rho):
+            rho_p = rho.copy(); rho_p[k] += eps
+            rho_m = rho.copy(); rho_m[k] -= eps
+            g_p = gcv_grad_comp(rho_p, p["X"], p["Q"], p["R"], p["endog"],
+                                 p["sm"], p["var_list"], return_par="gcv")
+            g_m = gcv_grad_comp(rho_m, p["X"], p["Q"], p["R"], p["endog"],
+                                 p["sm"], p["var_list"], return_par="gcv")
+            hess_fd[:, k] = (g_p - g_m) / (2 * eps)
+
+        np.testing.assert_allclose(
+            hess_obj, hess_fd, rtol=1e-3, atol=1e-6,
+            err_msg="gcv_objective 'eval_grad_hess' vs FD Hessian mismatch",
         )
