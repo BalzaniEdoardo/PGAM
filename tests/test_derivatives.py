@@ -48,8 +48,9 @@ from PGAM.der_wrt_smoothing import (
     penalty_ll,
     laplace_appr_REML,
     grad_laplace_appr_REML,
+    grad_laplace_appr_REML_dense,
     hess_laplace_appr_REML,
-    hess_laplace_appr_REML_scalable,
+    hess_laplace_appr_REML_dense,
 )
 
 # ---------------------------------------------------------------------------
@@ -811,6 +812,30 @@ class TestHessLaplaceREML:
                                    err_msg="hess_laplace_appr_REML FD mismatch")
 
 
+class TestGradLaplaceREMLScalable:
+    """Scalable gradient must match the dense version exactly on small problems."""
+
+    def test_matches_dense(self, gam_problem):
+        prob = gam_problem
+        rho, beta_hat = prob["rho"], prob["beta_hat"]
+        y, X, family = prob["y"], prob["X"], prob["family"]
+        sm, var_list, phi_est = prob["sm"], prob["var_list"], prob["phi_est"]
+        S_all = prob["S_all"]
+
+        grad_dense = grad_laplace_appr_REML_dense(
+            rho, beta_hat, S_all, y, X, family, phi_est, sm, var_list,
+            compute_grad=False,
+        )
+        grad_scalable = grad_laplace_appr_REML(
+            rho, beta_hat, S_all, y, X, family, phi_est, sm, var_list,
+            compute_grad=False,
+        )
+        np.testing.assert_allclose(
+            grad_scalable, grad_dense, rtol=1e-10, atol=1e-12,
+            err_msg="grad_laplace_appr_REML does not match dense version",
+        )
+
+
 class TestHessLaplaceREMLScalable:
     """Scalable Hessian must match the dense version exactly on small problems.
 
@@ -825,15 +850,15 @@ class TestHessLaplaceREMLScalable:
         sm, var_list, phi_est = prob["sm"], prob["var_list"], prob["phi_est"]
         S_all = prob["S_all"]
 
-        hess_dense = hess_laplace_appr_REML(
+        hess_dense = hess_laplace_appr_REML_dense(
             rho, beta_hat, S_all, y, X, family, phi_est, sm, var_list,
             compute_grad=False,
         )
-        hess_scalable = hess_laplace_appr_REML_scalable(
+        hess_scalable = hess_laplace_appr_REML(
             rho, beta_hat, S_all, y, X, family, phi_est, sm, var_list,
             compute_grad=False,
         )
         np.testing.assert_allclose(
             hess_scalable, hess_dense, rtol=1e-10, atol=1e-12,
-            err_msg="hess_laplace_appr_REML_scalable does not match dense version",
+            err_msg="hess_laplace_appr_REML does not match dense version",
         )

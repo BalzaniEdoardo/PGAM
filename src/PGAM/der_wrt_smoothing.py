@@ -612,6 +612,7 @@ def Vbeta_rho(
     phi_est,
     inverse=False,
     compute_grad=False,
+    return_logdet=False,
 ):
     """Bayesian posterior covariance V_beta = -(H + S_lambda)^{-1}, or its inverse.
 
@@ -631,11 +632,16 @@ def Vbeta_rho(
         If True, returns -(H + S_lambda)^{-1} = V_beta.
     compute_grad : bool
         If True, re-optimise beta_hat before computing (expensive; for debugging).
+    return_logdet : bool
+        If True, also return log|H + S_lambda| computed for free from the SVD
+        singular values (avoids a second O(p³) decomposition in the caller).
 
     Returns
     -------
-    sum_hes_inv : np.matrix, shape (p, p)
+    sum_hes_inv : ndarray, shape (p, p)
         Either -(H + S_lambda) or V_beta depending on `inverse`.
+    log_det : float, optional
+        log|H + S_lambda|.  Only returned when return_logdet=True.
     """
     if compute_grad:
         b_hat = mle_gradient_bassed_optim(
@@ -677,9 +683,13 @@ def Vbeta_rho(
     else:
         D[di] = (s) ** 2 / phi_est
 
-    # np.matrix deprecated in NumPy 2.x; use @ for matrix products instead
     V_T = np.asarray(V_T)
     sum_hes_inv = -(V_T.T @ D @ V_T)
+
+    if return_logdet:
+        # log|H+S| = 2·Σlog(s) − r·log(phi),  free from the SVD already done above
+        log_det = 2.0 * np.sum(np.log(s)) - len(s) * np.log(phi_est)
+        return sum_hes_inv, log_det
     return sum_hes_inv
 
 
@@ -1259,7 +1269,7 @@ def deriv_compute(
 
     grad_REML = add1 + add2 + add3
     if test:
-        grad_REML1 = grad_laplace_appr_REML(
+        grad_REML1 = grad_laplace_appr_REML_dense(
             rho,
             beta_hat,
             S_all,
@@ -1405,7 +1415,7 @@ def deriv_compute(
     tt1 = perf_counter()
     if test:
         t0 = perf_counter()
-        hess_REML1 = hess_laplace_appr_REML(
+        hess_REML1 = hess_laplace_appr_REML_dense(
             rho,
             beta_hat,
             S_all,
@@ -1915,6 +1925,7 @@ def laplace_appr_REML(
     method="Newton-CG",
     tol=10**-12,
     num_random_init=1,
+    null_dim=None,
 ):
     """Laplace approximation of the REML (marginal likelihood) at rho.
 
@@ -1941,7 +1952,6 @@ def laplace_appr_REML(
     if compute_grad:
         if fixRand:
             np.random.seed(4)
-        t0 = perf_counter()
         b_hat = mle_gradient_bassed_optim(
             rho,
             sm_handler,
@@ -1954,8 +1964,6 @@ def laplace_appr_REML(
             num_random_init=num_random_init,
             tol=tol,
         )[0]
-        t1 = perf_counter()
-        print("mle fit: %.3f sec" % (t1 - t0))
     else:
         b_hat = beta
 
@@ -1968,7 +1976,8 @@ def laplace_appr_REML(
         -0.5 * logDet_Slam(rho, S_transf, compute_grad=False, S_all=S_all) / phi_est
     )
 
-    sum_H_Slam = -Vbeta_rho(
+    # log|H+S| comes free from the SVD already done inside Vbeta_rho
+    _, log_det_H_plus_S = Vbeta_rho(
         rho,
         b_hat,
         y,
@@ -1979,17 +1988,21 @@ def laplace_appr_REML(
         phi_est,
         inverse=False,
         compute_grad=False,
+        return_logdet=True,
     )
-    log_det_sum = -0.5 * np.log(np.linalg.det(sum_H_Slam))
+    log_det_sum = -0.5 * log_det_H_plus_S
 
-    M = b_hat.shape[0] - np.linalg.matrix_rank(Slam_trans)
+    if null_dim is None:
+        M = b_hat.shape[0] - np.linalg.matrix_rank(Slam_trans)
+    else:
+        M = null_dim
     reml_approx = (
         ll_unpen + ll_penalty + log_det_Slam + log_det_sum + M * np.log(np.pi * 2)
     )
     return reml_approx
 
 
-def grad_laplace_appr_REML(
+def grad_laplace_appr_REML_dense(
     rho,
     beta,
     S_all,
@@ -2069,7 +2082,7 @@ def grad_laplace_appr_REML(
     return add1 + add2 + add3
 
 
-def hess_laplace_appr_REML(
+def hess_laplace_appr_REML_dense(
     rho,
     beta,
     S_all,
@@ -2170,7 +2183,90 @@ def hess_laplace_appr_REML(
     return add1 + add2 + add3
 
 
-def hess_laplace_appr_REML_scalable(
+def grad_laplace_appr_REML(
+    rho,
+    beta,
+    S_all,
+    y,
+    X,
+    family,
+    phi_est,
+    sm_handler,
+    var_list,
+    omega=1,
+    compute_grad=False,
+    fixRand=False,
+    method="Newton-CG",
+    num_random_init=1,
+    tol=1e-12,
+):
+    """Gradient of the Laplace REML wrt rho, shape (M,).
+
+    Avoids materialising the (M, p, p) dVb tensor by computing
+    tr(Vb_inv @ dVb[r]) directly via diag(X Vb_inv X^T).
+
+    Memory : O(p·n)   instead of O(M·p²)  (no dVb tensor)
+    Compute: O(n·p² + M·p)  instead of O(n·M·p²)
+
+    Agrees with grad_laplace_appr_REML_dense on small problems
+    (validated by TestGradLaplaceREMLScalable).
+    """
+    if compute_grad:
+        if fixRand:
+            np.random.seed(4)
+        b_hat = mle_gradient_bassed_optim(
+            rho, sm_handler, var_list, y, X, family,
+            phi_est=phi_est, method=method,
+            num_random_init=num_random_init, tol=tol,
+        )[0]
+    else:
+        b_hat = beta
+
+    lams = np.exp(rho)
+    S_raw    = np.array(S_all)                                     # (M, p, p)
+    S_tensor = S_raw * lams[:, None, None]                         # (M, p, p)
+
+    # ── add1: -0.5 * beta^T (lam_r * S_r) beta / phi ─────────────────────────
+    add1 = -0.5 * np.einsum("i,rij,j->r", b_hat, S_tensor, b_hat) / phi_est
+
+    # ── add2: -0.5 * d log|S_lambda|+ / drho / phi ────────────────────────────
+    Slam_trans, S_transf = transform_Slam(S_all, rho)
+    add2 = (
+        -0.5
+        * grad_logDet_Slam(rho, S_transf, compute_grad=False, S_all=S_all)
+        / phi_est
+    )
+
+    # ── add3: -0.5 * tr(Vb_inv @ dVb[r]) — streaming, no dVb materialised ────
+    # dVb[r] = dH[r] + lam_r * S_r / phi
+    # tr(Vb_inv @ dH[r])     = (dB @ q)[r] / phi
+    # tr(Vb_inv @ lam_r*S_r) = lam_r * tr(Vb_inv @ S_r) / phi
+    # where q[l] = Σ_k h_mu[k] * diag_XVX[k] * X[k,l]
+
+    Vb_inv = -np.array(Vbeta_rho(
+        rho, b_hat, y, X, family, sm_handler, var_list, phi_est,
+        inverse=True, compute_grad=False,
+    ))
+
+    mu    = family.link.inverse(np.dot(X, b_hat))
+    h_mu  = small_h_mu(mu, y, family)                             # (n,)
+
+    dB = dbeta_hat(rho, b_hat, S_all, sm_handler, var_list, y, X, family, phi_est)
+
+    VX       = Vb_inv @ X.T                                       # (p, n)
+    diag_XVX = np.sum(X * VX.T, axis=1)                          # (n,)
+
+    q     = X.T @ (h_mu * diag_XVX)                              # (p,)
+    tr_dH = dB @ q / phi_est                                      # (M,)
+
+    tr_VS = np.einsum("ij,hji->h", Vb_inv, S_raw) / phi_est      # (M,)
+
+    add3 = -0.5 * (tr_dH + lams * tr_VS)
+
+    return add1 + add2 + add3
+
+
+def hess_laplace_appr_REML(
     rho,
     beta,
     S_all,
@@ -2188,16 +2284,14 @@ def hess_laplace_appr_REML_scalable(
 ):
     """Hessian of the Laplace REML wrt rho, shape (M, M).
 
-    Scalable alternative to hess_laplace_appr_REML: avoids materialising the
-    (M, M, p, p) second-derivative tensor d2Vb by computing the required trace
-    contractions directly.
+    Avoids materialising the (M, M, p, p) second-derivative tensor d2Vb by
+    computing the required trace contractions directly.
 
     Memory : O(M·p²)   instead of O(M²·p²)
     Compute: O(n·p² + n·M·p + M²·p²)  instead of O(n·M²·p²)
 
-    The three terms are identical to hess_laplace_appr_REML; only add3 differs
-    in implementation.  On small problems the two functions agree to machine
-    precision (validated by TestHessLaplaceREMLScalable).
+    Agrees with hess_laplace_appr_REML_dense on small problems
+    (validated by TestHessLaplaceREMLScalable).
     """
     if compute_grad:
         if fixRand:
