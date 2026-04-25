@@ -869,6 +869,7 @@ class general_additive_model(object):
         max_iter=10**3,
         tol=1e-5,
         conv_criteria="gcv",
+        fitting_approach="pql_gcv",
         perform_PQL=True,
         use_dgcv=True,
         method="L-BFGS-B",
@@ -883,6 +884,92 @@ class general_additive_model(object):
         saveBetaHist=False,
         WLS_solver="positive_weights",
     ):
+        """Fit a GAM by optimising the smoothing parameters.
+
+        Two fitting strategies are available, controlled by ``fitting_approach``.
+
+        **``"pql_gcv"`` (default) — Penalised Quasi-Likelihood / PIRLS loop.**
+        At each step the Fisher-scoring working linear model is updated via
+        WLS, and the smoothing parameters are re-selected by minimising a
+        (d)GCV score computed on the linearised problem (Wood 2017 §6.2–6.3).
+        ``perform_PQL`` controls whether the GCV step is active; if ``False``
+        the smoothing parameters are fixed and only β is iterated until
+        convergence.
+
+        **``"direct_reml"`` — Direct Laplace-REML optimisation (Wood 2017 §6.6).**
+        The log-smoothing parameters ρ are optimised by maximising the Laplace
+        approximation to the restricted marginal likelihood via
+        ``reml_objective``, which re-solves the inner penalised MLE at every
+        objective evaluation.  No PIRLS loop is required; the approach is more
+        statistically principled but incurs an inner optimisation at each
+        outer step.
+
+        Parameters
+        ----------
+        var_list : list[str]
+            Names of the covariates to include in the model.
+        smooth_pen : array-like or None, optional
+            Initial smoothing penalties λ (one per penalty matrix).  If
+            ``None``, the values stored in ``sm_handler`` are used.
+        max_iter : int, optional
+            Maximum number of PIRLS iterations (``"pql"`` only).
+        tol : float, optional
+            Convergence tolerance on the relative change of the convergence
+            criterion between successive iterations (``"pql"`` only).
+        conv_criteria : {"gcv", "deviance"}, optional
+            Criterion used to assess PQL convergence.
+        fitting_approach : {"pql_gcv", "direct_reml"}, optional
+            Fitting strategy; see above.
+        perform_PQL : bool, optional
+            (``"pql"`` only) If ``True`` the smoothing parameters are updated
+            at each PIRLS step via GCV/dGCV minimisation; if ``False`` they
+            are fixed and only β is iterated.
+        use_dgcv : bool or float, optional
+            If ``True`` use γ = 1.5 (dGCV); if ``False`` use γ = 1 (plain
+            GCV); if a float, use that value as γ.
+        method : str, optional
+            ``scipy.optimize.minimize`` method used for the smoothing-parameter
+            optimisation step (GCV for ``"pql"``; negative-REML for
+            ``"direct_nested"``).  Default ``"L-BFGS-B"``.
+        methodInit : str, optional
+            Optimiser used to compute the initial β when ``fit_initial_beta``
+            is ``True``.
+        compute_AIC : bool, optional
+            If ``True``, compute the corrected AIC (Wood 2017 eq. 6.32) after
+            fitting and store it in the returned ``GAM_result``.
+        random_init : bool, optional
+            Add Gaussian noise to the initial log-smoothing parameters.
+        bounds_rho : list of (float, float) or None, optional
+            Box constraints on log-smoothing parameters for
+            ``method="L-BFGS-B"``.  If ``None`` and method is
+            ``"L-BFGS-B"``, defaults to ``[(-5 ln 10, 13 ln 10)]`` per
+            parameter.
+        gcv_sel_tol : float, optional
+            Tolerance passed to ``scipy.optimize.minimize`` for the
+            smoothing-parameter optimisation step.
+        fit_initial_beta : bool, optional
+            If ``True``, run an unconstrained penalised MLE before the first
+            PIRLS step to obtain a better starting β.
+        filter_trials : array-like of bool or None, optional
+            Boolean mask selecting observations to include.  ``None`` uses all
+            observations.
+        compute_MI : bool, optional
+            If ``True``, compute mutual-information statistics for each
+            covariate.
+        saveBetaHist : bool, optional
+            If ``True``, store the β estimates from every PIRLS iteration in
+            ``gam_result.beta_hist`` (``"pql"`` only; ``None`` for
+            ``"direct_nested"``).
+        WLS_solver : {"positive_weights", "robust"}, optional
+            WLS implementation used inside the PIRLS loop.
+
+        Returns
+        -------
+        GAM_result
+            Fitted model object containing β̂, smoothing penalties, EDF,
+            covariate significance tests, and optionally AIC / mutual
+            information.
+        """
         if filter_trials is None:
             filter_trials = np.ones(self.y.shape[0], dtype=bool)
 
@@ -907,239 +994,22 @@ class general_additive_model(object):
         n_obs = np.sum(filter_trials)
         yfit = self.y[filter_trials]
 
-        # want an initial naive fit? (no smooth optim)
-        if fit_initial_beta:
-            rho = np.log(smooth_pen)
-            # newton based optim of the likelihood
-            bhat = mle_gradient_bassed_optim(
-                rho,
-                self.sm_handler,
-                var_list,
-                yfit,
-                exog,
-                self.family,
-                phi_est=1,
-                method=methodInit,
-                num_random_init=1,
-                beta_zero=np.zeros(exog.shape[1]),
-                tol=10**-8,
-            )[0]
-            lin_pred = np.dot(exog[:n_obs, :], bhat)
-            mu = f_weights_and_data.family.fitted(lin_pred)
-        else:
-            mu = f_weights_and_data.family.starting_mu(yfit)
-            bhat = np.random.normal(exog.shape[1])
-
-        converged = False
-        old_conv_score = -100
-
-        iteration = 0
-
-        # set the constant for dcv or gcv score
-        if use_dgcv == True and (type(use_dgcv) == bool):
-            gamma = 1.5
-        elif np.isscalar(use_dgcv) and not (type(use_dgcv) == bool):
-            gamma = use_dgcv
-        else:
-            gamma = 1.0
-
-        if flagUseCuda:
-            cuda_linalg.init()
-            X_gpu = gpuarray.to_gpu(
-                np.array(np.zeros((n_obs, exog.shape[1]), dtype=exog.dtype), order="F")
+        if fitting_approach == "pql_gcv":
+            bhat, smooth_pen, converged, beta_hist = self._fit_pql_gcv(
+                var_list, yfit, exog, n_obs, smooth_pen, f_weights_and_data,
+                bounds_rho, max_iter, tol, conv_criteria, perform_PQL, use_dgcv,
+                method, methodInit, gcv_sel_tol, saveBetaHist, WLS_solver,
+                fit_initial_beta, filter_trials,
             )
-
-        if method == "L-BFGS-B" and bounds_rho is None:
-            bounds_rho = [(-5 * np.log(10), 13 * np.log(10))] * len(smooth_pen)
-        else:
-            bounds_rho = None
-        first_itetation = True
-        if saveBetaHist:
-            beta_hist = np.zeros((0, bhat.shape[0]))
-        else:
-            beta_hist = None
-        while not converged:
-            if WLS_solver == "positive_weights":
-                # print('smooth_pen iter %d'%iteration,smooth_pen)
-                z, w = f_weights_and_data.get_params(mu)
-                self.sm_handler.set_smooth_penalties(smooth_pen, var_list)
-                pen_matrix = self.sm_handler.get_penalty_agumented(var_list)
-                Xagu = np.vstack((exog, pen_matrix))
-                yagu = np.zeros(Xagu.shape[0])
-                yagu[:n_obs] = z
-                wagu = np.ones(Xagu.shape[0])
-                wagu[:n_obs] = w
-                model = sm.WLS(yagu, Xagu, wagu)
-
-                # begin STEP HALVING
-                Slam = create_Slam(np.log(smooth_pen), self.sm_handler, var_list)
-                func = lambda beta: -(
-                    unpenalized_ll(beta, yfit, exog[:n_obs, :], self.family, 1, omega=1)
-                    + penalty_ll_Slam(Slam, beta, 1)
-                )
-
-                if not first_itetation:
-                    dev0 = np.sum(func(bhat))
-                else:
-                    dev0 = np.inf
-
-                fit_OLS = model.fit()
-
-                # step halving
-                bnew = fit_OLS.params.copy()
-                bnew_halved = bnew.copy()
-            else:
-                bnew, _, _, _, z, w, _ = robust_WLS(
-                    yfit,
-                    mu,
-                    self.family,
-                    exog,
-                    f_weights_and_data,
-                    S_list=compute_Sjs(self.sm_handler, var_list),
-                    lambda_list=np.log(smooth_pen),
-                    fisher_scoring=self.fisher_scoring,
-                )
-                bnew_halved = bnew.copy()
-
-            dev1 = np.sum(func(bnew))
-
-            halving_max = 10
-            ii = 1
-            decr_dev = dev1 <= dev0
-            while not decr_dev and ii < halving_max:
-                # print('halving step',ii)
-                bnew_halved = 1 / (2**ii) * bnew + (1 - 1 / (2**ii)) * bhat
-                dev1 = np.sum(func(bnew_halved))
-                decr_dev = dev1 <= dev0
-                ii += 1
-
-            if decr_dev:
-                bhat = bnew_halved
-
-            if saveBetaHist:
-                tmp = np.zeros((1, bhat.shape[0]))
-                tmp[0] = bhat
-                beta_hist = np.vstack((beta_hist, tmp))
-
-            if any(bnew != fit_OLS.params):
-                mu = f_weights_and_data.family.fitted(np.dot(exog[:n_obs, :], bhat))
-                z, w = f_weights_and_data.get_params(mu)
-                Xagu = np.vstack((exog, pen_matrix))
-                yagu = np.zeros(Xagu.shape[0])
-                yagu[:n_obs] = z
-                wagu = np.ones(Xagu.shape[0])
-                wagu[:n_obs] = w
-                model = sm.WLS(yagu, Xagu, wagu)
-
-            first_itetation = False
-            if perform_PQL:
-                X = model.wexog[:n_obs, :]
-                if flagUseCuda:
-                    X_gpu.set(np.array(X, order="F"))
-                    Q_gpu, R_gpu = cuda_linalg.qr(X_gpu, mode="reduced")
-                    Q, R = Q_gpu.get(), R_gpu.get()
-                else:
-                    Q, R = np.linalg.qr(X, "reduced")
-                rho0 = np.log(smooth_pen)
-
-                gcv_func = lambda rho: gcv_comp(
-                    rho,
-                    X,
-                    Q,
-                    R,
-                    model.wendog,
-                    self.sm_handler,
-                    var_list,
-                    return_par="gcv",
-                    gamma=gamma,
-                )
-                gcv_grad = lambda rho: gcv_grad_comp(
-                    rho,
-                    X,
-                    Q,
-                    R,
-                    model.wendog,
-                    self.sm_handler,
-                    var_list,
-                    return_par="gcv",
-                    gamma=gamma,
-                )
-                if method == "L-BFGS-B":
-                    gcv_hess = None
-                else:
-                    gcv_hess = lambda rho: gcv_hess_comp(
-                        rho,
-                        X,
-                        Q,
-                        R,
-                        model.wendog,
-                        self.sm_handler,
-                        var_list,
-                        return_par="gcv",
-                        gamma=gamma,
-                    )
-                init_score = gcv_func(rho0)
-
-                if np.sum(np.isnan(gcv_func(rho0))):
-                    print("NaN here")
-
-                res = minimize(
-                    gcv_func,
-                    rho0,
-                    method=method,
-                    jac=gcv_grad,
-                    hess=gcv_hess,
-                    tol=gcv_sel_tol,
-                    bounds=bounds_rho,
-                    options={"disp": False},
-                )
-                # print('\niter %d - DGCV optimization results:\n'%iteration,res)
-                res.x = np.clip(res.x, -25, 30)
-
-                if res.success or (
-                    (init_score - res.fun) > init_score * np.finfo(float).eps
-                ):
-                    # set the new smooth pen
-                    smooth_pen = np.exp(res.x)
-
-            else:
-                if conv_criteria != "deviance":
-                    X = model.wexog[:n_obs, :]
-                    Q, R = np.linalg.qr(X, "reduced")
-                    gcv_func = lambda rho: gcv_comp(
-                        rho,
-                        X,
-                        Q,
-                        R,
-                        model.wendog,
-                        self.sm_handler,
-                        var_list,
-                        return_par="gcv",
-                        gamma=gamma,
-                    )
-                else:
-                    gcv_func = None
-
-            lin_pred = np.dot(exog[:n_obs, :], bhat)
-            mu = f_weights_and_data.family.fitted(lin_pred)
-            conv_score = self.convergence_score(
-                gcv_func,
-                smooth_pen,
-                eta=lin_pred,
-                criteria=conv_criteria,
-                idx_sele=filter_trials,
+        elif fitting_approach == "direct_reml":
+            bhat, smooth_pen, converged, beta_hist = self._fit_direct_reml(
+                var_list, yfit, exog, n_obs, smooth_pen,
+                bounds_rho, method, gcv_sel_tol,
             )
-            # print('\n',iteration+1, conv_criteria,conv_score, 'smoothing par',smooth_pen)
-            self.sm_handler.set_smooth_penalties(smooth_pen, var_list)
-
-            converged = np.abs(conv_score - old_conv_score) < tol * conv_score
-            converged = converged and (iteration > 3)
-            old_conv_score = conv_score
-            if iteration >= max_iter:
-                break
-            iteration += 1
-
-        # save useful parameters
+        else:
+            raise ValueError(
+                f"fitting_approach must be 'pql_gcv' or 'direct_reml', got {fitting_approach!r}"
+            )
         self.converged = converged
         # self.compute_fit_statistics(model,fit_OLS,n_obs,index_var)
         trial_idx = None
@@ -1190,6 +1060,259 @@ class general_additive_model(object):
         )
         return gam_results
 
+    def _fit_pql_gcv(
+        self,
+        var_list,
+        yfit,
+        exog,
+        n_obs,
+        smooth_pen,
+        f_weights_and_data,
+        bounds_rho,
+        max_iter,
+        tol,
+        conv_criteria,
+        perform_PQL,
+        use_dgcv,
+        method,
+        methodInit,
+        gcv_sel_tol,
+        saveBetaHist,
+        WLS_solver,
+        fit_initial_beta,
+        filter_trials,
+    ):
+        """PIRLS + GCV/dGCV inner loop.
+
+        Iterates the penalised working-response WLS step (PIRLS) and, at each
+        iteration, re-selects the smoothing parameters by minimising the GCV
+        (or dGCV) score of the linearised problem.
+
+        Returns
+        -------
+        bhat : ndarray, shape (p,)
+        smooth_pen : ndarray, shape (M,)
+        converged : bool
+        beta_hist : ndarray or None
+        """
+        if fit_initial_beta:
+            rho = np.log(smooth_pen)
+            bhat = mle_gradient_bassed_optim(
+                rho, self.sm_handler, var_list, yfit, exog, self.family,
+                phi_est=1, method=methodInit, num_random_init=1,
+                beta_zero=np.zeros(exog.shape[1]), tol=10**-8,
+            )[0]
+            lin_pred = np.dot(exog[:n_obs, :], bhat)
+            mu = f_weights_and_data.family.fitted(lin_pred)
+        else:
+            mu = f_weights_and_data.family.starting_mu(yfit)
+            bhat = np.random.normal(exog.shape[1])
+
+        converged = False
+        old_conv_score = -100
+        iteration = 0
+
+        if use_dgcv == True and (type(use_dgcv) == bool):
+            gamma = 1.5
+        elif np.isscalar(use_dgcv) and not (type(use_dgcv) == bool):
+            gamma = use_dgcv
+        else:
+            gamma = 1.0
+
+        if flagUseCuda:
+            cuda_linalg.init()
+            X_gpu = gpuarray.to_gpu(
+                np.array(np.zeros((n_obs, exog.shape[1]), dtype=exog.dtype), order="F")
+            )
+
+        first_itetation = True
+        if saveBetaHist:
+            beta_hist = np.zeros((0, bhat.shape[0]))
+        else:
+            beta_hist = None
+        while not converged:
+            if WLS_solver == "positive_weights":
+                z, w = f_weights_and_data.get_params(mu)
+                self.sm_handler.set_smooth_penalties(smooth_pen, var_list)
+                pen_matrix = self.sm_handler.get_penalty_agumented(var_list)
+                Xagu = np.vstack((exog, pen_matrix))
+                yagu = np.zeros(Xagu.shape[0])
+                yagu[:n_obs] = z
+                wagu = np.ones(Xagu.shape[0])
+                wagu[:n_obs] = w
+                model = sm.WLS(yagu, Xagu, wagu)
+
+                Slam = create_Slam(np.log(smooth_pen), self.sm_handler, var_list)
+                func = lambda beta: -(
+                    unpenalized_ll(beta, yfit, exog[:n_obs, :], self.family, 1, omega=1)
+                    + penalty_ll_Slam(Slam, beta, 1)
+                )
+
+                if not first_itetation:
+                    dev0 = np.sum(func(bhat))
+                else:
+                    dev0 = np.inf
+
+                fit_OLS = model.fit()
+
+                bnew = fit_OLS.params.copy()
+                bnew_halved = bnew.copy()
+            else:
+                bnew, _, _, _, z, w, _ = robust_WLS(
+                    yfit, mu, self.family, exog, f_weights_and_data,
+                    S_list=compute_Sjs(self.sm_handler, var_list),
+                    lambda_list=np.log(smooth_pen),
+                    fisher_scoring=self.fisher_scoring,
+                )
+                bnew_halved = bnew.copy()
+
+            dev1 = np.sum(func(bnew))
+
+            halving_max = 10
+            ii = 1
+            decr_dev = dev1 <= dev0
+            while not decr_dev and ii < halving_max:
+                bnew_halved = 1 / (2**ii) * bnew + (1 - 1 / (2**ii)) * bhat
+                dev1 = np.sum(func(bnew_halved))
+                decr_dev = dev1 <= dev0
+                ii += 1
+
+            if decr_dev:
+                bhat = bnew_halved
+
+            if saveBetaHist:
+                tmp = np.zeros((1, bhat.shape[0]))
+                tmp[0] = bhat
+                beta_hist = np.vstack((beta_hist, tmp))
+
+            if any(bnew != fit_OLS.params):
+                mu = f_weights_and_data.family.fitted(np.dot(exog[:n_obs, :], bhat))
+                z, w = f_weights_and_data.get_params(mu)
+                Xagu = np.vstack((exog, pen_matrix))
+                yagu = np.zeros(Xagu.shape[0])
+                yagu[:n_obs] = z
+                wagu = np.ones(Xagu.shape[0])
+                wagu[:n_obs] = w
+                model = sm.WLS(yagu, Xagu, wagu)
+
+            first_itetation = False
+            if perform_PQL:
+                X = model.wexog[:n_obs, :]
+                if flagUseCuda:
+                    X_gpu.set(np.array(X, order="F"))
+                    Q_gpu, R_gpu = cuda_linalg.qr(X_gpu, mode="reduced")
+                    Q, R = Q_gpu.get(), R_gpu.get()
+                else:
+                    Q, R = np.linalg.qr(X, "reduced")
+                rho0 = np.log(smooth_pen)
+
+                gcv_func = lambda rho: gcv_comp(
+                    rho, X, Q, R, model.wendog, self.sm_handler, var_list,
+                    return_par="gcv", gamma=gamma,
+                )
+                gcv_grad = lambda rho: gcv_grad_comp(
+                    rho, X, Q, R, model.wendog, self.sm_handler, var_list,
+                    return_par="gcv", gamma=gamma,
+                )
+                if method == "L-BFGS-B":
+                    gcv_hess = None
+                else:
+                    gcv_hess = lambda rho: gcv_hess_comp(
+                        rho, X, Q, R, model.wendog, self.sm_handler, var_list,
+                        return_par="gcv", gamma=gamma,
+                    )
+                init_score = gcv_func(rho0)
+
+                if np.sum(np.isnan(gcv_func(rho0))):
+                    print("NaN here")
+
+                res = minimize(
+                    gcv_func, rho0, method=method, jac=gcv_grad, hess=gcv_hess,
+                    tol=gcv_sel_tol, bounds=bounds_rho, options={"disp": False},
+                )
+                res.x = np.clip(res.x, -25, 30)
+
+                if res.success or (
+                    (init_score - res.fun) > init_score * np.finfo(float).eps
+                ):
+                    smooth_pen = np.exp(res.x)
+
+            else:
+                if conv_criteria != "deviance":
+                    X = model.wexog[:n_obs, :]
+                    Q, R = np.linalg.qr(X, "reduced")
+                    gcv_func = lambda rho: gcv_comp(
+                        rho, X, Q, R, model.wendog, self.sm_handler, var_list,
+                        return_par="gcv", gamma=gamma,
+                    )
+                else:
+                    gcv_func = None
+
+            lin_pred = np.dot(exog[:n_obs, :], bhat)
+            mu = f_weights_and_data.family.fitted(lin_pred)
+            conv_score = self.convergence_score(
+                gcv_func, smooth_pen, eta=lin_pred,
+                criteria=conv_criteria, idx_sele=filter_trials,
+            )
+            self.sm_handler.set_smooth_penalties(smooth_pen, var_list)
+
+            converged = np.abs(conv_score - old_conv_score) < tol * conv_score
+            converged = converged and (iteration > 3)
+            old_conv_score = conv_score
+            if iteration >= max_iter:
+                break
+            iteration += 1
+
+        return bhat, smooth_pen, converged, beta_hist
+
+    def _fit_direct_reml(
+        self,
+        var_list,
+        yfit,
+        exog,
+        n_obs,
+        smooth_pen,
+        bounds_rho,
+        method,
+        gcv_sel_tol,
+    ):
+        """Direct Laplace-REML optimisation of the log-smoothing parameters.
+
+        Maximises the Laplace approximation to the restricted marginal
+        likelihood (Wood 2017 §6.6) by minimising ``-reml_objective``.  The
+        inner penalised MLE for β is re-solved at every objective evaluation,
+        so no PIRLS loop is needed.
+
+        Returns
+        -------
+        bhat : ndarray, shape (p,)
+        smooth_pen : ndarray, shape (M,)
+        converged : bool
+        beta_hist : None  (no iterations to record)
+        """
+        S_all = compute_Sjs(self.sm_handler, var_list)
+        rho0 = np.log(smooth_pen)
+
+        def _neg_reml(rho):
+            val, grad = reml_objective(
+                rho, yfit, exog, self.sm_handler, var_list, self.family,
+                S_all, phi_est=1, return_type="eval_grad",
+            )
+            return -val, -grad
+
+        res = minimize(
+            _neg_reml, rho0, method=method, jac=True,
+            tol=gcv_sel_tol, bounds=bounds_rho, options={"disp": False},
+        )
+        rho_opt = np.clip(res.x, -25, 30)
+        smooth_pen = np.exp(rho_opt)
+        self.sm_handler.set_smooth_penalties(smooth_pen, var_list)
+        bhat = mle_gradient_bassed_optim(
+            rho_opt, self.sm_handler, var_list, yfit, exog, self.family,
+            phi_est=1, method="Newton-CG", num_random_init=1, tol=1e-10,
+        )[0]
+        return bhat, smooth_pen, res.success, None
+
     def initialize_smooth_par(self, f_weights_and_data, X, S_all, random_init=False):
         # not stable
         mu = f_weights_and_data.family.starting_mu(self.y)
@@ -1224,6 +1347,7 @@ class general_additive_model(object):
         max_iter=10**3,
         tol=1e-5,
         conv_criteria="gcv",
+        fitting_approach="pql_gcv",
         perform_PQL=True,
         use_dgcv=False,
         method="Newton-CG",
@@ -1272,6 +1396,7 @@ class general_additive_model(object):
                 max_iter=max_iter,
                 tol=tol,
                 conv_criteria=conv_criteria,
+                fitting_approach=fitting_approach,
                 perform_PQL=perform_PQL,
                 use_dgcv=use_dgcv,
                 method=method,
@@ -1361,7 +1486,89 @@ class general_additive_model(object):
         perform_PQL=True,
         WLS_solver="positive_weights",
         compute_AIC=False,
+        fitting_approach="pql_gcv",
     ):
+        """Fit a full model and a covariate-selected reduced model.
+
+        Fits the full GAM over ``var_list``, then drops covariates whose
+        p-value exceeds ``th_pval`` and re-fits a reduced model on the
+        survivors.  Both fits use ``fitting_approach`` (passed through to
+        :meth:`optim_gam`).
+
+        Parameters
+        ----------
+        var_list : list[str]
+            Names of all covariates to include in the full model.
+        th_pval : float, optional
+            P-value threshold for covariate selection.  Covariates with
+            ``p-val > th_pval`` in the full model are dropped.
+        method : str, optional
+            ``scipy.optimize.minimize`` solver for the smoothing-parameter
+            optimisation step.
+        tol : float, optional
+            Convergence tolerance passed to :meth:`optim_gam`.
+        conv_criteria : {"gcv", "deviance"}, optional
+            Convergence criterion passed to :meth:`optim_gam`.
+        max_iter : int, optional
+            Maximum PIRLS iterations (``"pql_gcv"`` only).
+        gcv_sel_tol : float, optional
+            Tolerance for the inner smoothing-parameter optimisation.
+        random_init : bool, optional
+            Randomise initial log-smoothing parameters.
+        use_dgcv : bool or float, optional
+            dGCV γ factor; see :meth:`optim_gam`.
+        smooth_pen : array-like or None, optional
+            Initial smoothing penalties.  ``None`` uses values from
+            ``sm_handler``.
+        fit_initial_beta : bool, optional
+            Pre-optimise β before the main fitting loop.
+        pseudoR2_per_variable : bool, optional
+            If ``True``, compute the marginal pseudo-R² for each covariate
+            in the reduced model by leave-one-out refitting.
+        filter_trials : array-like of bool or None, optional
+            Boolean mask for observation selection.
+        k_fold : bool, optional
+            Use k-fold cross-validation to select the full model (and
+            optionally the reduced model) instead of in-sample fitting.
+        fold_num : int, optional
+            Number of folds when ``k_fold=True``.
+        trial_num_vec : array-like or None, optional
+            Trial indices for k-fold stratification.
+        compute_MI : bool, optional
+            Compute mutual-information statistics.
+        k_fold_reducedOnly : bool, optional
+            When ``k_fold=True``, fit the full model in-sample and apply
+            k-fold only to the reduced model.
+        bounds_rho : list of (float, float) or None, optional
+            Box constraints on log-smoothing parameters for L-BFGS-B.
+        reducedAdaptive : bool, optional
+            If ``True``, re-optimise the basis for each covariate in the
+            reduced model before refitting.
+        ord_AD : int, optional
+            Spline order for adaptive basis re-fitting.
+        ad_knots : int, optional
+            Number of knots for adaptive basis re-fitting.
+        saveBetaHist : bool, optional
+            Store β estimates from every PIRLS iteration.
+        perform_PQL : bool, optional
+            Update smoothing parameters at each PIRLS step (``"pql_gcv"``
+            only).
+        WLS_solver : {"positive_weights", "robust"}, optional
+            WLS implementation inside the PIRLS loop.
+        compute_AIC : bool, optional
+            Compute corrected AIC for the full model (Wood 2017 eq. 6.32).
+        fitting_approach : {"pql_gcv", "direct_reml"}, optional
+            Fitting strategy passed to :meth:`optim_gam`; see its
+            docstring for details.
+
+        Returns
+        -------
+        full_model : GAM_result
+            Fitted full model.
+        reduced_model : GAM_result or None
+            Fitted reduced model, or ``None`` if no covariate passes the
+            p-value threshold.
+        """
         if smooth_pen is None:
             smooth_pen = []
             for var in var_list:
@@ -1377,6 +1584,7 @@ class general_additive_model(object):
                 max_iter=max_iter,
                 tol=tol,
                 conv_criteria=conv_criteria,
+                fitting_approach=fitting_approach,
                 perform_PQL=perform_PQL,
                 method=method,
                 compute_AIC=compute_AIC,
@@ -1400,6 +1608,7 @@ class general_additive_model(object):
                 max_iter=max_iter,
                 tol=tol,
                 conv_criteria=conv_criteria,
+                fitting_approach=fitting_approach,
                 perform_PQL=perform_PQL,
                 method=method,
                 compute_AIC=compute_AIC,
@@ -1503,6 +1712,7 @@ class general_additive_model(object):
                     max_iter=max_iter,
                     tol=tol,
                     conv_criteria=conv_criteria,
+                    fitting_approach=fitting_approach,
                     perform_PQL=perform_PQL,
                     method=method,
                     compute_AIC=False,
@@ -1526,6 +1736,7 @@ class general_additive_model(object):
                     max_iter=max_iter,
                     tol=tol,
                     conv_criteria=conv_criteria,
+                    fitting_approach=fitting_approach,
                     perform_PQL=perform_PQL,
                     method=method,
                     compute_AIC=False,

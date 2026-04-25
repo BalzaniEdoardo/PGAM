@@ -602,7 +602,7 @@ def mle_gradient_bassed_optim(
         jac=grad_func,
         hess=hess_func,
         tol=tol,
-        options={"maxiter": max_iter, "disp": True},
+        options={"maxiter": max_iter, "disp": False},
     )
 
     return res.x, res, beta_zero
