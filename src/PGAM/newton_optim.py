@@ -67,6 +67,124 @@ class weights_and_data(object):
         return z, w
 
 
+def gcv_objective(
+    rho, X, Q, R, endog, sm_handler, var_list,
+    return_type="eval_grad", gamma=1.0, S_all=None,
+):
+    """GCV (and optionally gradient / Hessian) sharing one SVD.
+
+    Parameters
+    ----------
+    rho : ndarray, shape (M,)
+        Log-smoothing parameters.
+    X, Q, R, endog : as in gcv_comp / gcv_grad_comp.
+    sm_handler, var_list : smooth handler and variable list.
+    return_type : {"eval", "eval_grad", "eval_grad_hess"}
+        How much to compute.  Each level is a strict superset of the previous.
+    gamma : float
+        dGCV inflation factor (1 = plain GCV).
+    S_all : list of np.matrix or None
+        Pre-converted penalty matrices from ``compute_Sjs``; computed
+        internally when ``None``.  Pass a cached value to avoid re-building
+        on every call.
+
+    Returns
+    -------
+    "eval"           → gcv (float)
+    "eval_grad"      → (gcv, gcv_grad)
+    "eval_grad_hess" → (gcv, gcv_grad, gcv_hes)
+    """
+    sm_handler.set_smooth_penalties(np.exp(rho), var_list)
+    n_obs = X.shape[0]
+    B = np.array(sm_handler.get_penalty_agumented(var_list), dtype=np.float64)
+
+    U, s, V_T = linalg.svd(np.vstack((R, B)))
+
+    # truncate near-zero singular values
+    i_rem = np.where(s < 1e-8 * s.max())[0]
+    s = np.delete(s, i_rem, 0)
+    U = np.delete(U, i_rem, 1)
+    V_T = np.delete(V_T, i_rem, 0)
+
+    di = np.diag_indices(s.shape[0])
+    U1 = U[: R.shape[0], : s.shape[0]]
+    delta = n_obs - gamma * inner1d_sum(np.asarray(U1), np.asarray(U1))
+
+    y = endog[:n_obs].reshape((n_obs, 1))
+
+
+    dinv = 1.0 / s
+    dinv_sq = 1.0 / s ** 2
+
+    Ay = X @ (V_T.T @ (dinv_sq[:, None] * (V_T @ (X.T @ y))))
+    alpha = np.sum(np.power(Ay - y, 2))
+    gcv = n_obs * alpha / delta ** 2
+
+    if return_type == "eval":
+        return gcv
+
+    # ---- gradient and (optionally) Hessian --------------------------------
+    if S_all is None:
+        S_all = matrix_transform(*compute_Sjs(sm_handler, var_list))
+
+    y1 = U1.T @ (Q.T @ y)
+    UTU = U1.T @ U1
+    p = len(rho)
+
+    # precompute Mj and Fj once — reused for both grad and hess
+    lams = np.exp(rho)
+    M = [None] * p
+    F = [None] * p
+    alpha_grad = np.zeros(p)
+    delta_grad = np.zeros(p)
+    for j in range(p):
+        Mj = (dinv[:, None] * V_T) @ S_all[j] @ (dinv * V_T.T)
+        Fj = Mj @ UTU
+        M[j] = Mj
+        F[j] = Fj
+        alpha_grad[j] = (lams[j] * (
+            2 * y1.T @ Mj @ y1 - y1.T @ Fj @ y1 - y1.T @ Fj.T @ y1
+        ))[0, 0]
+        delta_grad[j] = gamma * lams[j] * float(np.trace(Fj))
+
+    gcv_grad = (n_obs / delta ** 2) * alpha_grad - (2 * n_obs * alpha / delta ** 3) * delta_grad
+
+    if return_type == "eval_grad":
+        return gcv, gcv_grad
+
+    # ---- Hessian -----------------------------------------------------------
+    alpha_hes = np.zeros((p, p))
+    delta_hes = np.zeros((p, p))
+    for j in range(p):
+        Mj, Fj = M[j], F[j]
+        for k in range(p):
+            Mk, Fk = M[k], F[k]
+            yT_AT_hes_A_y = lams[j] * lams[k] * y1.T @ (Fk.T @ Mj + Fj.T @ Mk) @ y1
+            yT_hes_AT_A_y = lams[j] * lams[k] * y1.T @ (Mj @ Fk + Mk @ Fj) @ y1
+            yT_hes_A_y    = lams[j] * lams[k] * y1.T @ (Mk @ Mj + Mj @ Mk) @ y1
+            yT_cross       = lams[j] * lams[k] * y1.T @ Fk @ Mj @ y1
+            delta_hes[j, k] = -2 * lams[j] * lams[k] * float(np.trace(Mk @ Fj)) * gamma
+            if j == k:
+                yT_AT_hes_A_y -= lams[j] * y1.T @ Fj.T @ y1
+                yT_hes_AT_A_y -= lams[j] * y1.T @ Fj @ y1
+                yT_hes_A_y    -= lams[j] * y1.T @ Mj @ y1
+                delta_hes[j, k] += lams[j] * float(np.trace(Fj)) * gamma
+            alpha_hes[j, k] = (
+                -2 * yT_hes_A_y + yT_hes_AT_A_y + yT_AT_hes_A_y + 2 * yT_cross
+            ).item()
+
+    gcv_hes = (
+        (n_obs / delta ** 2) * alpha_hes
+        - (2 * n_obs / delta ** 3) * (
+            np.outer(alpha_grad, delta_grad) + np.outer(delta_grad, alpha_grad)
+        )
+        + (6 * n_obs * alpha / delta ** 4) * np.outer(delta_grad, delta_grad)
+        - (2 * n_obs * alpha / delta ** 3) * delta_hes
+    )
+    gcv_hes = 0.5 * (gcv_hes + gcv_hes.T)  # symmetrize for numerical stability
+    return gcv, gcv_grad, gcv_hes
+
+
 def gcv_comp(rho, X, Q, R, endog, sm_handler, var_list, return_par="gcv", gamma=1.0):
     sm_handler.set_smooth_penalties(np.exp(rho), var_list)
     B = sm_handler.get_penalty_agumented(var_list)
@@ -85,9 +203,9 @@ def gcv_comp(rho, X, Q, R, endog, sm_handler, var_list, return_par="gcv", gamma=
     V_T = np.delete(V_T, i_rem, 0)
 
     # compute the diag matrix with the singular vals
-    D = np.zeros((s.shape[0], s.shape[0]))
-    di = np.diag_indices(s.shape[0])
-    D[di] = s
+    # d = np.zeros((s.shape[0], ))[di] = s
+    #di = np.diag_indices(s.shape[0])
+    #D[di] = s
 
     ## check several steps
     U1 = U[: R.shape[0], : s.shape[0]]
@@ -95,20 +213,14 @@ def gcv_comp(rho, X, Q, R, endog, sm_handler, var_list, return_par="gcv", gamma=
 
     delta = n_obs - gamma * trA
     y = endog[:n_obs]
-    Dinv = np.zeros(D.shape)
-    Dinv[di] = 1 / s
+    sinv = 1 / s
 
     # transform everything needed in matrix
-    y, Q, R, U1, Dinv, V_T = matrix_transform(y, Q, R, U1, Dinv, V_T)
-    D2inv = np.zeros(D.shape)  # Dinv * Dinv
-    D2inv[di] = 1 / s**2
-    D2inv = np.matrix(D2inv)
-
-    # X = Q * R
+    sinv_sq = 1 / s**2
 
     y = np.matrix(endog[:n_obs].reshape(n_obs, 1))
 
-    Ay = X * (V_T.T * (D2inv * (V_T * (X.T * y))))
+    Ay = X @ ((sinv_sq * V_T.T) @ (V_T @ (X.T @ y)))
 
     alpha = np.sum(np.power(Ay - y, 2))
 
@@ -121,10 +233,10 @@ def gcv_comp(rho, X, Q, R, endog, sm_handler, var_list, return_par="gcv", gamma=
     elif return_par == "delta":
         return delta
     elif return_par == "A":
-        A = X * V_T.T * D2inv * V_T * X.T
+        A = X @ (sinv_sq * V_T.T) @ V_T @ X.T
         return A
     elif return_par == "all":
-        return gcv, alpha, delta, V_T.T * D2inv * V_T
+        return gcv, alpha, delta, (sinv_sq * V_T.T) @ V_T
     else:
         raise ValueError("unknow output specification")
 
