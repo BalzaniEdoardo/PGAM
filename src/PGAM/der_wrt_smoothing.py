@@ -6,11 +6,18 @@ from scipy.optimize import minimize
 from scipy.special import erfinv
 from .utils.linalg_utils import inner1d_sum
 
+from enum import Enum
+
 try:
     import fast_summations
 except:
     pass
 from opt_einsum import contract
+
+class ReturnType(Enum):
+    eval = 0
+    eval_grad = 1
+    eval_grad_hess = 2
 
 
 class d2variance_family(sm.genmod.families.Family):
@@ -692,6 +699,75 @@ def Vbeta_rho(
         return sum_hes_inv, log_det
     return sum_hes_inv
 
+def Vbeta_rho_all(
+    rho,
+    b_hat,
+    y,
+    X,
+    family,
+    sm_handler,
+    var_list,
+    phi_est,
+    return_logdet=False,
+):
+    """Bayesian posterior covariance V_beta = -(H + S_lambda)^{-1}, or its inverse.
+
+    Computed via QR decomposition of sqrt(W) X followed by SVD of [R; B], where B
+    is the Cholesky square root of S_lambda.  This avoids forming X^T W X explicitly
+    and is numerically stable when p is large relative to n.
+
+    Parameters
+    ----------
+    rho : ndarray, shape (M,)
+    b_hat : ndarray, shape (p,)
+        MAP estimate of beta at which to evaluate V_beta.
+    y, X, family, sm_handler, var_list, phi_est : standard GAM inputs.
+    return_logdet : bool
+        If True, also return log|H + S_lambda| computed for free from the SVD
+        singular values (avoids a second O(p³) decomposition in the caller).
+
+    Returns
+    -------
+    sum_hes_inv : ndarray, shape (p, p)
+        Either (H + S_lambda) or V_beta depending on `inverse`.
+    log_det : float, optional
+        log|H + S_lambda|.  Only returned when return_logdet=True.
+    """
+    FLOAT_EPS = np.finfo(float).eps
+    mu = family.link.inverse(np.dot(X, b_hat))
+    alpha = alpha_mu(y, mu, family)
+    dmu_deta = np.clip(1 / family.link.deriv(mu), FLOAT_EPS, np.inf)
+    w = alpha * dmu_deta**2 / family.variance(mu)
+    if any(np.abs(w[w < 0]) > 10**-15):
+        raise ValueError("w takes negative values")
+    else:
+        w = np.clip(w, 0, np.inf)
+    WX = (np.sqrt(w) * X.T).T
+
+    Q, R = np.linalg.qr(WX, mode="reduced")
+    sm_handler.set_smooth_penalties(np.exp(rho), var_list)
+    B = sm_handler.get_penalty_agumented(var_list)
+    B = np.array(B, dtype=np.float64)
+    _, s, V_T = linalg.svd(np.vstack((R, B)))
+
+    i_rem = np.where(s < 10 ** (-8) * s.max())[0]
+    s = np.delete(s, i_rem, 0)
+    V_T = np.delete(V_T, i_rem, 0)
+
+    d = s ** 2 / phi_est
+    dinv = 1 / d
+
+    V_T = np.asarray(V_T)
+    sum_hes_inv = d * V_T.T @ V_T
+    sum_hes = dinv * V_T.T @ V_T
+
+
+    if return_logdet:
+        # log|H+S| = 2·Σlog(s) − r·log(phi),  free from the SVD already done above
+        log_det = 2.0 * np.sum(np.log(s)) - len(s) * np.log(phi_est)
+        return sum_hes_inv, sum_hes, log_det
+    return sum_hes_inv, sum_hes
+
 
 def dbeta_hat(
     rho,
@@ -1028,7 +1104,7 @@ def grad_H_drho(
     return grad_H
 
 
-def deriv_compute(
+def reml_objective(
     rho,
     y,
     X,
@@ -1037,25 +1113,26 @@ def deriv_compute(
     family,
     S_all,
     phi_est,
-    test=True,
+    return_type="eval_grad_hess",
     omega=1,
-    fix_beta=False,
+    null_dim=None,
 ):
-    """One-pass computation of the REML value, its gradient, and its Hessian wrt rho.
+    """Laplace-REML objective and its derivatives wrt the log-smoothing parameters rho.
 
-    This is the efficient version that reuses intermediate results (beta_hat, V_beta,
-    dV_beta/drho, d2V_beta/drho2) instead of recomputing them in separate calls to
-    laplace_appr_REML, grad_laplace_appr_REML, and hess_laplace_appr_REML.
-
-    When test=True, each intermediate is cross-checked against the standalone
-    reference implementations and the maximum absolute difference is printed.
+    Delegates to the scalable standalone functions (laplace_appr_REML,
+    grad_laplace_appr_REML, hess_laplace_appr_REML) after a single beta
+    optimisation, so beta_hat is never recomputed more than once per call.
 
     Parameters
     ----------
     rho : ndarray, shape (M,)
-    y, X, sm_handler, var_list, family, S_all, phi_est : standard GAM inputs.
-    test : bool
-        Run internal consistency checks (slower but useful during development).
+        Log smoothing parameters.
+    y, X, sm_handler, var_list, family, S_all, phi-_est : standard GAM inputs.
+    return_type : {"eval", "eval_grad", "eval_gradhess"}
+        Controls which quantities are computed and returned:
+        - "eval"            -> REML value only
+        - "eval-grad"       -> (REML, grad_REML)
+        - "eval-grad-hess"  -> (REML, grad_REML, hess_REML)
     omega : float
         Prior observation weights.
     fix_beta : bool or ndarray
@@ -1064,376 +1141,180 @@ def deriv_compute(
     Returns
     -------
     REML : float
-        Laplace-approximated REML (marginal likelihood) value.
-    grad_REML : ndarray, shape (M,)
+        Laplace-approximated REML value (Wood 2017 eq. 6.18).
+    grad_REML : ndarray, shape (M,)  -- only when return_type != "eval"
         Gradient of REML wrt rho.
-    hess_REML : ndarray, shape (M, M)
-        Hessian of REML wrt rho.  Invert its negative to get V_rho (eq. 6.30).
+    hess_REML : ndarray, shape (M, M)  -- only when return_type == "eval-grad-hess"
+        Hessian of REML wrt rho.  -hess_REML^{-1} is V_rho (eq. 6.30).
     """
-    print("rho", rho)
+    return_type = ReturnType(getattr(ReturnType, return_type))
+    b_hat = mle_gradient_bassed_optim(
+        rho,
+        sm_handler,
+        var_list,
+        y,
+        X,
+        family,
+        phi_est=phi_est,
+        method="BFGS",
+        num_random_init=1,
+        tol=1e-10,
+    )[0]
 
-    FLOAT_EPS = np.finfo(float).eps
-    if fix_beta == False:
-        beta_hat = mle_gradient_bassed_optim(
-            rho,
-            sm_handler,
-            var_list,
-            y,
-            X,
-            family,
-            phi_est=phi_est,
-            method="Newton-CG",
-            num_random_init=10,
-        )[0]
-    else:
-        beta_hat = fix_beta
-
-    mu = family.link.inverse(np.dot(X, beta_hat))
-
-    ll_penalty = penalty_ll(rho, beta_hat, sm_handler, var_list, phi_est)
-    ll_unpen = unpenalized_ll(beta_hat, y, X, family, phi_est, omega=omega)
+    ll_penalty = penalty_ll(rho, b_hat, sm_handler, var_list, phi_est)
+    ll_unpen = unpenalized_ll(b_hat, y, X, family, phi_est, omega=omega)
 
     Slam_trans, S_transf = transform_Slam(S_all, rho)
 
-    log_det_Slam = (
-        -0.5 * logDet_Slam(rho, S_transf, compute_grad=False, S_all=S_all) / phi_est
-    )
-
-    alpha_prime = alpha_deriv(y, mu, family)
-    g_prime = family.link.deriv(mu)
-    g_2prime = family.link.deriv2(mu)
-    g_3prime = family.link.deriv3(mu)
-    g_prime_inv = np.array(1 / g_prime, order="C")
-    V = family.variance(mu)
-    V_prime = family.variance.deriv(mu)
-    V_2prime = family.variance.deriv2(mu)
-    alpha = alpha_mu(y, mu, family)
-    alpha_prime = alpha_deriv(y, mu, family)
-    alpha_2prime = alpha_deriv2(y, mu, family)
-    w_prime = (
-        alpha_prime * g_prime * V - alpha * (2 * g_2prime * V + V_prime * g_prime)
-    ) / (np.clip(g_prime**3, FLOAT_EPS, np.inf) * V**2)
-
-    term1 = (
-        (
-            alpha_2prime * g_prime * V
-            - alpha_prime * g_2prime * V
-            - 2 * alpha * g_3prime * V
-            - 3 * alpha * g_2prime * V_prime
-            - alpha * V_2prime * g_prime
+    # Compute Sinv and log|S_λ|+ together in the transformed space.
+    # Sinv is reused for gradient add2 and Hessian add2 — avoids two extra
+    # Cholesky factorizations that logDet_Slam / hes_logDet_Slam would do.
+    lams = np.exp(rho)
+    Slam_t = np.einsum("ijk,i->jk", S_transf, lams)
+    try:
+        Pinv_t = np.diag(1 / np.sqrt(np.abs(np.diag(Slam_t))))
+        P_t    = np.diag(np.sqrt(np.abs(np.diag(Slam_t))))
+        L_t    = np.linalg.cholesky(np.einsum("ij,jh,hk->ik", Pinv_t, Slam_t, Pinv_t))
+        Linv_t = np.linalg.pinv(L_t)
+        Sinv   = np.einsum("ij,kj,kh,hl->il", Pinv_t, Linv_t, Linv_t, Pinv_t)
+        log_det_Slam_val = (
+            2 * np.sum(np.log(np.diag(L_t))) + 2 * np.sum(np.log(np.diag(P_t)))
         )
-        * g_prime
-        * V
+    except np.linalg.LinAlgError:
+        Slam_t = np.triu(Slam_t) + np.triu(Slam_t, 1).T
+        d_t, U_t = np.linalg.eigh(Slam_t)
+        idx = d_t > np.finfo(float).eps
+        Utmp = U_t[:, idx] * (1 / np.sqrt(d_t[idx]))
+        Sinv = np.dot(Utmp, Utmp.T)
+        log_det_Slam_val = np.sum(np.log(d_t[idx]))
+
+    log_det_Slam = -0.5 * log_det_Slam_val / phi_est
+
+    # log|H+S| comes free from the SVD already done inside Vbeta_rho
+    Vb, Vb_inv, log_det_H_plus_S = Vbeta_rho_all(
+        rho,
+        b_hat,
+        y,
+        X,
+        family,
+        sm_handler,
+        var_list,
+        phi_est,
+        return_logdet=True,
     )
-    term2 = -(
-        alpha_prime * g_prime * V - alpha * (2 * g_2prime * V + V_prime * g_prime)
-    ) * (4 * g_2prime * V + 2 * g_prime * V_prime)
+    log_det_sum = -0.5 * log_det_H_plus_S
 
-    small_h_prime = (term1 + term2) / (g_prime**5 * V**3)
-    small_h = w_prime / g_prime
-
-    dw_dB = ((w_prime / g_prime) * X.T).T
-
-    dmu_deta = np.clip(1 / family.link.deriv(mu), FLOAT_EPS, np.inf)
-    w = alpha * dmu_deta**2 / family.variance(mu)
-    if any(np.abs(w[w < 0]) > 10**-15):
-        raise ValueError("w takes negative values")
+    if null_dim is None:
+        M = b_hat.shape[0] - np.linalg.matrix_rank(Slam_trans)
     else:
-        w = np.clip(w, 0, np.inf)
-    WX = (np.sqrt(w) * X.T).T
+        M = null_dim
 
-    Q, R = np.linalg.qr(WX, mode="reduced")
-    sm_handler.set_smooth_penalties(np.exp(rho), var_list)
-    B = sm_handler.get_penalty_agumented(var_list)
-    B = np.array(B, dtype=np.float64)
-    _, s, V_T = linalg.svd(np.vstack((R, B)))
+    REML = (
+            ll_unpen + ll_penalty - log_det_Slam + log_det_sum + 0.5 * M * np.log(np.pi * 2)
+    )
+    if return_type == ReturnType.eval:
+        return REML
 
-    log_det_sum = -np.sum(np.log(s)) + X.shape[1] * np.log(phi_est)
+    S_raw = np.array(S_all)  # (M, p, p)
+    S_tensor = S_raw * lams[:, None, None]  # (M, p, p)
 
-    i_rem = np.where(s < 10 ** (-8) * s.max())[0]
-    s = np.delete(s, i_rem, 0)
-    V_T = np.delete(V_T, i_rem, 0)
+    # ── add1: -0.5 * beta^T (lam_r * S_r) beta / phi ─────────────────────────
+    add1 = -0.5 * np.einsum("i,rij,j->r", b_hat, S_tensor, b_hat) / phi_est
 
-    di = np.diag_indices(s.shape[0])
-    Dinv = np.zeros((s.shape[0], s.shape[0]))
-    Dinv[di] = phi_est / (s) ** 2
-
-    D = np.zeros((s.shape[0], s.shape[0]))
-    D[di] = (s) ** 2 / phi_est
-
-    V_T = np.asarray(V_T)
-
-    M = beta_hat.shape[0] - np.linalg.matrix_rank(Slam_trans)
-
-    REML = ll_unpen + ll_penalty - log_det_Slam + log_det_sum + 0.5 * M * np.log(np.pi * 2)
-    if test:
-        REML1 = laplace_appr_REML(
-            rho,
-            beta_hat,
-            S_all,
-            y,
-            X,
-            family,
-            phi_est,
-            sm_handler,
-            var_list,
-            omega=omega,
-            compute_grad=False,
-            fixRand=False,
-            method="Newton-CG",
-            tol=10**-12,
-            num_random_init=1,
-        )
-        print("REML", np.max(np.abs(REML1 - REML)))
-
-    sum_hes_inv = -(V_T.T @ Dinv @ V_T)
-
-    if test:
-        sum_hes_inv1 = Vbeta_rho(
-            rho, beta_hat, y, X, family, sm_handler, var_list, phi_est, inverse=True
-        )
-        print("Vb_inv check", np.max(np.abs(sum_hes_inv - sum_hes_inv1)))
-
-    Slam_tensor = np.zeros((len(S_all),) + S_all[0].shape)
-    Slam_tensor[:, :, :] = S_all
-    Slam_tensor = (Slam_tensor.T * np.exp(rho)).T / phi_est
-    P1 = np.einsum("kij,j->ki", Slam_tensor, beta_hat)
-    dB_drho = np.einsum("li,ki->kl", sum_hes_inv, P1)
-
-    dw_drho_array = np.zeros((X.shape[0], rho.shape[0]))
-    dH_drho = np.zeros((rho.shape[0], beta_hat.shape[0], beta_hat.shape[0]))
-    t0 = perf_counter()
-    for k in range(rho.shape[0]):
-        dw_drho_array[:, k] = np.dot(dw_dB, dB_drho[k, :])
-        dH_drho[k, :, :] = np.dot(X.T * dw_drho_array[:, k], X) / phi_est
-
-    if test:
-        dw_drho1 = dw_drho(
-            rho,
-            beta_hat,
-            y,
-            X,
-            sm_handler,
-            var_list,
-            family,
-            S_all,
-            phi_est,
-            compute_grad=False,
-            method="Newton-CG",
-        )
-
-        t0 = perf_counter()
-        grH = grad_H_drho(
-            rho,
-            beta_hat,
-            y,
-            X,
-            sm_handler,
-            var_list,
-            family,
-            S_all,
-            phi_est,
-            compute_grad=False,
-        )
-        t1 = perf_counter()
-        print("old method", t1 - t0, np.max(np.abs(grH - dH_drho)))
-
-    dVb_drho_arr = Slam_tensor + dH_drho
-
-    if test:
-        dVb_drho_arr1 = dVb_drho(
-            rho,
-            beta_hat,
-            S_all,
-            y,
-            X,
-            family,
-            sm_handler,
-            var_list,
-            phi_est,
-            compute_grad=False,
-        )
-        print("dVb diff:", np.max(np.abs(dVb_drho_arr1 - dVb_drho_arr)))
-
-    add1 = -0.5 * np.einsum("i,rij,j->r", beta_hat, Slam_tensor, beta_hat)
-
+    # ── add2: +0.5 * d log|S_lambda|+ / drho / phi — reuse Sinv from above ────
     add2 = (
         0.5
-        * grad_logDet_Slam(rho, S_transf, compute_grad=False, S_all=S_all)
+        * np.array([lams[j] * inner1d_sum(Sinv, S_transf[j].T) for j in range(len(rho))])
         / phi_est
     )
 
-    add3 = np.zeros(add1.shape)
-    for j in range(rho.shape[0]):
-        add3[j] = -0.5 * inner1d_sum(-sum_hes_inv, dVb_drho_arr[j].T)
+    # ── add3: -0.5 * tr(Vb_inv @ dVb[r]) — streaming, no dVb materialised ────
+    # dVb[r] = dH[r] + lam_r * S_r / phi
+    # tr(Vb_inv @ dH[r])     = (dB @ q)[r] / phi
+    # tr(Vb_inv @ lam_r*S_r) = lam_r * tr(Vb_inv @ S_r) / phi
+    # where q[l] = Σ_k h_mu[k] * diag_XVX[k] * X[k,l]
 
+    mu = family.link.inverse(np.dot(X, b_hat))
+    h_mu = small_h_mu(mu, y, family)  # (n,)
+
+    dB = dbeta_hat(rho, b_hat, S_all, sm_handler, var_list, y, X, family, phi_est)
+
+    VX = Vb_inv @ X.T  # (p, n)
+    diag_XVX = np.sum(X * VX.T, axis=1)  # (n,)
+
+    q = X.T @ (h_mu * diag_XVX)  # (p,)
+    tr_dH = dB @ q / phi_est  # (M,)
+
+    tr_VS = np.einsum("ij,hji->h", Vb_inv, S_raw) / phi_est  # (M,)
+
+    add3 = -0.5 * (tr_dH + lams * tr_VS)
     grad_REML = add1 + add2 + add3
-    if test:
-        grad_REML1 = grad_laplace_appr_REML_dense(
-            rho,
-            beta_hat,
-            S_all,
-            y,
-            X,
-            family,
-            phi_est,
-            sm_handler,
-            var_list,
-            omega=1,
-            compute_grad=False,
-            fixRand=False,
-            method="Newton-CG",
-            num_random_init=1,
-            tol=10**-12,
-        )
-        print("grad_reml", np.max(np.abs(grad_REML - grad_REML1)))
+    if return_type == ReturnType.eval_grad:
+        return REML, grad_REML
 
-    grad_neg_sum = -dVb_drho_arr
-    if np.isfortran(sum_hes_inv):
-        sum_hes_inv = np.array(sum_hes_inv, order="C")
-    if np.isfortran(grad_neg_sum):
-        grad_neg_sum = np.array(grad_neg_sum, order="C")
-    if np.isfortran(Slam_tensor):
-        Slam_tensor = np.array(Slam_tensor, order="C")
-    if np.isfortran(beta_hat):
-        beta_hat = np.array(beta_hat, order="C")
-    if np.isfortran(dB_drho):
-        dB_drho = np.array(dB_drho, order="C")
 
-    try:
-        add1 = fast_summations.d2beta_hat_summation_1(
-            sum_hes_inv, grad_neg_sum, Slam_tensor, beta_hat
-        )
-        add2 = fast_summations.d2beta_hat_summation_2(sum_hes_inv, Slam_tensor, dB_drho)
-    except:
-        add1 = np.einsum(
-            "ij,hjl,lr,krp,p->hki",
-            sum_hes_inv,
-            grad_neg_sum,
-            -sum_hes_inv,
-            Slam_tensor,
-            beta_hat,
-            optimize=True,
-        )
-        tmp = np.einsum("kjl,hl->hkj", Slam_tensor, dB_drho, optimize=True)
-        add2 = np.einsum("hkj,ij->hki", tmp, sum_hes_inv, optimize=True)
-    di1, di2 = np.diag_indices(rho.shape[0])
-    hes_beta = add1 + add2
-    hes_beta[di1, di2] = hes_beta[di1, di2] + np.einsum(
-        "ij,hjl,l->hi", sum_hes_inv, Slam_tensor, beta_hat
-    )
-    if test:
-        d2b = d2beta_hat(
-            rho, beta_hat, S_all, sm_handler, var_list, y, X, family, phi_est=1
-        )
-        print("d2beta", np.max(np.abs(d2b - hes_beta)))
-
-    NUM = alpha_prime * g_prime * V - alpha * (2 * g_2prime * V + V_prime * g_prime)
-    NUM_prime = (
-        alpha_2prime * g_prime * V
-        + alpha_prime * g_2prime * V
-        + alpha_prime * g_prime * V_prime
-        - alpha_prime * (2 * g_2prime * V + g_prime * V_prime)
-        - alpha
-        * (
-            2 * g_3prime * V
-            + 2 * g_2prime * V_prime
-            + V_2prime * g_prime
-            + V_prime * g_2prime
-        )
+    # ── add1 ──────────────────────────────────────────────────────────────────
+    di = np.diag_indices(len(rho))
+    add1 = np.einsum("hj,ji,ki->hk", dB, Vb, dB, optimize="optimal")
+    add1[di] -= (
+            0.5 * np.einsum("i,hij,j->h", b_hat, S_tensor, b_hat, optimize="optimal")
+            / phi_est
     )
 
-    tmp_DEN_prime = 3 * g_2prime * V + 2 * g_prime * V_prime
-    w_2prime = (NUM_prime * (g_prime * V) - NUM * tmp_DEN_prime) / (
-        g_prime**4 * V**3
-    )
-    tt0 = perf_counter()
-    t0 = perf_counter()
-    hess_H = np.zeros(
-        (rho.shape[0], rho.shape[0], beta_hat.shape[0], beta_hat.shape[0])
-    )
+    # ── add2: reuse Sinv — hes_logDet_Slam would recompute the Cholesky ─────────
+    Sinv_Sj = [np.einsum("ij,jk->ik", Sinv, S_transf[j]) for j in range(len(rho))]
+    hes_det = np.zeros((len(rho), len(rho)))
+    for _i in range(len(rho)):
+        for _j in range(len(rho)):
+            hes_det[_i, _j] = -lams[_i] * lams[_j] * inner1d_sum(Sinv_Sj[_i], Sinv_Sj[_j].T)
+            if _i == _j:
+                hes_det[_i, _j] += lams[_i] * inner1d_sum(Sinv, S_transf[_i].T)
+    add2 = 0.5 * hes_det / phi_est
 
-    for i in range(rho.shape[0]):
-        tmp_i = np.dot((X.T * small_h_prime * g_prime_inv).T, dB_drho[i, :])
-        for j in range(i, rho.shape[0]):
-            tmp_j = np.dot(X, dB_drho[j, :])
-            hess_H_term1 = np.dot(X.T * (tmp_i * tmp_j), X)
-            hess_H_term2 = np.dot(X.T * np.dot((X.T * small_h).T, hes_beta[i, j, :]), X)
-            hess_H[i, j] = (hess_H_term1 + hess_H_term2) / phi_est
-            hess_H[j, i] = hess_H[i, j]
+    # ── add3 — streaming trace, no (M, M, p, p) materialisation ──────────────
+    # add3[h,r] = 0.5 * ( tr(A[h]@A[r]) - tr(Vb_inv @ d2Vb[h,r]) )
+    # where A[h] = Vb_inv @ dVb[h]   and   d2Vb = d2H + δ_{hr}*lam_h*S_h/phi
+    dVb = dVb_drho(rho, b_hat, S_all, y, X, family, sm_handler, var_list, phi_est)
 
-    t1 = perf_counter()
-    if test:
-        t0 = perf_counter()
-        hes_H = hes_H_drho(
-            rho,
-            beta_hat,
-            y,
-            X,
-            S_all,
-            sm_handler,
-            var_list,
-            family,
-            phi_est,
-            return_all=False,
-        )
-        t1 = perf_counter()
-        print("old hess time", t1 - t0)
-        print(np.max(np.abs(hess_H - hes_H)))
+    # First part: tr( (Vb_inv dVb[h]) (Vb_inv dVb[r]) ) — O(M·p² + M²·p²)
+    tmp = np.einsum("ij,hjk->hik", Vb_inv, dVb, optimize=True)  # (M, p, p)
+    tr_AhAr = np.einsum("hij,rji->hr", tmp, tmp)  # (M, M)
 
-    d2Vb = hess_H.copy()
-    di1, di2 = np.diag_indices(rho.shape[0])
-    d2Vb[di1, di2] = hess_H[di1, di2] + Slam_tensor
+    # Second part: tr(Vb_inv @ d2Vb[h,r]) via diag(X Vb_inv X^T)
+    # d2H[h,r,i,j] = Σ_k X[k,i]*X[k,j]*(tilde_h[k]*A[k,h]*A[k,r] + h[k]*v[k,h,r])/phi
+    # tr(Vb_inv @ d2H[h,r]) = Σ_k diag_XVX[k]*(tilde_h[k]*A[k,h]*A[k,r]+h[k]*v[k,h,r])/phi
 
-    if test:
-        d2Vb2 = d2Vb_drho(
-            rho, beta_hat, S_all, y, X, family, sm_handler, var_list, phi_est
-        )
-        print(np.max(np.abs(d2Vb2 - d2Vb)))
+    h_prime = deriv_small_h(mu, y, family)  # (n,)
+    g_prime = family.link.deriv(mu)  # (n,)
+    tilde_h = h_prime / g_prime  # (n,)
 
-    Vb = V_T.T * D * V_T
-    add1 = np.einsum("hj,ji,ki->hk", dB_drho, Vb, dB_drho, optimize="optimal")
-    di1, di2 = np.diag_indices(rho.shape[0])
-    add1[di1, di2] = add1[di1, di2] - 0.5 * np.einsum(
-        "i,hij,j->h", beta_hat, Slam_tensor, beta_hat, optimize="optimal"
+    d2B = d2beta_hat(  # (M, M, p)
+        rho, b_hat, S_all, sm_handler, var_list, y, X, family, phi_est
     )
 
-    add2 = 0.5 * hes_logDet_Slam(rho, S_transf) / phi_est
+    VX = Vb_inv @ X.T  # (p, n)
+    diag_XVX = np.sum(X * VX.T, axis=1)  # (n,)
 
-    Vb_inv = -sum_hes_inv
-    try:
-        add3 = 0.5 * fast_summations.trace_log_det_H_summation_1(
-            Vb_inv, dVb_drho_arr, d2Vb
-        )
-    except:
-        tmp = np.einsum("ij,hjk->hik", Vb_inv, dVb_drho_arr, optimize=True)
-        add3 = 0.5 * (
-            np.einsum("hij,rji->hr", tmp, tmp) - np.einsum("ij,hrji->hr", Vb_inv, d2Vb)
-        )
+    # Term 1 of tr(Vb_inv @ d2H): Σ_k tilde_h[k]*diag_XVX[k]*A[k,h]*A[k,r]
+    A = X @ dB.T  # (n, M)
+    w1 = tilde_h * diag_XVX  # (n,)
+    tr_d2H_t1 = (A * w1[:, None]).T @ A  # (M, M)
+
+    # Term 2 of tr(Vb_inv @ d2H): Σ_{k,l} h[k]*diag_XVX[k]*X[k,l]*d2B[h,r,l]
+    q = X.T @ (h_mu * diag_XVX)  # (p,)
+    tr_d2H_t2 = np.einsum("l,hrl->hr", q, d2B)  # (M, M)
+
+    tr_d2H = (tr_d2H_t1 + tr_d2H_t2) / phi_est  # (M, M)
+
+    # Penalty diagonal: δ_{hr} * lam_h/phi * tr(Vb_inv @ S_h)
+    S_raw = np.array(S_all)  # (M, p, p)
+    tr_VS = np.einsum("ij,hji->h", Vb_inv, S_raw) / phi_est  # (M,)
+    tr_d2Vb = tr_d2H.copy()
+    tr_d2Vb[di] += lams * tr_VS
+
+    add3 = 0.5 * (tr_AhAr - tr_d2Vb)
 
     hess_REML = add1 + add2 + add3
-    tt1 = perf_counter()
-    if test:
-        t0 = perf_counter()
-        hess_REML1 = hess_laplace_appr_REML_dense(
-            rho,
-            beta_hat,
-            S_all,
-            y,
-            X,
-            family,
-            phi_est,
-            sm_handler,
-            var_list,
-            compute_grad=False,
-            fixRand=False,
-            method="Newton-CG",
-            num_random_init=1,
-            tol=10**-12,
-        )
-        t1 = perf_counter()
-        print(np.abs(np.max(hess_REML - hess_REML1)), "time hess old:", t1 - t0)
-
     return REML, grad_REML, hess_REML
 
 

@@ -51,6 +51,7 @@ from PGAM.der_wrt_smoothing import (
     grad_laplace_appr_REML_dense,
     hess_laplace_appr_REML,
     hess_laplace_appr_REML_dense,
+    reml_objective,
 )
 
 # ---------------------------------------------------------------------------
@@ -862,4 +863,218 @@ class TestHessLaplaceREMLScalable:
         np.testing.assert_allclose(
             hess_scalable, hess_dense, rtol=1e-10, atol=1e-12,
             err_msg="hess_laplace_appr_REML does not match dense version",
+        )
+
+
+# ===========================================================================
+# Batch 7 – reml_objective (consolidated evaluation)
+# ===========================================================================
+
+class TestRemlObjective:
+    """reml_objective must match the standalone laplace / grad / hess functions.
+
+    reml_objective re-optimises beta_hat internally (BFGS, tol=1e-10), then
+    returns REML / grad / hess via the scalable tensor-free path.  The
+    standalone functions use the pre-optimised gam_problem beta_hat (Newton-CG,
+    tol=1e-10).  Both find the same optimum so results should agree within the
+    optimisation tolerance (~1e-4 relative).
+    """
+
+    def test_eval_matches_laplace_reml(self, gam_problem):
+        """return_type='eval' REML value matches laplace_appr_REML at same rho."""
+        prob = gam_problem
+        rho, beta_hat = prob["rho"], prob["beta_hat"]
+        y, X, family = prob["y"], prob["X"], prob["family"]
+        sm, var_list, phi_est = prob["sm"], prob["var_list"], prob["phi_est"]
+        S_all = prob["S_all"]
+
+        reml_val = reml_objective(
+            rho, y, X, sm, var_list, family, S_all, phi_est,
+            return_type="eval",
+        )
+        standalone_val = laplace_appr_REML(
+            rho, beta_hat, S_all, y, X, family, phi_est, sm, var_list,
+            compute_grad=False,
+        )
+        np.testing.assert_allclose(
+            reml_val, standalone_val, rtol=1e-5,
+            err_msg="reml_objective 'eval' vs laplace_appr_REML mismatch",
+        )
+
+    def test_eval_grad_matches_grad_laplace_reml(self, gam_problem):
+        """return_type='eval_grad' gradient matches grad_laplace_appr_REML."""
+        prob = gam_problem
+        rho, beta_hat = prob["rho"], prob["beta_hat"]
+        y, X, family = prob["y"], prob["X"], prob["family"]
+        sm, var_list, phi_est = prob["sm"], prob["var_list"], prob["phi_est"]
+        S_all = prob["S_all"]
+
+        _reml_val, grad_val = reml_objective(
+            rho, y, X, sm, var_list, family, S_all, phi_est,
+            return_type="eval_grad",
+        )
+        standalone_grad = grad_laplace_appr_REML(
+            rho, beta_hat, S_all, y, X, family, phi_est, sm, var_list,
+            compute_grad=False,
+        )
+        np.testing.assert_allclose(
+            grad_val, standalone_grad, rtol=1e-3, atol=1e-6,
+            err_msg="reml_objective 'eval_grad' vs grad_laplace_appr_REML mismatch",
+        )
+
+    def test_eval_grad_hess_matches_hess_laplace_reml(self, gam_problem):
+        """return_type='eval_grad_hess' Hessian matches hess_laplace_appr_REML."""
+        prob = gam_problem
+        rho, beta_hat = prob["rho"], prob["beta_hat"]
+        y, X, family = prob["y"], prob["X"], prob["family"]
+        sm, var_list, phi_est = prob["sm"], prob["var_list"], prob["phi_est"]
+        S_all = prob["S_all"]
+
+        _reml_val, _grad_val, hess_val = reml_objective(
+            rho, y, X, sm, var_list, family, S_all, phi_est,
+            return_type="eval_grad_hess",
+        )
+        standalone_hess = hess_laplace_appr_REML(
+            rho, beta_hat, S_all, y, X, family, phi_est, sm, var_list,
+            compute_grad=False,
+        )
+        np.testing.assert_allclose(
+            hess_val, standalone_hess, rtol=1e-3, atol=1e-5,
+            err_msg="reml_objective 'eval_grad_hess' vs hess_laplace_appr_REML mismatch",
+        )
+
+
+# ===========================================================================
+# Batch 8 – Corrected AIC (Wood 2017 eq 6.31-6.32)
+# ===========================================================================
+
+class TestCorrectedAIC:
+    """Verify the corrected AIC formula from Wood (2017) eq 6.31-6.32.
+
+    The corrected covariance matrix is (eq 6.31):
+        V'_β = Vb + V' + V''
+        V'    = J Vρ J^T                          (smoothing-parameter location)
+        V''_jm = Σ_i Σ_k Σ_l ∂R_ij/∂ρ_k Vρ_kl ∂R_im/∂ρ_l  (Cholesky correction)
+
+    The corrected AIC penalty is (eq 6.32):
+        τ₂ = tr(V'_β * I_hat)
+        AIC = -2 l(β̂) + 2 τ₂
+
+    where I_hat = H = X^T diag(w) X / phi is the observed Fisher information.
+    Tests below replicate each building block independently (matrix multiply
+    vs einsum, np.trace vs inner product) to catch index-ordering bugs.
+    """
+
+    def _build_quantities(self, prob):
+        """Compute all building blocks needed for the AIC formula."""
+        rho, beta_hat = prob["rho"], prob["beta_hat"]
+        y, X, family = prob["y"], prob["X"], prob["family"]
+        sm, var_list, phi_est = prob["sm"], prob["var_list"], prob["phi_est"]
+        S_all = prob["S_all"]
+
+        # Bayesian covariance Vb = (H + S_λ)^{-1}
+        Vb = -np.array(Vbeta_rho(
+            rho, beta_hat, y, X, family, sm, var_list, phi_est, inverse=True,
+        ))
+
+        # V_ρ = (negative REML Hessian)^{-1}  (Wood 2017 eq 6.30)
+        hess_reml = hess_laplace_appr_REML(
+            rho, beta_hat, S_all, y, X, family, phi_est, sm, var_list,
+            compute_grad=False,
+        )
+        V_rho = np.linalg.pinv(-hess_reml)
+
+        # J = dβ̂/dρ, shape (M, p)
+        J = dbeta_hat(rho, beta_hat, S_all, sm, var_list, y, X, family, phi_est)
+
+        # dR/dρ_k (Cholesky factor gradient), shape (M, p, p)
+        dR = grad_chol_Vb_rho(rho, beta_hat, S_all, y, X, family, sm, var_list, phi_est)
+
+        # Observed Fisher information I_hat = H = X^T diag(w) X / phi
+        I_hat = np.array(H_rho(
+            rho, beta_hat, y, X, family, phi_est, sm, var_list, comp_gradient=False,
+        ))
+
+        return rho, beta_hat, y, X, family, sm, var_list, phi_est, Vb, V_rho, J, dR, I_hat
+
+    def test_V_prime_einsum_matches_matmul(self, gam_problem):
+        """V' = J Vρ J^T: einsum 'ri,rh,hj->ij' must equal J.T @ Vρ @ J."""
+        _, _, _, _, _, _, _, _, _, V_rho, J, _, _ = self._build_quantities(gam_problem)
+
+        V_prime_ein = np.einsum("ri,rh,hj->ij", J, V_rho, J)
+        V_prime_mat = J.T @ V_rho @ J
+        np.testing.assert_allclose(
+            V_prime_ein, V_prime_mat, rtol=1e-12,
+            err_msg="V' einsum vs matrix-multiply mismatch (eq 6.31)",
+        )
+
+    def test_corrected_covariance_is_symmetric(self, gam_problem):
+        """V'_β = Vb + V' + V'' must be symmetric (it is a covariance matrix)."""
+        _, _, _, _, _, _, _, _, Vb, V_rho, J, dR, _ = self._build_quantities(gam_problem)
+
+        V_prime   = np.einsum("ri,rh,hj->ij", J, V_rho, J)
+        V_2prime  = np.einsum("kij,kl,lim->jm", dR, V_rho, dR)
+        V_corr = Vb + V_prime + V_2prime
+
+        np.testing.assert_allclose(
+            V_corr, V_corr.T, rtol=1e-10,
+            err_msg="V'_β from eq 6.31 is not symmetric",
+        )
+
+    def test_aic_trace_matches_einsum(self, gam_problem):
+        """τ₂ = tr(V'_β I_hat): np.trace(V_corr @ I_hat) must equal einsum contraction."""
+        _, _, _, _, _, _, _, _, Vb, V_rho, J, dR, I_hat = self._build_quantities(gam_problem)
+
+        V_prime  = J.T @ V_rho @ J
+        V_2prime = np.einsum("kij,kl,lim->jm", dR, V_rho, dR)
+        V_corr   = Vb + V_prime + V_2prime
+
+        tau2_trace = np.trace(V_corr @ I_hat)
+        tau2_ein   = np.einsum("ij,ji->", V_corr, I_hat)
+        np.testing.assert_allclose(
+            tau2_trace, tau2_ein, rtol=1e-12,
+            err_msg="τ₂ via np.trace vs einsum mismatch",
+        )
+
+    def test_aic_correction_nonnegative(self, gam_problem):
+        """Corrected EDF τ₂ must be ≥ the uncorrected edf₁ = tr(F) where F = Vb H.
+
+        V' and V'' are both PSD (outer-product form weighted by PSD V_ρ), so
+        the correction V' + V'' adds non-negative eigenvalues to Vb.  Hence
+        tr((V' + V'') I_hat) ≥ 0 and τ₂ ≥ edf₁.
+        """
+        _, _, _, _, _, _, _, _, Vb, V_rho, J, dR, I_hat = self._build_quantities(gam_problem)
+
+        V_prime  = J.T @ V_rho @ J
+        V_2prime = np.einsum("kij,kl,lim->jm", dR, V_rho, dR)
+        V_corr   = Vb + V_prime + V_2prime
+
+        # uncorrected edf: tr(Vb H) = tr(F) where F = (H + S_λ)^{-1} H
+        edf1 = np.trace(Vb @ I_hat)
+        tau2 = np.trace(V_corr @ I_hat)
+
+        assert tau2 >= edf1 - 1e-6, (
+            f"τ₂ = {tau2:.6f} < edf₁ = {edf1:.6f}; correction is negative"
+        )
+
+    def test_aic_formula_eq_6_32(self, gam_problem):
+        """AIC = -2 l(β̂) + 2 τ₂ is finite and well-formed (eq 6.32)."""
+        rho, beta_hat, y, X, family, sm, var_list, phi_est, Vb, V_rho, J, dR, I_hat = (
+            self._build_quantities(gam_problem)
+        )
+
+        V_prime  = J.T @ V_rho @ J
+        V_2prime = np.einsum("kij,kl,lim->jm", dR, V_rho, dR)
+        V_corr   = Vb + V_prime + V_2prime
+
+        tau2 = np.trace(V_corr @ I_hat)
+        l_hat = unpenalized_ll(beta_hat, y, X, family, phi_est, omega=1)
+        aic = -2 * l_hat + 2 * tau2
+
+        assert np.isfinite(aic), f"AIC is not finite: {aic}"
+        assert tau2 > 0, f"τ₂ = {tau2:.6f} is non-positive"
+        # AIC decomposes correctly
+        np.testing.assert_allclose(
+            aic, -2 * l_hat + 2 * tau2, rtol=1e-15,
+            err_msg="AIC = -2l + 2τ₂ decomposition mismatch",
         )

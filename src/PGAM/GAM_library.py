@@ -1360,6 +1360,7 @@ class general_additive_model(object):
         saveBetaHist=False,
         perform_PQL=True,
         WLS_solver="positive_weights",
+        compute_AIC=False,
     ):
         if smooth_pen is None:
             smooth_pen = []
@@ -1378,7 +1379,7 @@ class general_additive_model(object):
                 conv_criteria=conv_criteria,
                 perform_PQL=perform_PQL,
                 method=method,
-                compute_AIC=False,
+                compute_AIC=compute_AIC,
                 gcv_sel_tol=gcv_sel_tol,
                 random_init=random_init,
                 use_dgcv=use_dgcv,
@@ -1401,7 +1402,7 @@ class general_additive_model(object):
                 conv_criteria=conv_criteria,
                 perform_PQL=perform_PQL,
                 method=method,
-                compute_AIC=False,
+                compute_AIC=compute_AIC,
                 gcv_sel_tol=gcv_sel_tol,
                 random_init=random_init,
                 use_dgcv=use_dgcv,
