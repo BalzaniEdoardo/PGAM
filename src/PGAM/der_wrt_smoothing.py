@@ -411,11 +411,7 @@ def d3beta_unpenalized_ll(beta, y, X, family, phi_est):
     mu = family.link.inverse(np.dot(X, beta))
     dalpha_dmu = alpha_deriv(y, mu, family)
     dmu_deta = np.clip(1 / family.link.deriv(mu), FLOAT_EPS, np.inf)
-    t0 = perf_counter()
     temp = -1 / phi_est * contract("i,i,im,ir,il->mrl", dalpha_dmu, dmu_deta, X, X, X)
-    t1 = perf_counter()
-    print("optim einsum:", t1 - t0)
-    t0 = perf_counter()
     try:
         d3beta_ll = (
             -1
@@ -428,8 +424,6 @@ def d3beta_unpenalized_ll(beta, y, X, family, phi_est):
             / phi_est
             * np.einsum("i,i,im,ir,il -> mrl", dalpha_dmu, dmu_deta, X, X, X)
         )
-    t1 = perf_counter()
-    print("fastsum:", t1 - t0)
     return d3beta_ll
 
 
@@ -468,7 +462,6 @@ def ll_MLE_rho(
     iteration = 0
     smooth_pen = np.exp(rho)
     sm_handler.set_smooth_penalties(smooth_pen, var_list)
-    print("Start optim: criteria", conv_criteria, "smoothing par", smooth_pen)
     pen_matrix = sm_handler.get_penalty_agumented(var_list)
     Xagu = np.vstack((X, pen_matrix))
     yagu = np.zeros(Xagu.shape[0])
@@ -673,7 +666,8 @@ def Vbeta_rho(
         w = np.clip(w, 0, np.inf)
     WX = (np.sqrt(w) * X.T).T
 
-    Q, R = np.linalg.qr(WX, mode="reduced")
+    # mode='r' skips forming Q (DORGQR), saving ~2/3 of the QR time; Q is never used
+    R = np.linalg.qr(WX, mode="r")
     sm_handler.set_smooth_penalties(np.exp(rho), var_list)
     B = sm_handler.get_penalty_agumented(var_list)
     B = np.array(B, dtype=np.float64)
@@ -694,7 +688,6 @@ def Vbeta_rho(
     sum_hes_inv = -(V_T.T @ D @ V_T)
 
     if return_logdet:
-        # log|H+S| = 2·Σlog(s) − r·log(phi),  free from the SVD already done above
         log_det = 2.0 * np.sum(np.log(s)) - len(s) * np.log(phi_est)
         return sum_hes_inv, log_det
     return sum_hes_inv
@@ -744,7 +737,8 @@ def Vbeta_rho_all(
         w = np.clip(w, 0, np.inf)
     WX = (np.sqrt(w) * X.T).T
 
-    Q, R = np.linalg.qr(WX, mode="reduced")
+    # mode='r' skips forming Q (DORGQR), saving ~2/3 of the QR time; Q is never used
+    R = np.linalg.qr(WX, mode="r")
     sm_handler.set_smooth_penalties(np.exp(rho), var_list)
     B = sm_handler.get_penalty_agumented(var_list)
     B = np.array(B, dtype=np.float64)
@@ -833,81 +827,84 @@ def dbeta_hat(
     return true_grad
 
 
-def d2beta_hat(rho, b_hat, S_all, sm_handler, var_list, y, X, family, phi_est=1):
+def d2beta_hat(rho, b_hat, S_all, sm_handler, var_list, y, X, family, phi_est=1,
+               dH_drho=None, neg_sum_inv=None, grad_beta_precomp=None):
     r"""Second derivative of beta_hat wrt rho: d^2 beta_hat / (d rho_h d rho_k).
 
     Differentiates the expression for J = d beta_hat / d rho a second time.
     The formula in the book (Wood 2017) contains a sign error; the correct
     expression is implemented here (see project Overleaf notes).
 
+    Parameters
+    ----------
+    dH_drho : ndarray, shape (M, p, p), optional
+        Pre-computed d H / d rho.  If provided, the grad_H_drho call is skipped.
+    neg_sum_inv : ndarray, shape (p, p), optional
+        Pre-computed -(H + S_lambda)^{-1} = V_beta.  If provided, the Vbeta_rho
+        (QR + SVD) call is skipped.
+    grad_beta_precomp : ndarray, shape (M, p), optional
+        Pre-computed d beta_hat / d rho.  If provided, both the Vbeta_rho call
+        and the P1/grad_beta einsum are skipped.
+
     Returns
     -------
     hes_beta : ndarray, shape (M, M, p)
         hes_beta[h, k, :] = d^2 beta_hat / (d rho_h d rho_k).
     """
-    dH_drho = grad_H_drho(
-        rho, b_hat, y, X, sm_handler, var_list, family, S_all, phi_est
-    )
-    Slam_tensor = np.zeros((len(S_all),) + S_all[0].shape)
-    Slam_tensor[:, :, :] = S_all
-    exp_rho = np.exp(rho)
-    dSlam_drho = (Slam_tensor.T * exp_rho).T / phi_est
+    # dSlam/drho_k = exp(rho_k) * S_k / phi  (always needed for grad_neg_sum)
+    dSlam_drho = (np.array(S_all).T * np.exp(rho)).T / phi_est
 
-    neg_sum_inv = np.array(
-        Vbeta_rho(
-            rho,
-            b_hat,
-            y,
-            X,
-            family,
-            sm_handler,
-            var_list,
-            phi_est,
-            inverse=True,
-            compute_grad=False,
+    # --- V_beta = -(H+S)^{-1}: dominant cost, skipped when pre-supplied ---
+    if neg_sum_inv is None:
+        neg_sum_inv = np.array(
+            Vbeta_rho(
+                rho, b_hat, y, X, family, sm_handler, var_list, phi_est,
+                inverse=True, compute_grad=False,
+            )
         )
-    )
+
+    # --- grad_beta[k] = neg_sum_inv @ (dSlam_drho[k] @ b_hat) ---
+    if grad_beta_precomp is not None:
+        grad_beta = grad_beta_precomp
+    else:
+        P1 = np.einsum("kij,j->ki", dSlam_drho, b_hat)   # (M, p)
+        grad_beta = np.einsum("li,ki->kl", neg_sum_inv, P1)  # (M, p)
+
+    # --- dH/drho: skipped when pre-supplied ---
+    if dH_drho is None:
+        dH_drho = grad_H_drho(
+            rho, b_hat, y, X, sm_handler, var_list, family, S_all, phi_est,
+            dB=grad_beta,
+        )
 
     grad_neg_sum = -(dH_drho + dSlam_drho)
-    grad_beta = dbeta_hat(
-        rho, b_hat, S_all, sm_handler, var_list, y, X, family, phi_est=phi_est
-    )
 
     if np.isfortran(neg_sum_inv):
         neg_sum_inv = np.array(neg_sum_inv, order="C")
     if np.isfortran(grad_neg_sum):
         grad_neg_sum = np.array(grad_neg_sum, order="C")
-    if np.isfortran(dSlam_drho):
-        dSlam_drho = np.array(dSlam_drho, order="C")
     if np.isfortran(b_hat):
         b_hat = np.array(b_hat, order="C")
     if np.isfortran(grad_beta):
         grad_beta = np.array(grad_beta, order="C")
 
-    try:
-        add1 = fast_summations.d2beta_hat_summation_1(
-            neg_sum_inv, grad_neg_sum, dSlam_drho, b_hat
-        )
-        add2 = fast_summations.d2beta_hat_summation_2(
-            neg_sum_inv, dSlam_drho, grad_beta
-        )
-    except:
-        add1 = np.einsum(
-            "ij,hjl,lr,krp,p->hki",
-            neg_sum_inv,
-            grad_neg_sum,
-            -neg_sum_inv,
-            dSlam_drho,
-            b_hat,
-            optimize=True,
-        )
-        tmp = np.einsum("kjl,hl->hkj", dSlam_drho, grad_beta, optimize=True)
-        add2 = np.einsum("hkj,ij->hki", tmp, neg_sum_inv, optimize=True)
+    T = np.tensordot(grad_beta, dSlam_drho, axes=(1, 2))  # (M, M, p)
+
+    # step 1: right-multiply neg_sum_inv into grad_neg_sum[h]
+    tmp2 = np.einsum("ij,hjl->hil", neg_sum_inv, grad_neg_sum)  # (M, p, p)
+
+    # step 2: contract tmp2 with grad_beta.
+    # Note: tmp_p[k,l] = (-neg_sum_inv @ dSlam_drho[k] @ b_hat)[l] = -grad_beta[k,l],
+    # so tmp_p = -grad_beta and the two intermediate tensors are not needed.
+    add1 = -np.einsum("hil,kl->hki", tmp2, grad_beta)
+    add2 = T @ neg_sum_inv.T
+
     di1, di2 = np.diag_indices(rho.shape[0])
     hes_beta = add1 + add2
-    hes_beta[di1, di2] = hes_beta[di1, di2] + np.einsum(
-        "ij,hjl,l->hi", neg_sum_inv, dSlam_drho, b_hat
-    )
+
+    # Diagonal correction: einsum("ij,hjl,l->hi", neg_sum_inv, dSlam_drho, b_hat)
+    # = neg_sum_inv @ P1[h] = grad_beta[h], so just add grad_beta on the diagonal.
+    hes_beta[di1, di2] += grad_beta
 
     return hes_beta
 
@@ -1063,14 +1060,45 @@ def dw_drho(
 
     return dw
 
+def grad_H_chunked_fused(X, w_prime, dB, phi_est, block_size=256):
+    n, p = X.shape
+    M = dB.shape[0]
+
+    result = np.empty((M, p, p))
+
+    for start in range(0, M, block_size):
+        end = min(start + block_size, M)
+        B = end - start
+
+        # compute hv block on the fly:
+        # hv[:, r] = sum_l dB[r,l] * w_prime[l,k]
+        block_dB = dB[start:end]              # (B, M)
+        block_hv = (block_dB @ w_prime).T     # (n, B)
+
+        V = (block_hv[:, :, None] * X[:, None, :])  # (n, B, p)
+        V = V.reshape(n, B * p)
+
+        chunk = X.T @ V
+        chunk = chunk.reshape(p, B, p).transpose(1, 0, 2)
+
+        result[start:end] = chunk
+
+    return result / phi_est
 
 def grad_H_drho(
-    rho, beta, y, X, sm_handler, var_list, family, S_all, phi_est, compute_grad=False
+    rho, beta, y, X, sm_handler, var_list, family, S_all, phi_est, compute_grad=False,
+    dB=None,
 ):
     """Gradient of the unpenalised Hessian H wrt rho: dH/drho, shape (M, p, p).
 
     H = X^T diag(w) X / phi.  Differentiating through w gives
         dH[k]/drho_h = X^T diag(dw/drho_h) X / phi.
+
+    Parameters
+    ----------
+    dB : ndarray, shape (M, p), optional
+        Pre-computed d beta_hat / d rho.  If provided, the internal dbeta_hat
+        call (and its Vbeta_rho / QR+SVD) is skipped.
     """
     if compute_grad:
         beta_hat = mle_gradient_bassed_optim(
@@ -1087,20 +1115,15 @@ def grad_H_drho(
     else:
         beta_hat = beta
     w_prime = dw_dbeta(beta_hat, y, family, X)
-    dB = dbeta_hat(rho, beta_hat, S_all, sm_handler, var_list, y, X, family)
-
+    if dB is None:
+        dB = dbeta_hat(rho, beta_hat, S_all, sm_handler, var_list, y, X, family)
     if np.isfortran(X):
         X = np.array(X, order="C")
     if np.isfortran(dB):
         dB = np.array(dB, order="C")
     if np.isfortran(w_prime):
         w_prime = np.array(w_prime, order="C")
-    try:
-        grad_H = (
-            fast_summations.grad_H_summation(X, dB, w_prime) / phi_est
-        )
-    except Exception:
-        grad_H = np.einsum("ki,lk,kj,rl->rij", X, w_prime, X, dB) / phi_est
+    grad_H = grad_H_chunked_fused(X, w_prime, dB, phi_est, block_size=256)
     return grad_H
 
 
@@ -1215,53 +1238,54 @@ def reml_objective(
     if return_type == ReturnType.eval:
         return REML
 
-    S_raw = np.array(S_all)  # (M, p, p)
-    S_tensor = S_raw * lams[:, None, None]  # (M, p, p)
+    S_raw    = np.array(S_all)                        # (M, p, p) — computed once
+    S_tensor = S_raw * lams[:, None, None]             # (M, p, p)
+    dSlam_drho = S_tensor / phi_est                   # (M, p, p) = exp(rho_k)*S_k/phi
 
-    # ── add1: -0.5 * beta^T (lam_r * S_r) beta / phi ─────────────────────────
+    # neg_sum_inv = -(H+S)^{-1} from the already-computed Vbeta_rho_all — no extra QR+SVD
+    neg_sum_inv = -Vb_inv
+
+    # dB = d beta_hat / d rho — inline using neg_sum_inv, no dbeta_hat / Vbeta_rho call
+    P1 = np.einsum("kij,j->ki", dSlam_drho, b_hat)    # (M, p)
+    dB = np.einsum("li,ki->kl", neg_sum_inv, P1)       # (M, p)
+
+    # ── add1 (gradient): -0.5 * beta^T (lam_r * S_r) beta / phi ──────────────
     add1 = -0.5 * np.einsum("i,rij,j->r", b_hat, S_tensor, b_hat) / phi_est
 
-    # ── add2: +0.5 * d log|S_lambda|+ / drho / phi — reuse Sinv from above ────
+    # ── add2 (gradient): +0.5 * d log|S_lambda|+ / drho / phi ────────────────
     add2 = (
         0.5
         * np.array([lams[j] * inner1d_sum(Sinv, S_transf[j].T) for j in range(len(rho))])
         / phi_est
     )
 
-    # ── add3: -0.5 * tr(Vb_inv @ dVb[r]) — streaming, no dVb materialised ────
-    # dVb[r] = dH[r] + lam_r * S_r / phi
-    # tr(Vb_inv @ dH[r])     = (dB @ q)[r] / phi
-    # tr(Vb_inv @ lam_r*S_r) = lam_r * tr(Vb_inv @ S_r) / phi
-    # where q[l] = Σ_k h_mu[k] * diag_XVX[k] * X[k,l]
-
+    # ── add3 (gradient): -0.5 * tr(Vb_inv @ dVb[r]) ─────────────────────────
+    # tr(Vb_inv @ dH[r]) = (dB @ q)[r] / phi;  tr(Vb_inv @ lam_r*S_r) = lam_r*tr_VS[r]
     mu = family.link.inverse(np.dot(X, b_hat))
     h_mu = small_h_mu(mu, y, family)  # (n,)
 
-    dB = dbeta_hat(rho, b_hat, S_all, sm_handler, var_list, y, X, family, phi_est)
-
-    VX = Vb_inv @ X.T  # (p, n)
-    diag_XVX = np.sum(X * VX.T, axis=1)  # (n,)
-
-    q = X.T @ (h_mu * diag_XVX)  # (p,)
-    tr_dH = dB @ q / phi_est  # (M,)
-
-    tr_VS = np.einsum("ij,hji->h", Vb_inv, S_raw) / phi_est  # (M,)
+    VX = Vb_inv @ X.T                                 # (p, n) — hoisted, reused below
+    diag_XVX = np.sum(X * VX.T, axis=1)              # (n,)
+    q = X.T @ (h_mu * diag_XVX)                      # (p,) — hoisted, reused below
+    tr_dH = dB @ q / phi_est                          # (M,)
+    tr_VS = np.einsum("ij,hji->h", Vb_inv, S_raw) / phi_est  # (M,) — hoisted, reused below
 
     add3 = -0.5 * (tr_dH + lams * tr_VS)
     grad_REML = add1 + add2 + add3
     if return_type == ReturnType.eval_grad:
         return REML, grad_REML
 
+    # ── Hessian ───────────────────────────────────────────────────────────────
 
-    # ── add1 ──────────────────────────────────────────────────────────────────
+    # ── add1 (Hessian) ────────────────────────────────────────────────────────
     di = np.diag_indices(len(rho))
     add1 = np.einsum("hj,ji,ki->hk", dB, Vb, dB, optimize="optimal")
     add1[di] -= (
-            0.5 * np.einsum("i,hij,j->h", b_hat, S_tensor, b_hat, optimize="optimal")
-            / phi_est
+        0.5 * np.einsum("i,hij,j->h", b_hat, S_tensor, b_hat, optimize="optimal")
+        / phi_est
     )
 
-    # ── add2: reuse Sinv — hes_logDet_Slam would recompute the Cholesky ─────────
+    # ── add2 (Hessian): reuse Sinv ────────────────────────────────────────────
     Sinv_Sj = [np.einsum("ij,jk->ik", Sinv, S_transf[j]) for j in range(len(rho))]
     hes_det = np.zeros((len(rho), len(rho)))
     for _i in range(len(rho)):
@@ -1271,44 +1295,37 @@ def reml_objective(
                 hes_det[_i, _j] += lams[_i] * inner1d_sum(Sinv, S_transf[_i].T)
     add2 = 0.5 * hes_det / phi_est
 
-    # ── add3 — streaming trace, no (M, M, p, p) materialisation ──────────────
-    # add3[h,r] = 0.5 * ( tr(A[h]@A[r]) - tr(Vb_inv @ d2Vb[h,r]) )
-    # where A[h] = Vb_inv @ dVb[h]   and   d2Vb = d2H + δ_{hr}*lam_h*S_h/phi
-    dVb = dVb_drho(rho, b_hat, S_all, y, X, family, sm_handler, var_list, phi_est)
+    # ── add3 (Hessian) — streaming trace ──────────────────────────────────────
+    # dH/drho: one grad_H_chunked_fused, passing dB to skip the internal dbeta_hat
+    dH_drho = grad_H_drho(
+        rho, b_hat, y, X, sm_handler, var_list, family, S_all, phi_est, dB=dB
+    )
+    dVb = dH_drho + dSlam_drho  # replaces dVb_drho call
 
-    # First part: tr( (Vb_inv dVb[h]) (Vb_inv dVb[r]) ) — O(M·p² + M²·p²)
     tmp = np.einsum("ij,hjk->hik", Vb_inv, dVb, optimize=True)  # (M, p, p)
     tr_AhAr = np.einsum("hij,rji->hr", tmp, tmp)  # (M, M)
 
-    # Second part: tr(Vb_inv @ d2Vb[h,r]) via diag(X Vb_inv X^T)
-    # d2H[h,r,i,j] = Σ_k X[k,i]*X[k,j]*(tilde_h[k]*A[k,h]*A[k,r] + h[k]*v[k,h,r])/phi
-    # tr(Vb_inv @ d2H[h,r]) = Σ_k diag_XVX[k]*(tilde_h[k]*A[k,h]*A[k,r]+h[k]*v[k,h,r])/phi
-
     h_prime = deriv_small_h(mu, y, family)  # (n,)
-    g_prime = family.link.deriv(mu)  # (n,)
-    tilde_h = h_prime / g_prime  # (n,)
+    g_prime = family.link.deriv(mu)         # (n,)
+    tilde_h = h_prime / g_prime             # (n,)
 
-    d2B = d2beta_hat(  # (M, M, p)
-        rho, b_hat, S_all, sm_handler, var_list, y, X, family, phi_est
+    # d2B: pass pre-computed quantities to skip all internal Vbeta_rho / grad_H calls
+    d2B = d2beta_hat(
+        rho, b_hat, S_all, sm_handler, var_list, y, X, family, phi_est,
+        dH_drho=dH_drho, neg_sum_inv=neg_sum_inv, grad_beta_precomp=dB,
     )
 
-    VX = Vb_inv @ X.T  # (p, n)
-    diag_XVX = np.sum(X * VX.T, axis=1)  # (n,)
+    # Term 1: reuse A = X @ dB.T, diag_XVX already computed above
+    A = X @ dB.T                             # (n, M)
+    w1 = tilde_h * diag_XVX                 # (n,)
+    tr_d2H_t1 = (A * w1[:, None]).T @ A     # (M, M)
 
-    # Term 1 of tr(Vb_inv @ d2H): Σ_k tilde_h[k]*diag_XVX[k]*A[k,h]*A[k,r]
-    A = X @ dB.T  # (n, M)
-    w1 = tilde_h * diag_XVX  # (n,)
-    tr_d2H_t1 = (A * w1[:, None]).T @ A  # (M, M)
-
-    # Term 2 of tr(Vb_inv @ d2H): Σ_{k,l} h[k]*diag_XVX[k]*X[k,l]*d2B[h,r,l]
-    q = X.T @ (h_mu * diag_XVX)  # (p,)
+    # Term 2: reuse q and diag_XVX from gradient section
     tr_d2H_t2 = np.einsum("l,hrl->hr", q, d2B)  # (M, M)
 
     tr_d2H = (tr_d2H_t1 + tr_d2H_t2) / phi_est  # (M, M)
 
-    # Penalty diagonal: δ_{hr} * lam_h/phi * tr(Vb_inv @ S_h)
-    S_raw = np.array(S_all)  # (M, p, p)
-    tr_VS = np.einsum("ij,hji->h", Vb_inv, S_raw) / phi_est  # (M,)
+    # Diagonal penalty: reuse tr_VS from gradient section
     tr_d2Vb = tr_d2H.copy()
     tr_d2Vb[di] += lams * tr_VS
 
@@ -1548,12 +1565,19 @@ def R_rho(rho, b_hat, y, X, family, sm_handler, var_list, phi_est):
 
 
 def dVb_drho(
-    rho, beta, S_all, y, X, family, sm_handler, var_list, phi_est, compute_grad=False
+    rho, beta, S_all, y, X, family, sm_handler, var_list, phi_est, compute_grad=False,
+    dB=None,
 ):
     """Gradient of V_beta wrt rho: dV_beta/drho, shape (M, p, p).
 
     dV_beta/drho_k = dH/drho_k + dS_lambda/drho_k,
     where dS_lambda/drho_k = lambda_k * S_k / phi.
+
+    Parameters
+    ----------
+    dB : ndarray, shape (M, p), optional
+        Pre-computed d beta_hat / d rho.  Passed through to grad_H_drho to
+        skip the internal dbeta_hat (and its Vbeta_rho) call.
     """
     if compute_grad:
         b_hat = mle_gradient_bassed_optim(
@@ -1569,7 +1593,7 @@ def dVb_drho(
         )[0]
     else:
         b_hat = beta
-    dH = grad_H_drho(rho, b_hat, y, X, sm_handler, var_list, family, S_all, phi_est)
+    dH = grad_H_drho(rho, b_hat, y, X, sm_handler, var_list, family, S_all, phi_est, dB=dB)
     Slam_tensor = np.zeros((len(S_all),) + S_all[0].shape)
     Slam_tensor[:, :, :] = S_all
     dS = (np.exp(rho) * Slam_tensor.T).T / phi_est
@@ -1647,21 +1671,30 @@ def grad_cholesky(grad_D_rho, R):
     return grad_chol
 
 
-def grad_chol_Vb_rho(rho, b_hat, S_all, y, X, family, sm_handler, var_list, phi_est):
+def grad_chol_Vb_rho(rho, b_hat, S_all, y, X, family, sm_handler, var_list, phi_est,
+                     Vb_inv=None, dVb=None):
     """Gradient of the Cholesky factor of V_beta wrt rho, shape (M, p, p).
 
     Needed for the V'' correction term in eq. 6.31 of Wood (2017).
+
+    Parameters
+    ----------
+    Vb_inv : ndarray, shape (p, p), optional
+        Pre-computed (H + S_lambda)^{-1}.  If provided, the Vbeta_rho call is skipped.
+    dVb : ndarray, shape (M, p, p), optional
+        Pre-computed dH/drho + dSlam/drho.  If provided, the dVb_drho call is skipped.
     """
-    Vb = -Vbeta_rho(
-        rho, b_hat, y, X, family, sm_handler, var_list, phi_est, inverse=True
-    )
-    R = np.array(np.linalg.cholesky(Vb))
-    R = R.T
-    dVb = dVb_drho(rho, b_hat, S_all, y, X, family, sm_handler, var_list, phi_est)
-    dVb = -np.einsum("ij,hjk,kl->hil", Vb, dVb, Vb, optimize="optimal")
-    grad_chol_Vb = np.zeros(dVb.shape)
+    if Vb_inv is None:
+        Vb_inv = -Vbeta_rho(
+            rho, b_hat, y, X, family, sm_handler, var_list, phi_est, inverse=True
+        )
+    if dVb is None:
+        dVb = dVb_drho(rho, b_hat, S_all, y, X, family, sm_handler, var_list, phi_est)
+    R = np.array(np.linalg.cholesky(Vb_inv)).T
+    dVb_xform = -np.einsum("ij,hjk,kl->hil", Vb_inv, dVb, Vb_inv, optimize="optimal")
+    grad_chol_Vb = np.zeros(dVb_xform.shape)
     for j in range(rho.shape[0]):
-        grad_chol_Vb[j] = grad_cholesky(dVb[j], R)
+        grad_chol_Vb[j] = grad_cholesky(dVb_xform[j], R)
 
     return grad_chol_Vb
 
@@ -2162,6 +2195,7 @@ def hess_laplace_appr_REML(
     method="Newton-CG",
     num_random_init=1,
     tol=1e-12,
+    return_intermediates=False,
 ):
     """Hessian of the Laplace REML wrt rho, shape (M, M).
 
@@ -2173,6 +2207,14 @@ def hess_laplace_appr_REML(
 
     Agrees with hess_laplace_appr_REML_dense on small problems
     (validated by TestHessLaplaceREMLScalable).
+
+    Parameters
+    ----------
+    return_intermediates : bool
+        If True, return ``(hess, intermediates)`` where ``intermediates`` is a
+        dict with keys ``Vb``, ``Vb_inv``, ``dB``, ``dVb``.  These are the
+        quantities already computed internally; passing them to downstream
+        callers (e.g. ``compute_AIC``) avoids 3 redundant Vbeta_rho calls.
     """
     if compute_grad:
         if fixRand:
@@ -2188,14 +2230,24 @@ def hess_laplace_appr_REML(
     M = len(rho)
     lams = np.exp(rho)
 
-    # ── add1 ──────────────────────────────────────────────────────────────────
-    Vb = -np.array(Vbeta_rho(
-        rho, b_hat, y, X, family, sm_handler, var_list, phi_est,
-        inverse=False, compute_grad=False,
-    ))
-    dB = dbeta_hat(rho, b_hat, S_all, sm_handler, var_list, y, X, family, phi_est)
+    # One QR+SVD gives both Vb = (H+S) and Vb_inv = (H+S)^{-1}.
+    # All downstream calls that need either quantity reuse these arrays.
+    Vb, Vb_inv = Vbeta_rho_all(
+        rho, b_hat, y, X, family, sm_handler, var_list, phi_est
+    )
+    # neg_sum_inv = -(H+S)^{-1} = Vbeta_rho(inverse=True), used by d2beta_hat
+    neg_sum_inv = -Vb_inv
 
-    S_tensor = np.array(S_all) * lams[:, None, None]               # (M, p, p)
+    # dSlam/drho_k = exp(rho_k) * S_k / phi  (cheap, computed once)
+    S_raw    = np.array(S_all)                                       # (M, p, p)
+    S_tensor = S_raw * lams[:, None, None]                           # (M, p, p)
+    dSlam_drho = S_tensor / phi_est                                  # (M, p, p)
+
+    # dB = d beta_hat / d rho — inline from neg_sum_inv, no extra Vbeta_rho
+    P1 = np.einsum("kij,j->ki", dSlam_drho, b_hat)                  # (M, p)
+    dB = np.einsum("li,ki->kl", neg_sum_inv, P1)                    # (M, p)
+
+    # ── add1 ──────────────────────────────────────────────────────────────────
     add1 = np.einsum("hj,ji,ki->hk", dB, Vb, dB, optimize="optimal")
     di = np.diag_indices(M)
     add1[di] -= (
@@ -2211,32 +2263,34 @@ def hess_laplace_appr_REML(
     # add3[h,r] = 0.5 * ( tr(A[h]@A[r]) - tr(Vb_inv @ d2Vb[h,r]) )
     # where A[h] = Vb_inv @ dVb[h]   and   d2Vb = d2H + δ_{hr}*lam_h*S_h/phi
 
-    Vb_inv = -np.array(Vbeta_rho(
-        rho, b_hat, y, X, family, sm_handler, var_list, phi_est,
-        inverse=True, compute_grad=False,
-    ))
-    dVb = dVb_drho(rho, b_hat, S_all, y, X, family, sm_handler, var_list, phi_est)
+    # dH/drho: one grad_H_chunked_fused call; pass dB to skip internal dbeta_hat
+    dH_drho = grad_H_drho(
+        rho, b_hat, y, X, sm_handler, var_list, family, S_all, phi_est, dB=dB
+    )
+    # dVb = dH + dS — no dVb_drho call needed
+    dVb = dH_drho + dSlam_drho
 
     # First part: tr( (Vb_inv dVb[h]) (Vb_inv dVb[r]) ) — O(M·p² + M²·p²)
     tmp = np.einsum("ij,hjk->hik", Vb_inv, dVb, optimize=True)    # (M, p, p)
-    tr_AhAr = np.einsum("hij,rji->hr", tmp, tmp)                   # (M, M)
+    tmp_flat  = tmp.reshape(tmp.shape[0], -1)
+    tmpT_flat = tmp.transpose(0, 2, 1).reshape(tmp.shape[0], -1)
+    tr_AhAr   = tmp_flat @ tmpT_flat.T
 
     # Second part: tr(Vb_inv @ d2Vb[h,r]) via diag(X Vb_inv X^T)
-    # d2H[h,r,i,j] = Σ_k X[k,i]*X[k,j]*(tilde_h[k]*A[k,h]*A[k,r] + h[k]*v[k,h,r])/phi
-    # tr(Vb_inv @ d2H[h,r]) = Σ_k diag_XVX[k]*(tilde_h[k]*A[k,h]*A[k,r]+h[k]*v[k,h,r])/phi
-
     mu       = family.link.inverse(np.dot(X, b_hat))
     h_mu     = small_h_mu(mu, y, family)                           # (n,)
     h_prime  = deriv_small_h(mu, y, family)                        # (n,)
     g_prime  = family.link.deriv(mu)                               # (n,)
     tilde_h  = h_prime / g_prime                                   # (n,)
 
-    d2B = d2beta_hat(                                              # (M, M, p)
-        rho, b_hat, S_all, sm_handler, var_list, y, X, family, phi_est
-    )
-
     VX        = Vb_inv @ X.T                                       # (p, n)
     diag_XVX  = np.sum(X * VX.T, axis=1)                          # (n,)
+
+    # d2B: pass all pre-computed quantities — skips Vbeta_rho, grad_beta, dH_drho
+    d2B = d2beta_hat(                                              # (M, M, p)
+        rho, b_hat, S_all, sm_handler, var_list, y, X, family, phi_est,
+        dH_drho=dH_drho, neg_sum_inv=neg_sum_inv, grad_beta_precomp=dB,
+    )
 
     # Term 1 of tr(Vb_inv @ d2H): Σ_k tilde_h[k]*diag_XVX[k]*A[k,h]*A[k,r]
     A  = X @ dB.T                                                   # (n, M)
@@ -2250,14 +2304,16 @@ def hess_laplace_appr_REML(
     tr_d2H = (tr_d2H_t1 + tr_d2H_t2) / phi_est                    # (M, M)
 
     # Penalty diagonal: δ_{hr} * lam_h/phi * tr(Vb_inv @ S_h)
-    S_raw  = np.array(S_all)                                       # (M, p, p)
     tr_VS  = np.einsum("ij,hji->h", Vb_inv, S_raw) / phi_est      # (M,)
     tr_d2Vb       = tr_d2H.copy()
     tr_d2Vb[di]  += lams * tr_VS
 
     add3 = 0.5 * (tr_AhAr - tr_d2Vb)
 
-    return add1 + add2 + add3
+    hess = add1 + add2 + add3
+    if return_intermediates:
+        return hess, dict(Vb=Vb, Vb_inv=Vb_inv, dB=dB, dVb=dVb)
+    return hess
 
 
 def balance_diag_func(rho, s, d):
