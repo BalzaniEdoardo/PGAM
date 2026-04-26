@@ -939,7 +939,10 @@ class general_additive_model(object):
         method : str, optional
             ``scipy.optimize.minimize`` method used for the smoothing-parameter
             optimisation step (GCV for ``"pql"``; negative-REML for
-            ``"direct_nested"``).  Default ``"L-BFGS-B"``.
+            ``"direct_reml"``).  Default ``"L-BFGS-B"``.
+            Use ``"trust-constr"`` to exploit the exact Hessian via
+            ``RemlProblem``; it converges in fewer iterations and respects
+            ``bounds_rho`` via an interior-point approach.
         methodInit : str, optional
             Optimiser used to compute the initial β when ``fit_initial_beta``
             is ``True``.
@@ -949,8 +952,8 @@ class general_additive_model(object):
         random_init : bool, optional
             Add Gaussian noise to the initial log-smoothing parameters.
         bounds_rho : list of (float, float) or None, optional
-            Box constraints on log-smoothing parameters for
-            ``method="L-BFGS-B"``.  If ``None`` and method is
+            Box constraints on log-smoothing parameters.  Accepted by both
+            ``"L-BFGS-B"`` and ``"trust-constr"``.  If ``None`` and method is
             ``"L-BFGS-B"``, defaults to ``[(-5 ln 10, 13 ln 10)]`` per
             parameter.
         gcv_sel_tol : float, optional
@@ -1320,17 +1323,29 @@ class general_additive_model(object):
         S_all = compute_Sjs(self.sm_handler, var_list)
         rho0 = np.log(smooth_pen)
 
-        def _neg_reml(rho):
-            val, grad = reml_objective(
-                rho, yfit, exog, self.sm_handler, var_list, self.family,
-                S_all, phi_est=1, return_type="eval_grad",
-            )
+        prob = RemlProblem(
+            yfit, exog, self.sm_handler, var_list, self.family, S_all, phi_est=1,
+        )
+
+        def _neg_eval_grad(rho):
+            val, grad = prob.eval_grad(rho)
             return -val, -grad
 
-        res = minimize(
-            _neg_reml, rho0, method=method, jac=True,
-            tol=gcv_sel_tol, bounds=bounds_rho, options={"disp": True},
-        )
+        if method == "trust-constr":
+            res = minimize(
+                _neg_eval_grad, rho0,
+                method="trust-constr",
+                jac=True,
+                hess=lambda rho: -prob.hess(rho),
+                bounds=bounds_rho,
+                tol=gcv_sel_tol,
+                options={"verbose": 1},
+            )
+        else:
+            res = minimize(
+                _neg_eval_grad, rho0, method=method, jac=True,
+                tol=gcv_sel_tol, bounds=bounds_rho, options={"disp": True, "verbose": 1},
+            )
         rho_opt = np.clip(res.x, -25, 30)
         smooth_pen = np.exp(rho_opt)
         self.sm_handler.set_smooth_penalties(smooth_pen, var_list)

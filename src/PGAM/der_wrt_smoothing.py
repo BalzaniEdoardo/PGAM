@@ -1139,6 +1139,7 @@ def reml_objective(
     return_type="eval_grad_hess",
     omega=1,
     null_dim=None,
+    return_intermediates=False,
 ):
     """Laplace-REML objective and its derivatives wrt the log-smoothing parameters rho.
 
@@ -1273,6 +1274,8 @@ def reml_objective(
     add3 = -0.5 * (tr_dH + lams * tr_VS)
     grad_REML = add1 + add2 + add3
     if return_type == ReturnType.eval_grad:
+        if return_intermediates:
+            return REML, grad_REML, dict(b_hat=b_hat, Vb=Vb, Vb_inv=Vb_inv, dB=dB)
         return REML, grad_REML
 
     # ── Hessian ───────────────────────────────────────────────────────────────
@@ -2196,6 +2199,7 @@ def hess_laplace_appr_REML(
     num_random_init=1,
     tol=1e-12,
     return_intermediates=False,
+    intermediates=None,
 ):
     """Hessian of the Laplace REML wrt rho, shape (M, M).
 
@@ -2215,37 +2219,47 @@ def hess_laplace_appr_REML(
         dict with keys ``Vb``, ``Vb_inv``, ``dB``, ``dVb``.  These are the
         quantities already computed internally; passing them to downstream
         callers (e.g. ``compute_AIC``) avoids 3 redundant Vbeta_rho calls.
+    intermediates : dict or None
+        Pre-computed dict with keys ``b_hat``, ``Vb``, ``Vb_inv``, ``dB``
+        (as returned by ``reml_objective(..., return_intermediates=True)``).
+        When provided, ``mle_gradient_bassed_optim`` and ``Vbeta_rho_all`` are
+        skipped.  Used by ``RemlProblem`` to eliminate the redundant recomputation
+        that occurs when ``trust-constr`` calls ``fun`` then ``hess`` at the same rho.
     """
-    if compute_grad:
-        if fixRand:
-            np.random.seed(4)
-        b_hat = mle_gradient_bassed_optim(
-            rho, sm_handler, var_list, y, X, family,
-            phi_est=phi_est, method=method,
-            num_random_init=num_random_init, tol=tol,
-        )[0]
-    else:
-        b_hat = beta
-
     M = len(rho)
     lams = np.exp(rho)
+    S_raw      = np.array(S_all)                      # (M, p, p)
+    S_tensor   = S_raw * lams[:, None, None]           # (M, p, p)
+    dSlam_drho = S_tensor / phi_est                   # (M, p, p)
 
-    # One QR+SVD gives both Vb = (H+S) and Vb_inv = (H+S)^{-1}.
-    # All downstream calls that need either quantity reuse these arrays.
-    Vb, Vb_inv = Vbeta_rho_all(
-        rho, b_hat, y, X, family, sm_handler, var_list, phi_est
-    )
-    # neg_sum_inv = -(H+S)^{-1} = Vbeta_rho(inverse=True), used by d2beta_hat
+    if intermediates is not None:
+        # Reuse quantities already computed by reml_objective at this rho —
+        # skips mle_gradient_bassed_optim and Vbeta_rho_all.
+        b_hat  = intermediates["b_hat"]
+        Vb     = intermediates["Vb"]
+        Vb_inv = intermediates["Vb_inv"]
+        dB     = intermediates["dB"]
+    else:
+        if compute_grad:
+            if fixRand:
+                np.random.seed(4)
+            b_hat = mle_gradient_bassed_optim(
+                rho, sm_handler, var_list, y, X, family,
+                phi_est=phi_est, method=method,
+                num_random_init=num_random_init, tol=tol,
+            )[0]
+        else:
+            b_hat = beta
+
+        # One QR+SVD gives both Vb = (H+S) and Vb_inv = (H+S)^{-1}.
+        Vb, Vb_inv = Vbeta_rho_all(
+            rho, b_hat, y, X, family, sm_handler, var_list, phi_est
+        )
+        neg_sum_inv = -Vb_inv
+        P1 = np.einsum("kij,j->ki", dSlam_drho, b_hat)   # (M, p)
+        dB = np.einsum("li,ki->kl", neg_sum_inv, P1)      # (M, p)
+
     neg_sum_inv = -Vb_inv
-
-    # dSlam/drho_k = exp(rho_k) * S_k / phi  (cheap, computed once)
-    S_raw    = np.array(S_all)                                       # (M, p, p)
-    S_tensor = S_raw * lams[:, None, None]                           # (M, p, p)
-    dSlam_drho = S_tensor / phi_est                                  # (M, p, p)
-
-    # dB = d beta_hat / d rho — inline from neg_sum_inv, no extra Vbeta_rho
-    P1 = np.einsum("kij,j->ki", dSlam_drho, b_hat)                  # (M, p)
-    dB = np.einsum("li,ki->kl", neg_sum_inv, P1)                    # (M, p)
 
     # ── add1 ──────────────────────────────────────────────────────────────────
     add1 = np.einsum("hj,ji,ki->hk", dB, Vb, dB, optimize="optimal")
@@ -2314,6 +2328,65 @@ def hess_laplace_appr_REML(
     if return_intermediates:
         return hess, dict(Vb=Vb, Vb_inv=Vb_inv, dB=dB, dVb=dVb)
     return hess
+
+
+class RemlProblem:
+    """Pairs reml_objective and hess_laplace_appr_REML with a last-call cache.
+
+    scipy.optimize.minimize(method='trust-constr') evaluates fun(rho) → (f, grad)
+    and hess(rho) at the same rho in separate calls.  Without caching this doubles
+    mle_gradient_bassed_optim + Vbeta_rho_all.  The cache detects when hess is called
+    at the same rho as the preceding eval_grad and injects pre-computed
+    (b_hat, Vb, Vb_inv, dB) so those steps are skipped.
+
+    Usage
+    -----
+    prob = RemlProblem(y, X, sm_handler, var_list, family, S_all, phi_est)
+    result = minimize(prob.eval_grad, rho0, jac=True, hess=prob.hess,
+                      method="trust-constr", bounds=bounds)
+    """
+
+    def __init__(self, y, X, sm_handler, var_list, family, S_all, phi_est,
+                 null_dim=None, omega=1):
+        self._y        = y
+        self._X        = X
+        self._sm       = sm_handler
+        self._var_list = var_list
+        self._family   = family
+        self._S_all    = S_all
+        self._phi      = phi_est
+        self._null_dim = null_dim
+        self._omega    = omega
+        self._cached_rho = None
+        self._cached_itm = None  # dict: b_hat, Vb, Vb_inv, dB
+
+    def eval_grad(self, rho):
+        """Return (REML, grad_REML) and populate the intermediate cache."""
+        val, grad, itm = reml_objective(
+            rho, self._y, self._X, self._sm, self._var_list,
+            self._family, self._S_all, self._phi,
+            return_type="eval_grad",
+            omega=self._omega, null_dim=self._null_dim,
+            return_intermediates=True,
+        )
+        self._cached_rho = rho.copy()
+        self._cached_itm = itm
+        return val, grad
+
+    def hess(self, rho):
+        """Return the REML Hessian, reusing cached intermediates when possible."""
+        if (self._cached_rho is not None
+                and np.array_equal(rho, self._cached_rho)):
+            return hess_laplace_appr_REML(
+                rho, None, self._S_all, self._y, self._X,
+                self._family, self._phi, self._sm, self._var_list,
+                intermediates=self._cached_itm,
+            )
+        return hess_laplace_appr_REML(
+            rho, None, self._S_all, self._y, self._X,
+            self._family, self._phi, self._sm, self._var_list,
+            compute_grad=True,
+        )
 
 
 def balance_diag_func(rho, s, d):

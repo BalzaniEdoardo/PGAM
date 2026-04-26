@@ -53,6 +53,7 @@ from PGAM.der_wrt_smoothing import (
     hess_laplace_appr_REML,
     hess_laplace_appr_REML_dense,
     reml_objective,
+    RemlProblem,
 )
 
 # ---------------------------------------------------------------------------
@@ -943,6 +944,83 @@ class TestRemlObjective:
             hess_val, standalone_hess, rtol=1e-3, atol=1e-5,
             err_msg="reml_objective 'eval_grad_hess' vs hess_laplace_appr_REML mismatch",
         )
+
+
+# ===========================================================================
+# Batch 7b – RemlProblem (caching wrapper for trust-constr)
+# ===========================================================================
+
+class TestRemlProblem:
+    """RemlProblem must match reml_objective / hess_laplace_appr_REML and cache correctly."""
+
+    def test_eval_grad_matches_reml_objective(self, gam_problem):
+        """eval_grad returns the same (f, grad) as reml_objective('eval_grad')."""
+        prob = gam_problem
+        rho = prob["rho"]
+        y, X, family = prob["y"], prob["X"], prob["family"]
+        sm, var_list, phi_est, S_all = prob["sm"], prob["var_list"], prob["phi_est"], prob["S_all"]
+
+        rp = RemlProblem(y, X, sm, var_list, family, S_all, phi_est)
+        val_rp, grad_rp = rp.eval_grad(rho)
+
+        val_ref, grad_ref = reml_objective(
+            rho, y, X, sm, var_list, family, S_all, phi_est,
+            return_type="eval_grad",
+        )
+        np.testing.assert_allclose(val_rp, val_ref, rtol=1e-5)
+        np.testing.assert_allclose(grad_rp, grad_ref, rtol=1e-3, atol=1e-6)
+
+    def test_hess_cache_hit_matches_standalone(self, gam_problem):
+        """hess called at the same rho as eval_grad (cache hit) matches hess_laplace_appr_REML."""
+        prob = gam_problem
+        rho = prob["rho"]
+        beta_hat = prob["beta_hat"]
+        y, X, family = prob["y"], prob["X"], prob["family"]
+        sm, var_list, phi_est, S_all = prob["sm"], prob["var_list"], prob["phi_est"], prob["S_all"]
+
+        rp = RemlProblem(y, X, sm, var_list, family, S_all, phi_est)
+        rp.eval_grad(rho)  # populate cache
+        hess_rp = rp.hess(rho)  # cache hit: intermediates injected
+
+        hess_ref = hess_laplace_appr_REML(
+            rho, beta_hat, S_all, y, X, family, phi_est, sm, var_list,
+            compute_grad=False,
+        )
+        np.testing.assert_allclose(hess_rp, hess_ref, rtol=1e-3, atol=1e-5)
+
+    def test_hess_cache_miss_matches_standalone(self, gam_problem):
+        """hess called at a different rho from eval_grad (cache miss) still matches."""
+        prob = gam_problem
+        rho = prob["rho"]
+        rho2 = rho + 0.1
+        beta_hat = prob["beta_hat"]
+        y, X, family = prob["y"], prob["X"], prob["family"]
+        sm, var_list, phi_est, S_all = prob["sm"], prob["var_list"], prob["phi_est"], prob["S_all"]
+
+        rp = RemlProblem(y, X, sm, var_list, family, S_all, phi_est)
+        rp.eval_grad(rho)   # populate cache at rho
+        hess_rp = rp.hess(rho2)  # cache miss — rho2 != rho
+
+        hess_ref = hess_laplace_appr_REML(
+            rho2, None, S_all, y, X, family, phi_est, sm, var_list,
+            compute_grad=True,
+        )
+        np.testing.assert_allclose(hess_rp, hess_ref, rtol=1e-3, atol=1e-5)
+
+    def test_intermediates_keys(self, gam_problem):
+        """eval_grad with return_intermediates=True returns the expected keys."""
+        prob = gam_problem
+        rho = prob["rho"]
+        y, X, family = prob["y"], prob["X"], prob["family"]
+        sm, var_list, phi_est, S_all = prob["sm"], prob["var_list"], prob["phi_est"], prob["S_all"]
+
+        _, _, itm = reml_objective(
+            rho, y, X, sm, var_list, family, S_all, phi_est,
+            return_type="eval_grad", return_intermediates=True,
+        )
+        assert set(itm.keys()) == {"b_hat", "Vb", "Vb_inv", "dB"}
+        assert itm["Vb"].shape == itm["Vb_inv"].shape
+        assert itm["dB"].shape[0] == len(rho)
 
 
 # ===========================================================================
