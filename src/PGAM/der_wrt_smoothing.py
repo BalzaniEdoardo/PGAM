@@ -1,7 +1,7 @@
 import inspect
 from .deriv_det_Slam import *
 from .gam_data_handlers import *
-from .newton_optim import *
+from ._pql_gcv import *
 from scipy.optimize import minimize
 from scipy.special import erfinv
 from .utils.linalg_utils import inner1d_sum

@@ -5,7 +5,9 @@ import scipy.stats as sts
 import statsmodels.api as sm
 from .der_wrt_smoothing import *
 from .gam_data_handlers import *
-from .newton_optim import *
+from ._pql_gcv import *
+from ._pql_reml import reml_objective, prepare_S_transf
+from .deriv_det_Slam import transform_Slam
 from scipy.optimize import minimize
 
 tryCuda = False
@@ -1018,6 +1020,13 @@ class general_additive_model(object):
                 method, methodInit, gcv_sel_tol, saveBetaHist, WLS_solver,
                 fit_initial_beta, filter_trials,
             )
+        elif fitting_approach == "pql_reml":
+            bhat, smooth_pen, converged, beta_hist = self._fit_pql_reml(
+                var_list, yfit, exog, n_obs, smooth_pen, f_weights_and_data,
+                bounds_rho, max_iter, tol, conv_criteria, perform_PQL,
+                method, methodInit, gcv_sel_tol, saveBetaHist, WLS_solver,
+                fit_initial_beta, filter_trials,
+            )
         elif fitting_approach == "direct_reml":
             bhat, smooth_pen, converged, beta_hist = self._fit_direct_reml(
                 var_list, yfit, exog, n_obs, smooth_pen,
@@ -1025,7 +1034,8 @@ class general_additive_model(object):
             )
         else:
             raise ValueError(
-                f"fitting_approach must be 'pql_gcv' or 'direct_reml', got {fitting_approach!r}"
+                f"fitting_approach must be 'pql_gcv', 'pql_reml', or 'direct_reml', "
+                f"got {fitting_approach!r}"
             )
         self.converged = converged
         # self.compute_fit_statistics(model,fit_OLS,n_obs,index_var)
@@ -1300,6 +1310,189 @@ class general_additive_model(object):
 
         return bhat, smooth_pen, converged, beta_hist
 
+    def _fit_pql_reml(
+        self,
+        var_list,
+        yfit,
+        exog,
+        n_obs,
+        smooth_pen,
+        f_weights_and_data,
+        bounds_rho,
+        max_iter,
+        tol,
+        conv_criteria,
+        perform_PQL,
+        method,
+        methodInit,
+        gcv_sel_tol,
+        saveBetaHist,
+        WLS_solver,
+        fit_initial_beta,
+        filter_trials,
+    ):
+        """PIRLS + linearized-REML inner loop.
+
+        Structurally mirrors _fit_pql_gcv but replaces the GCV/dGCV score
+        with the restricted marginal likelihood of the working Gaussian model
+        (Wood 2017 §6.5, strategy 2).
+
+        At each PIRLS step:
+        1. S_transf = transform_Slam(S_all, rho0) is computed once before the
+           optimizer call.  This projects each Sj onto the range of S_lam and
+           is reused for all inner optimizer evaluations (the null-space
+           structure of S_lam does not change with rho in practice).
+        2. reml_objective(rho, ...) is minimised over rho.
+        3. Convergence is checked via the REML score or deviance.
+
+        Returns
+        -------
+        bhat : ndarray, shape (p,)
+        smooth_pen : ndarray, shape (M,)
+        converged : bool
+        beta_hist : ndarray or None
+        """
+        if fit_initial_beta:
+            rho = np.log(smooth_pen)
+            bhat = mle_gradient_bassed_optim(
+                rho, self.sm_handler, var_list, yfit, exog, self.family,
+                phi_est=1, method=methodInit, num_random_init=1,
+                beta_zero=np.zeros(exog.shape[1]), tol=10**-8,
+            )[0]
+            lin_pred = np.dot(exog[:n_obs, :], bhat)
+            mu = f_weights_and_data.family.fitted(lin_pred)
+        else:
+            mu = f_weights_and_data.family.starting_mu(yfit)
+            bhat = np.random.normal(exog.shape[1])
+
+        # S_all does not depend on rho or mu — compute once outside the loop.
+        S_all_raw = compute_Sjs(self.sm_handler, var_list)
+
+        converged = False
+        old_conv_score = -100
+        iteration = 0
+        first_iteration = True
+
+        if saveBetaHist:
+            beta_hist = np.zeros((0, bhat.shape[0]))
+        else:
+            beta_hist = None
+
+        while not converged:
+            if WLS_solver == "positive_weights":
+                z, w = f_weights_and_data.get_params(mu)
+                self.sm_handler.set_smooth_penalties(smooth_pen, var_list)
+                pen_matrix = self.sm_handler.get_penalty_agumented(var_list)
+                Xagu  = np.vstack((exog, pen_matrix))
+                yagu  = np.zeros(Xagu.shape[0])
+                yagu[:n_obs] = z
+                wagu  = np.ones(Xagu.shape[0])
+                wagu[:n_obs] = w
+                model = sm.WLS(yagu, Xagu, wagu)
+
+                Slam = create_Slam(np.log(smooth_pen), self.sm_handler, var_list)
+                func = lambda beta: -(
+                    unpenalized_ll(beta, yfit, exog[:n_obs, :], self.family, 1, omega=1)
+                    + penalty_ll_Slam(Slam, beta, 1)
+                )
+
+                if not first_iteration:
+                    dev0 = np.sum(func(bhat))
+                else:
+                    dev0 = np.inf
+
+                fit_OLS  = model.fit()
+                bnew     = fit_OLS.params.copy()
+                bnew_halved = bnew.copy()
+            else:
+                bnew, _, _, _, z, w, _ = robust_WLS(
+                    yfit, mu, self.family, exog, f_weights_and_data,
+                    S_list=compute_Sjs(self.sm_handler, var_list),
+                    lambda_list=np.log(smooth_pen),
+                    fisher_scoring=self.fisher_scoring,
+                )
+                bnew_halved = bnew.copy()
+
+            dev1 = np.sum(func(bnew))
+            halving_max = 10
+            ii = 1
+            decr_dev = dev1 <= dev0
+            while not decr_dev and ii < halving_max:
+                bnew_halved = 1 / (2**ii) * bnew + (1 - 1 / (2**ii)) * bhat
+                dev1 = np.sum(func(bnew_halved))
+                decr_dev = dev1 <= dev0
+                ii += 1
+
+            if decr_dev:
+                bhat = bnew_halved
+
+            if saveBetaHist:
+                tmp = np.zeros((1, bhat.shape[0]))
+                tmp[0] = bhat
+                beta_hist = np.vstack((beta_hist, tmp))
+
+            if any(bnew != fit_OLS.params):
+                mu = f_weights_and_data.family.fitted(np.dot(exog[:n_obs, :], bhat))
+                z, w = f_weights_and_data.get_params(mu)
+                Xagu = np.vstack((exog, pen_matrix))
+                yagu = np.zeros(Xagu.shape[0])
+                yagu[:n_obs] = z
+                wagu = np.ones(Xagu.shape[0])
+                wagu[:n_obs] = w
+                model = sm.WLS(yagu, Xagu, wagu)
+
+            first_iteration = False
+
+            # Whitened design matrix and working response for REML.
+            X      = model.wexog[:n_obs, :]
+            Q, R   = np.linalg.qr(X, "reduced")
+            rho0   = np.log(smooth_pen)
+            _wendog = model.wendog
+
+            # Project Sj onto range of S_lam once per PIRLS step.
+            # The null-space structure is fixed by the penalty design, so
+            # S_transf stays valid throughout the inner optimizer run.
+            S_transf = prepare_S_transf(S_all_raw, rho0)
+
+            _args = (X, Q, R, _wendog, self.sm_handler, var_list)
+            _kw   = dict(S_all=S_all_raw, S_transf=S_transf)
+
+            if perform_PQL:
+                def _reml_fg(rho):
+                    return reml_objective(rho, *_args, return_type="eval_grad", **_kw)
+
+                init_score, _ = _reml_fg(rho0)
+                res = minimize(
+                    _reml_fg, rho0, method=method, jac=True,
+                    tol=gcv_sel_tol, bounds=bounds_rho, options={"disp": False},
+                )
+                res.x = np.clip(res.x, -25, 30)
+                if res.success or (init_score - res.fun) > init_score * np.finfo(float).eps:
+                    smooth_pen = np.exp(res.x)
+
+            reml_func = lambda rho: reml_objective(  # noqa: E731
+                rho, *_args, return_type="eval", **_kw
+            )
+
+            lin_pred = np.dot(exog[:n_obs, :], bhat)
+            mu = f_weights_and_data.family.fitted(lin_pred)
+            conv_score = self.convergence_score(
+                reml_func, smooth_pen, eta=lin_pred,
+                criteria=conv_criteria, idx_sele=filter_trials,
+            )
+            self.sm_handler.set_smooth_penalties(smooth_pen, var_list)
+
+            # Use abs() in denominator: REML values can be negative for very
+            # smooth fits (log-det terms can dominate alpha).
+            converged = np.abs(conv_score - old_conv_score) < tol * np.abs(conv_score)
+            converged = converged and (iteration > 3)
+            old_conv_score = conv_score
+            if iteration >= max_iter:
+                break
+            iteration += 1
+
+        return bhat, smooth_pen, converged, beta_hist
+
     def _fit_direct_reml(
         self,
         var_list,
@@ -1478,10 +1671,10 @@ class general_additive_model(object):
         return best_model, best_test_bool
 
     def convergence_score(
-        self, gcv_func, smooth_pen, criteria="gcv", eta=None, idx_sele=None
+        self, score_func, smooth_pen, criteria="gcv", eta=None, idx_sele=None
     ):
-        if criteria == "gcv":
-            return self.compute_gcv_convergence(gcv_func, smooth_pen)
+        if criteria in ("gcv", "reml"):
+            return score_func(np.log(smooth_pen))
         if criteria == "deviance":
             return self.compute_deviance(eta, idx_sele)
 
