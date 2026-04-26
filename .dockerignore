@@ -8,4 +8,5 @@
 !conf/
 !PGAM_Tutorial.ipynb
 !island_col_mask_demo.ipynb
+!Tutorial_AIC_and_DirectREML.ipynb
 !run_jupyter.sh
