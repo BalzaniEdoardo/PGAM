@@ -72,6 +72,7 @@ COPY conf/.jupyter /root/.jupyter
 # Tutorial notebooks bundled in the image
 COPY PGAM_Tutorial.ipynb        /notebooks/
 COPY island_col_mask_demo.ipynb /notebooks/
+COPY Tutorial_AIC_and_DirectREML.ipynb /notebooks/
 
 # Strip JetBrains-injected 'jetTransient' field so Jupyter Server accepts the outputs
 RUN python - <<'EOF'
