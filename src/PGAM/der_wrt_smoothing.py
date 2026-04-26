@@ -584,10 +584,12 @@ def mle_gradient_bassed_optim(
             tmp = minimize(
                 func, beta0, method=method, jac=grad_func, hess=hess_func, tol=tol
             )
-            if tmp.fun < curr_min:
+            if np.isfinite(tmp.fun) and tmp.fun < curr_min:
                 res = tmp
                 curr_min = tmp.fun
                 beta_zero = beta0.copy()
+        if beta_zero is None:  # all restarts overflowed
+            beta_zero = np.zeros(X.shape[1])
     res = minimize(
         func,
         beta_zero,

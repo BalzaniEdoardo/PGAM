@@ -524,7 +524,6 @@ class GAM_result(object):
 
     def compute_AIC(self, y, sm_handler, Vb, phi_est=1, family=None, filter_trials=None):
         # can be super slow...
-        print("Computing AIC")
         if family == None:
             family = self.family
         rho = np.log(self.smooth_pen)
@@ -547,7 +546,6 @@ class GAM_result(object):
             return_intermediates=True,
         )
         hess = -hess
-        print("hess computed!")
         V_rho = np.linalg.pinv(hess)
         # J and dR_drho reuse quantities already computed inside hess_laplace_appr_REML,
         # avoiding 3 redundant Vbeta_rho (QR+SVD) calls (~975 ms at n=3e5).
@@ -556,15 +554,11 @@ class GAM_result(object):
             rho, self.beta, S_all, y, X, family, sm_handler, self.var_list, phi_est,
             Vb_inv=_itm["Vb_inv"], dVb=_itm["dVb"],
         )
-        print("computed J and dR_drho")
         H = H_rho(rho, self.beta, y, X, self.family, phi_est, sm_handler, self.var_list, comp_gradient=False)
-        print("computed H")
         V_prime = np.einsum("ri,rh,hj->ij", J, V_rho, J, optimize="optimal")
-        print("computed V_prime")
         V_2prime = np.einsum(
             "kij,kl,lim->jm", dR_drho, V_rho, dR_drho, optimize="optimal"
         )
-        print("computed V_2prime")
         V_corr = Vb + V_prime + V_2prime
         H = np.array(H)
         V_corr = np.array(V_corr)
@@ -929,6 +923,20 @@ class general_additive_model(object):
             Criterion used to assess PQL convergence.
         fitting_approach : {"pql_gcv", "direct_reml"}, optional
             Fitting strategy; see above.
+
+            .. warning::
+                ``"direct_reml"`` requires the family to be wrapped with
+                :func:`~PGAM.der_wrt_smoothing.d2variance_family` and the
+                link with :func:`~PGAM.der_wrt_smoothing.deriv3_link` before
+                constructing the model::
+
+                    base = sm.families.Poisson(link=sm.families.links.Log())
+                    base.link = deriv3_link(base.link, run_tests=False)
+                    family = d2variance_family(base, run_tests=False)
+
+                The plain statsmodels family object will raise an
+                ``AttributeError`` on the first gradient evaluation.
+
         perform_PQL : bool, optional
             (``"pql"`` only) If ``True`` the smoothing parameters are updated
             at each PIRLS step via GCV/dGCV minimisation; if ``False`` they
@@ -938,11 +946,8 @@ class general_additive_model(object):
             GCV); if a float, use that value as γ.
         method : str, optional
             ``scipy.optimize.minimize`` method used for the smoothing-parameter
-            optimisation step (GCV for ``"pql"``; negative-REML for
+            optimisation step (GCV for ``"pql_gcv"``; negative-REML for
             ``"direct_reml"``).  Default ``"L-BFGS-B"``.
-            Use ``"trust-constr"`` to exploit the exact Hessian via
-            ``RemlProblem``; it converges in fewer iterations and respects
-            ``bounds_rho`` via an interior-point approach.
         methodInit : str, optional
             Optimiser used to compute the initial β when ``fit_initial_beta``
             is ``True``.
@@ -952,10 +957,10 @@ class general_additive_model(object):
         random_init : bool, optional
             Add Gaussian noise to the initial log-smoothing parameters.
         bounds_rho : list of (float, float) or None, optional
-            Box constraints on log-smoothing parameters.  Accepted by both
-            ``"L-BFGS-B"`` and ``"trust-constr"``.  If ``None`` and method is
-            ``"L-BFGS-B"``, defaults to ``[(-5 ln 10, 13 ln 10)]`` per
-            parameter.
+            Box constraints on log-smoothing parameters passed to
+            ``scipy.optimize.minimize``.  If ``None``, no bounds are applied.
+            The number of parameters depends on the penalty type; check
+            ``len(sm_handler[var].lam)`` per variable.
         gcv_sel_tol : float, optional
             Tolerance passed to ``scipy.optimize.minimize`` for the
             smoothing-parameter optimisation step.
@@ -1331,28 +1336,16 @@ class general_additive_model(object):
             val, grad = prob.eval_grad(rho)
             return -val, -grad
 
-        if method == "trust-constr":
-            res = minimize(
-                _neg_eval_grad, rho0,
-                method="trust-constr",
-                jac=True,
-                hess=lambda rho: -prob.hess(rho),
-                bounds=bounds_rho,
-                tol=gcv_sel_tol,
-                options={"verbose": 1},
-            )
-        else:
-            res = minimize(
-                _neg_eval_grad, rho0, method=method, jac=True,
-                tol=gcv_sel_tol, bounds=bounds_rho, options={"disp": True, "verbose": 1},
-            )
+        res = minimize(
+            _neg_eval_grad, rho0, method=method, jac=True,
+            tol=gcv_sel_tol, bounds=bounds_rho, options={"disp": False},
+        )
         rho_opt = np.clip(res.x, -25, 30)
         smooth_pen = np.exp(rho_opt)
         self.sm_handler.set_smooth_penalties(smooth_pen, var_list)
-        bhat = mle_gradient_bassed_optim(
-            rho_opt, self.sm_handler, var_list, yfit, exog, self.family,
-            phi_est=1, method="Newton-CG", num_random_init=1, tol=1e-10,
-        )[0]
+        if not (prob._cached_rho is not None and np.array_equal(rho_opt, prob._cached_rho)):
+            prob.eval_grad(rho_opt)
+        bhat = prob._cached_itm["b_hat"]
         return bhat, smooth_pen, res.success, None
 
     def initialize_smooth_par(self, f_weights_and_data, X, S_all, random_init=False):
@@ -1603,6 +1596,19 @@ class general_additive_model(object):
             Fitting strategy passed to :meth:`optim_gam`; see its
             docstring for details.
 
+            .. warning::
+                ``"direct_reml"`` requires the family to be wrapped with
+                :func:`~PGAM.der_wrt_smoothing.d2variance_family` and the
+                link with :func:`~PGAM.der_wrt_smoothing.deriv3_link` before
+                constructing the model::
+
+                    base = sm.families.Poisson(link=sm.families.links.Log())
+                    base.link = deriv3_link(base.link, run_tests=False)
+                    family = d2variance_family(base, run_tests=False)
+
+                The plain statsmodels family object will raise an
+                ``AttributeError`` on the first gradient evaluation.
+
         Returns
         -------
         full_model : GAM_result
@@ -1757,7 +1763,7 @@ class general_additive_model(object):
                     fitting_approach=fitting_approach,
                     perform_PQL=perform_PQL,
                     method=method,
-                    compute_AIC=False,
+                    compute_AIC=compute_AIC,
                     gcv_sel_tol=gcv_sel_tol,
                     random_init=random_init,
                     use_dgcv=use_dgcv,
