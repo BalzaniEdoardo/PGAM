@@ -18,7 +18,7 @@ import pytest
 import statsmodels.api as sm
 
 from PGAM.gam_data_handlers import smooths_handler
-from PGAM.newton_optim import gcv_objective, gcv_comp, gcv_grad_comp, gcv_hess_comp, matrix_transform
+from PGAM._pql_gcv import gcv_objective, gcv_comp, gcv_grad_comp, gcv_hess_comp, matrix_transform
 from PGAM.der_wrt_smoothing import (
     d2variance_family,
     deriv3_link,

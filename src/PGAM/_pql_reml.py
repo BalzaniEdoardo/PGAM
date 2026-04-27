@@ -86,11 +86,16 @@ def reml_objective(
     U1 = U[: R.shape[0], : s.shape[0]]
     y  = endog[:n_obs].reshape((n_obs, 1))
 
-    dinv    = 1.0 / s
-    dinv_sq = dinv ** 2
+    dinv = 1.0 / s
 
-    Ay    = X @ (V_T.T @ (dinv_sq[:, None] * (V_T @ (X.T @ y))))
-    alpha = np.sum((Ay - y) ** 2)
+    # REML RSS: y^T (I - A) y  =  ||y||^2 - ||y1||^2
+    #
+    # The hat matrix A = X(X'X + S_lam)^{-1}X' is NOT idempotent for penalised
+    # regression, so ||y - Ay||^2  !=  y^T(I-A)y in general.  From the SVD:
+    #   y^T A y = ||U1^T Q^T y||^2  (using A = Q U1 U1^T Q^T)
+    # so the REML RSS is  ||y||^2 - ||y1||^2  where y1 = U1^T Q^T y.
+    y1        = U1.T @ (Q.T @ y)              # shape (k, 1)
+    RSS_reml  = y.T @ y - y1.T @ y1           # (1, 1) array
 
     # log|X'TX' + S_lam| = 2 * sum log(s_k)  (from SVD of [R; B])
     log_det_XtXpSl = 2.0 * np.sum(np.log(s))
@@ -102,14 +107,16 @@ def reml_objective(
 
     log_det_Sl = logDet_Slam(rho, S_transf)
 
-    reml_val = 0.5 * alpha + 0.5 * log_det_XtXpSl - 0.5 * log_det_Sl
+    reml_val = 0.5 * RSS_reml.item() + 0.5 * log_det_XtXpSl - 0.5 * log_det_Sl
 
     if return_type == "eval":
         return reml_val
 
     # --- gradient ---
-    y1   = U1.T @ (Q.T @ y)   # shape (k, 1)
-    UTU  = U1.T @ U1           # shape (k, k)
+    # d[y^T(I-A)y]/d rho_j = -d[y^T A y]/d rho_j
+    # Since y^T A y = y1^T y1 and dA/d rho_j = -lam_j Q U1 Dinv V Sj V^T Dinv U1^T Q^T:
+    #   d[y^T A y]/d rho_j = -lam_j y1^T Mj y1
+    # => d[y^T(I-A)y]/d rho_j =  lam_j y1^T Mj y1
     lams = np.exp(rho)
     p    = len(rho)
 
@@ -117,20 +124,18 @@ def reml_objective(
     reml_grad = np.zeros(p)
 
     for j in range(p):
-        Mj = (dinv[:, None] * V_T) @ S_all[j] @ (dinv * V_T.T)
-        Fj = Mj @ UTU
+        Mj = (dinv[:, None] * V_T) @ S_all[j] @ (dinv * V_T.T)   # (k, k)
 
-        # alpha gradient: same formula as gcv_objective alpha_grad
-        alpha_grad_j = float(
-            lams[j] * (2.0 * y1.T @ Mj @ y1 - y1.T @ Fj @ y1 - y1.T @ Fj.T @ y1)
-        )
+        # d[y^T(I-A)y]/d rho_j  =  lam_j * y1^T Mj y1
+        RSS_grad_j = lams[j] * (y1.T @ Mj @ y1).item()
 
-        # d log|X'TX'+S_lam|/d rho_j = 2 lam_j tr((X'TX'+S_lam)^{-1} S_j)
-        #                             = 2 lam_j tr(Mj)
-        logdet_XtX_grad_j = 2.0 * lams[j] * float(np.trace(Mj))
+        # d log|X'TX'+S_lam|/d rho_j  =  lam_j tr(Mj)
+        # Derivation: d/d rho_j [2 sum log s_k] = 2 sum (1/s_k) * lam_j v_k^T Sj v_k / (2 s_k)
+        #           = lam_j sum v_k^T Sj v_k / s_k^2  =  lam_j tr((X'X+Slam)^{-1} Sj)
+        logdet_XtX_grad_j = lams[j] * np.trace(Mj)
 
         reml_grad[j] = (
-            0.5 * alpha_grad_j
+            0.5 * RSS_grad_j
             + 0.5 * logdet_XtX_grad_j
             - 0.5 * grad_log_det_Sl[j]
         )
