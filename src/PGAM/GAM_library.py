@@ -921,9 +921,9 @@ class general_additive_model(object):
         tol : float, optional
             Convergence tolerance on the relative change of the convergence
             criterion between successive iterations (``"pql"`` only).
-        conv_criteria : {"gcv", "deviance"}, optional
+        conv_criteria : {"gcv", "reml", "deviance"}, optional
             Criterion used to assess PQL convergence.
-        fitting_approach : {"pql_gcv", "direct_reml"}, optional
+        fitting_approach : {"pql_gcv", "pql_reml", "direct_reml"}, optional
             Fitting strategy; see above.
 
             .. warning::
@@ -949,7 +949,7 @@ class general_additive_model(object):
         method : str, optional
             ``scipy.optimize.minimize`` method used for the smoothing-parameter
             optimisation step (GCV for ``"pql_gcv"``; negative-REML for
-            ``"direct_reml"``).  Default ``"L-BFGS-B"``.
+            ``"pql_reml"`` and ``"direct_reml"``).  Default ``"L-BFGS-B"``.
         methodInit : str, optional
             Optimiser used to compute the initial β when ``fit_initial_beta``
             is ``True``.
@@ -1735,7 +1735,7 @@ class general_additive_model(object):
             optimisation step.
         tol : float, optional
             Convergence tolerance passed to :meth:`optim_gam`.
-        conv_criteria : {"gcv", "deviance"}, optional
+        conv_criteria : {"gcv", "reml", "deviance"}, optional
             Convergence criterion passed to :meth:`optim_gam`.
         max_iter : int, optional
             Maximum PIRLS iterations (``"pql_gcv"`` only).
@@ -1779,13 +1779,13 @@ class general_additive_model(object):
         saveBetaHist : bool, optional
             Store β estimates from every PIRLS iteration.
         perform_PQL : bool, optional
-            Update smoothing parameters at each PIRLS step (``"pql_gcv"``
-            only).
+            Update smoothing parameters at each PIRLS step (``"pql_gcv"`` and
+            ``"pql_reml"`` only).
         WLS_solver : {"positive_weights", "robust"}, optional
             WLS implementation inside the PIRLS loop.
         compute_AIC : bool, optional
             Compute corrected AIC for the full model (Wood 2017 eq. 6.32).
-        fitting_approach : {"pql_gcv", "direct_reml"}, optional
+        fitting_approach : {"pql_gcv", "pql_reml", "direct_reml"}, optional
             Fitting strategy passed to :meth:`optim_gam`; see its
             docstring for details.
 
