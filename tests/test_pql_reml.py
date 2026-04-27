@@ -2,7 +2,7 @@
 
 Covers:
   - deriv_det_Slam.transform_Slam / logDet_Slam / grad_logDet_Slam / hes_logDet_Slam
-  - _pql_reml.reml_objective (gradient verified via FD)
+  - _pql_reml.linearized_reml_objective (gradient verified via FD)
 
 Tolerance conventions (consistent with test_derivatives.py):
   - 1st-derivative FD check   : rtol 1e-5
@@ -27,7 +27,7 @@ from PGAM.deriv_det_Slam import (
     hes_logDet_Slam,
 )
 from PGAM._pql_reml import (
-    reml_objective,
+    linearized_reml_objective,
     prepare_S_transf,
     _naive_log_det_Sl,
     _naive_grad_log_det_Sl,
@@ -135,12 +135,12 @@ class TestTransformSlam:
 
 
 # ---------------------------------------------------------------------------
-# reml_objective tests
+# linearized_reml_objective tests
 # ---------------------------------------------------------------------------
 
 @pytest.fixture(scope="module")
 def wls_problem(problem):
-    """Minimal whitened WLS system for reml_objective tests."""
+    """Minimal whitened WLS system for linearized_reml_objective tests."""
     import statsmodels.api as sm
     from PGAM._pql_gcv import weights_and_data
 
@@ -182,8 +182,8 @@ class TestRemlObjective:
         args = (d["X"], d["Q"], d["R"], d["endog"], d["sm_h"], d["var_list"])
         kw   = dict(S_all=d["S_all"], S_transf=d["S_transf"])
 
-        val_only  = reml_objective(d["rho"], *args, return_type="eval",      **kw)
-        val_and_g = reml_objective(d["rho"], *args, return_type="eval_grad", **kw)
+        val_only  = linearized_reml_objective(d["rho"], *args, return_type="eval",      **kw)
+        val_and_g = linearized_reml_objective(d["rho"], *args, return_type="eval_grad", **kw)
         assert abs(val_only - val_and_g[0]) < 1e-12
 
     def test_gradient_finite_diff(self, wls_problem):
@@ -191,14 +191,14 @@ class TestRemlObjective:
         args = (d["X"], d["Q"], d["R"], d["endog"], d["sm_h"], d["var_list"])
         kw   = dict(S_all=d["S_all"], S_transf=d["S_transf"])
 
-        val, grad = reml_objective(d["rho"], *args, return_type="eval_grad", **kw)
-        func      = lambda r: reml_objective(r, *args, return_type="eval", **kw)
+        val, grad = linearized_reml_objective(d["rho"], *args, return_type="eval_grad", **kw)
+        func      = lambda r: linearized_reml_objective(r, *args, return_type="eval", **kw)
         grad_app  = approx_grad(d["rho"], grad.shape, func, 1e-4)
 
         np.testing.assert_allclose(
             grad, grad_app, rtol=1e-5, atol=1e-8,
             err_msg=(
-                f"reml_objective gradient mismatch\n"
+                f"linearized_reml_objective gradient mismatch\n"
                 f"  analytic : {grad}\n  FD approx: {grad_app}"
             ),
         )

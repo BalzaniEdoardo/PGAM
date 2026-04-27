@@ -31,7 +31,7 @@ from .deriv_det_Slam import transform_Slam, logDet_Slam, grad_logDet_Slam
 from .utils.linalg_utils import inner1d_sum
 
 
-def reml_objective(
+def linearized_reml_objective(
     rho,
     X,
     Q,
@@ -152,7 +152,7 @@ def prepare_S_transf(S_all, rho):
 
     Wraps transform_Slam and returns only S_transf (the second output),
     which is the quantity that must be pre-computed once per PIRLS step and
-    then passed to reml_objective as S_transf.
+    then passed to linearized_reml_objective as S_transf.
 
     Parameters
     ----------
@@ -231,7 +231,7 @@ if __name__ == "__main__":
         print(f"  grad[{j}]  fast={gd_fast[j]:.6f}  naive={gd_naive[j]:.6f}  "
               f"diff={abs(gd_fast[j] - gd_naive[j]):.2e}")
 
-    # --- gradient check for reml_objective ---
+    # --- gradient check for linearized_reml_objective ---
     family = sm.families.Poisson(link=sm.families.links.Log())
     from ._pql_gcv import weights_and_data
 
@@ -250,17 +250,17 @@ if __name__ == "__main__":
 
     _, S_transf0 = transform_Slam(S_all, rho)
 
-    val, grad = reml_objective(
+    val, grad = linearized_reml_objective(
         rho, Xw, Q, R, endog_aug, sm_h, var_list,
         return_type="eval_grad", S_all=S_all, S_transf=S_transf0,
     )
-    func = lambda r: reml_objective(
+    func = lambda r: linearized_reml_objective(
         r, Xw, Q, R, endog_aug, sm_h, var_list,
         return_type="eval", S_all=S_all, S_transf=S_transf0,
     )
     grad_app = approx_grad(rho, grad.shape, func, 1e-4)
     max_err = np.max(np.abs(grad - grad_app) / (np.abs(grad_app) + 1e-8))
-    print(f"\nreml_objective gradient check: max rel err = {max_err:.2e}")
+    print(f"\nlinearized_reml_objective gradient check: max rel err = {max_err:.2e}")
     if max_err > 1e-3:
         print("  WARNING: gradient may be wrong")
     else:

@@ -10,7 +10,7 @@ import statsmodels.api as sm
 from .der_wrt_smoothing import *
 from .gam_data_handlers import *
 from ._pql_gcv import *
-from ._pql_reml import reml_objective, prepare_S_transf
+from ._pql_reml import linearized_reml_objective, prepare_S_transf
 from .deriv_det_Slam import transform_Slam
 from scipy.optimize import minimize
 
@@ -908,7 +908,7 @@ class general_additive_model(object):
         **``"direct_reml"`` — Direct Laplace-REML optimisation (Wood 2017 §6.6).**
         The log-smoothing parameters ρ are optimised by maximising the Laplace
         approximation to the restricted marginal likelihood via
-        ``reml_objective``, which re-solves the inner penalised MLE at every
+        ``linearized_reml_objective``, which re-solves the inner penalised MLE at every
         objective evaluation.  No PIRLS loop is required; the approach is more
         statistically principled but incurs an inner optimisation at each
         outer step.
@@ -1346,7 +1346,7 @@ class general_additive_model(object):
            optimizer call.  This projects each Sj onto the range of S_lam and
            is reused for all inner optimizer evaluations (the null-space
            structure of S_lam does not change with rho in practice).
-        2. reml_objective(rho, ...) is minimised over rho.
+        2. linearized_reml_objective(rho, ...) is minimised over rho.
         3. Convergence is checked via the REML score or deviance.
 
         Returns
@@ -1463,7 +1463,7 @@ class general_additive_model(object):
 
             if perform_PQL:
                 def _reml_fg(rho):
-                    return reml_objective(rho, *_args, return_type="eval_grad", **_kw)
+                    return linearized_reml_objective(rho, *_args, return_type="eval_grad", **_kw)
 
                 init_score, _ = _reml_fg(rho0)
                 res = minimize(
@@ -1474,7 +1474,7 @@ class general_additive_model(object):
                 if res.success or (init_score - res.fun) > init_score * np.finfo(float).eps:
                     smooth_pen = np.exp(res.x)
 
-            reml_func = lambda rho: reml_objective(  # noqa: E731
+            reml_func = lambda rho: linearized_reml_objective(  # noqa: E731
                 rho, *_args, return_type="eval", **_kw
             )
 
@@ -1511,7 +1511,7 @@ class general_additive_model(object):
         """Direct Laplace-REML optimisation of the log-smoothing parameters.
 
         Maximises the Laplace approximation to the restricted marginal
-        likelihood (Wood 2017 §6.6) by minimising ``-reml_objective``.  The
+        likelihood (Wood 2017 §6.6) by minimising ``-linearized_reml_objective``.  The
         inner penalised MLE for β is re-solved at every objective evaluation,
         so no PIRLS loop is needed.
 
