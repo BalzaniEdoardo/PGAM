@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import Literal
+
 import numpy as np
 import scipy.linalg as linalg
 import scipy.sparse as sparse
@@ -869,26 +873,26 @@ class general_additive_model(object):
 
     def optim_gam(
         self,
-        var_list,
-        smooth_pen=None,
-        max_iter=10**3,
-        tol=1e-5,
-        conv_criteria="gcv",
-        fitting_approach="pql_gcv",
-        perform_PQL=True,
-        use_dgcv=True,
-        method="L-BFGS-B",
-        methodInit="L-BFGS-B",
-        compute_AIC=False,
-        random_init=False,
-        bounds_rho=None,
-        gcv_sel_tol=1e-10,
-        fit_initial_beta=False,
-        filter_trials=None,
-        compute_MI=False,
-        saveBetaHist=False,
-        WLS_solver="positive_weights",
-    ):
+        var_list: list[str],
+        smooth_pen: np.ndarray | None = None,
+        max_iter: int = 10**3,
+        tol: float = 1e-5,
+        conv_criteria: Literal["gcv", "reml", "deviance"] = "gcv",
+        fitting_approach: Literal["pql_gcv", "pql_reml", "direct_reml"] = "pql_gcv",
+        perform_PQL: bool = True,
+        use_dgcv: bool | float = True,
+        method: str = "L-BFGS-B",
+        methodInit: str = "L-BFGS-B",
+        compute_AIC: bool = False,
+        random_init: bool = False,
+        bounds_rho: list[tuple[float, float]] | None = None,
+        gcv_sel_tol: float = 1e-10,
+        fit_initial_beta: bool = False,
+        filter_trials: np.ndarray | None = None,
+        compute_MI: bool = False,
+        saveBetaHist: bool = False,
+        WLS_solver: Literal["positive_weights", "robust"] = "positive_weights",
+    ) -> GAM_result:
         """Fit a GAM by optimising the smoothing parameters.
 
         Two fitting strategies are available, controlled by ``fitting_approach``.
@@ -1688,34 +1692,34 @@ class general_additive_model(object):
 
     def fit_full_and_reduced(
         self,
-        var_list,
-        th_pval=0.01,
-        method="L-BFGS-B",
-        tol=1e-8,
-        conv_criteria="deviance",
-        max_iter=10**3,
-        gcv_sel_tol=10**-13,
-        random_init=False,
-        use_dgcv=True,
-        smooth_pen=None,
-        fit_initial_beta=True,
-        pseudoR2_per_variable=False,
-        filter_trials=None,
-        k_fold=False,
-        fold_num=5,
-        trial_num_vec=None,
-        compute_MI=False,
-        k_fold_reducedOnly=True,
-        bounds_rho=None,
-        reducedAdaptive=True,
-        ord_AD=3,
-        ad_knots=6,
-        saveBetaHist=False,
-        perform_PQL=True,
-        WLS_solver="positive_weights",
-        compute_AIC=False,
-        fitting_approach="pql_gcv",
-    ):
+        var_list: list[str],
+        th_pval: float = 0.01,
+        method: str = "L-BFGS-B",
+        tol: float = 1e-8,
+        conv_criteria: Literal["gcv", "reml", "deviance"] = "deviance",
+        max_iter: int = 10**3,
+        gcv_sel_tol: float = 10**-13,
+        random_init: bool = False,
+        use_dgcv: bool | float = True,
+        smooth_pen: np.ndarray | None = None,
+        fit_initial_beta: bool = True,
+        pseudoR2_per_variable: bool = False,
+        filter_trials: np.ndarray | None = None,
+        k_fold: bool = False,
+        fold_num: int = 5,
+        trial_num_vec: np.ndarray | None = None,
+        compute_MI: bool = False,
+        k_fold_reducedOnly: bool = True,
+        bounds_rho: list[tuple[float, float]] | None = None,
+        reducedAdaptive: bool = True,
+        ord_AD: int = 3,
+        ad_knots: int = 6,
+        saveBetaHist: bool = False,
+        perform_PQL: bool = True,
+        WLS_solver: Literal["positive_weights", "robust"] = "positive_weights",
+        compute_AIC: bool = False,
+        fitting_approach: Literal["pql_gcv", "pql_reml", "direct_reml"] = "pql_gcv",
+    ) -> tuple[GAM_result, GAM_result | None]:
         """Fit a full model and a covariate-selected reduced model.
 
         Fits the full GAM over ``var_list``, then drops covariates whose
