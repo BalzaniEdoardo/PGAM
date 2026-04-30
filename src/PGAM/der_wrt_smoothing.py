@@ -1197,16 +1197,21 @@ def reml_objective(
     # Cholesky factorizations that logDet_Slam / hes_logDet_Slam would do.
     lams = np.exp(rho)
     Slam_t = np.einsum("ijk,i->jk", S_transf, lams)
-    try:
-        Pinv_t = np.diag(1 / np.sqrt(np.abs(np.diag(Slam_t))))
-        P_t    = np.diag(np.sqrt(np.abs(np.diag(Slam_t))))
-        L_t    = np.linalg.cholesky(np.einsum("ij,jh,hk->ik", Pinv_t, Slam_t, Pinv_t))
-        Linv_t = np.linalg.pinv(L_t)
-        Sinv   = np.einsum("ij,kj,kh,hl->il", Pinv_t, Linv_t, Linv_t, Pinv_t)
-        log_det_Slam_val = (
-            2 * np.sum(np.log(np.diag(L_t))) + 2 * np.sum(np.log(np.diag(P_t)))
-        )
-    except np.linalg.LinAlgError:
+    diag_Slam_t = np.abs(np.diag(Slam_t))
+    use_eigh = np.any(diag_Slam_t == 0)
+    if not use_eigh:
+        try:
+            Pinv_t = np.diag(1 / np.sqrt(diag_Slam_t))
+            P_t    = np.diag(np.sqrt(diag_Slam_t))
+            L_t    = np.linalg.cholesky(np.einsum("ij,jh,hk->ik", Pinv_t, Slam_t, Pinv_t))
+            Linv_t = np.linalg.pinv(L_t)
+            Sinv   = np.einsum("ij,kj,kh,hl->il", Pinv_t, Linv_t, Linv_t, Pinv_t)
+            log_det_Slam_val = (
+                2 * np.sum(np.log(np.diag(L_t))) + 2 * np.sum(np.log(np.diag(P_t)))
+            )
+        except np.linalg.LinAlgError:
+            use_eigh = True
+    if use_eigh:
         Slam_t = np.triu(Slam_t) + np.triu(Slam_t, 1).T
         d_t, U_t = np.linalg.eigh(Slam_t)
         idx = d_t > np.finfo(float).eps
