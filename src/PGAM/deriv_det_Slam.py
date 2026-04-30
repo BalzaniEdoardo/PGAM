@@ -1,8 +1,6 @@
 import numpy as np
 import scipy.linalg as sp_linalg
 import scipy.stats as sts
-from .der_wrt_smoothing import *
-from .gam_data_handlers import *
 from .utils.linalg_utils import inner1d_sum
 
 
