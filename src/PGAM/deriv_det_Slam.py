@@ -128,18 +128,20 @@ def _slam_chol_and_inv(S_transf, lam):
     triangular solve rather than pinv to avoid an unnecessary SVD.
     """
     Slam = np.einsum("ijk,i", S_transf, lam)
-    try:
-        Pinv = np.diag(1.0 / np.sqrt(np.abs(np.diag(Slam))))
-        P    = np.diag(np.sqrt(np.abs(np.diag(Slam))))
-        L    = np.linalg.cholesky(np.einsum("ij,jh,hk->ik", Pinv, Slam, Pinv))
-        log_det = 2.0 * np.sum(np.log(np.diag(L))) + 2.0 * np.sum(np.log(np.diag(P)))
-        # L is lower-triangular and full-rank: triangular solve, not pinv.
-        # Sinv = Pinv @ Linv.T @ Linv @ Pinv; since Pinv is diagonal this
-        # reduces to two element-wise scalings (~5 µs vs ~26 ms for einsum).
-        Linv = sp_linalg.solve_triangular(L, np.eye(L.shape[0]), lower=True)
-        p_inv = np.diag(Pinv)
-        Sinv = (p_inv[:, None] * Linv.T) @ (Linv * p_inv[None, :])
-    except np.linalg.LinAlgError:
+    diag_Slam = np.abs(np.diag(Slam))
+    use_eigh = np.any(diag_Slam == 0)
+    if not use_eigh:
+        try:
+            Pinv = np.diag(1.0 / np.sqrt(diag_Slam))
+            P    = np.diag(np.sqrt(diag_Slam))
+            L    = np.linalg.cholesky(np.einsum("ij,jh,hk->ik", Pinv, Slam, Pinv))
+            log_det = 2.0 * np.sum(np.log(np.diag(L))) + 2.0 * np.sum(np.log(np.diag(P)))
+            Linv = sp_linalg.solve_triangular(L, np.eye(L.shape[0]), lower=True)
+            p_inv = np.diag(Pinv)
+            Sinv = (p_inv[:, None] * Linv.T) @ (Linv * p_inv[None, :])
+        except np.linalg.LinAlgError:
+            use_eigh = True
+    if use_eigh:
         Slam = np.triu(Slam) + np.triu(Slam, 1).T
         d_tild, U_tild = np.linalg.eigh(Slam)
         idx     = d_tild > np.finfo(float).eps
@@ -154,12 +156,17 @@ def logDet_Slam(rho, S_transf, compute_grad=False, S_all=None):
     if compute_grad:
         _, S_transf = transform_Slam(S_all, rho)
     Slam = np.einsum("ijk,i", S_transf, lam)
-    try:
-        Pinv = np.diag(1.0 / np.sqrt(np.abs(np.diag(Slam))))
-        P    = np.diag(np.sqrt(np.abs(np.diag(Slam))))
-        L    = np.linalg.cholesky(np.einsum("ij,jh,hk->ik", Pinv, Slam, Pinv))
-        log_det = 2.0 * np.sum(np.log(np.diag(L))) + 2.0 * np.sum(np.log(np.diag(P)))
-    except np.linalg.LinAlgError:
+    diag_Slam = np.abs(np.diag(Slam))
+    use_eigh = np.any(diag_Slam == 0)
+    if not use_eigh:
+        try:
+            Pinv = np.diag(1.0 / np.sqrt(diag_Slam))
+            P    = np.diag(np.sqrt(diag_Slam))
+            L    = np.linalg.cholesky(np.einsum("ij,jh,hk->ik", Pinv, Slam, Pinv))
+            log_det = 2.0 * np.sum(np.log(np.diag(L))) + 2.0 * np.sum(np.log(np.diag(P)))
+        except np.linalg.LinAlgError:
+            use_eigh = True
+    if use_eigh:
         Slam = np.triu(Slam) + np.triu(Slam, 1).T
         d_tild, _ = np.linalg.eigh(Slam)
         log_det = np.sum(np.log(d_tild[d_tild > np.finfo(float).eps]))
